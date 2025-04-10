@@ -39,6 +39,9 @@ UI\Main.xml
 UI\Main.lua
 UI\ClassIcons.lua
 UI\ProfileUI.lua
+UI\EnhancedUI.lua
+UI\SettingsUI.lua
+UI\ClassHUD.lua
 
 # Classes
 Classes\Base.lua
