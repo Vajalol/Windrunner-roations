@@ -127,8 +127,8 @@ function WR:OnInitialize()
     if self.Rotation and self.Rotation.Initialize then self.Rotation:Initialize() end
     
     -- Configuration and data components
-    if self.Profiles and self.Profiles.Initialize then self.Profiles:Initialize() end
-    if self.Dungeons and self.Dungeons.Initialize then self.Dungeons:Initialize() end
+    if self.ProfileManager and self.ProfileManager.Initialize then self.ProfileManager:Initialize() end
+    if self.DungeonIntelligence and self.DungeonIntelligence.Initialize then self.DungeonIntelligence:Initialize() end
     
     -- Register for events
     self:RegisterEvents()
@@ -242,7 +242,9 @@ function WR:RegisterEvents()
         elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
             WR:LoadClassModule()
         elseif event == "ZONE_CHANGED_NEW_AREA" then
-            WR.Dungeons:CheckCurrentDungeon()
+            if WR.DungeonIntelligence then
+                WR.DungeonIntelligence:UpdateCurrentDungeon()
+            end
         end
     end)
     
@@ -313,7 +315,9 @@ function WR:UpdatePlayerInfo()
     self.playerLevel = UnitLevel("player")
     
     -- Check if we're in a dungeon
-    self.Dungeons:CheckCurrentDungeon()
+    if self.DungeonIntelligence then
+        self.DungeonIntelligence:UpdateCurrentDungeon()
+    end
 end
 
 -- Handle slash commands
