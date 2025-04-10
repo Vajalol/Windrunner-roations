@@ -28,6 +28,14 @@ Core\Auras.lua
 Core\Combat.lua
 Core\ProfileManager.lua
 Core\DungeonIntelligence.lua
+Core\Optimization.lua
+Core\Diagnostics.lua
+Core\Analytics.lua
+Core\Maintenance.lua
+Core\Documentation.lua
+Core\VersionCheck.lua
+Core\Community.lua
+Core\LearningSystem.lua
 
 # Data
 Data\Classes.lua
