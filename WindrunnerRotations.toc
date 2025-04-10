@@ -48,3 +48,5 @@ Classes\Paladin.lua
 Classes\Priest.lua
 Classes\Druid.lua
 Classes\DemonHunter.lua
+Classes\DeathKnight.lua
+Classes\Evoker.lua
