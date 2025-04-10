@@ -67,6 +67,9 @@ UI\ClassTheme.lua
 UI\ProfileIntegration.lua
 UI\ClassSpecificUI.lua
 UI\ResourceForecast.lua
+UI\AdvancedSettingsUI.lua
+UI\VisualEditMode.lua
+UI\GuidedLearning.lua
 
 # Classes
 Classes\Base.lua

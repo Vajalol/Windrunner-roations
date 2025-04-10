@@ -158,6 +158,11 @@ function WR:OnInitialize()
     if self.MachineLearning and self.MachineLearning.Initialize then self.MachineLearning:Initialize() end
     if self.PvPSystem and self.PvPSystem.Initialize then self.PvPSystem:Initialize() end
     
+    -- Advanced UI Customization (Phase 9)
+    if self.UI and self.UI.AdvancedSettingsUI and self.UI.AdvancedSettingsUI.Initialize then self.UI.AdvancedSettingsUI:Initialize() end
+    if self.UI and self.UI.VisualEditMode and self.UI.VisualEditMode.Initialize then self.UI.VisualEditMode:Initialize() end
+    if self.UI and self.UI.GuidedLearning and self.UI.GuidedLearning.Initialize then self.UI.GuidedLearning:Initialize() end
+    
     -- Register for events
     self:RegisterEvents()
     
@@ -439,6 +444,27 @@ function WR:HandleSlashCommand(msg)
             self.UI.ResourceForecast:Toggle()
         else
             print("|cFFFFFF00[Windrunner Rotations]|r ResourceForecast module not available")
+        end
+    elseif msg == "settings" or msg == "options" then
+        -- Show Advanced Settings
+        if self.UI and self.UI.AdvancedSettingsUI then
+            self.UI.AdvancedSettingsUI:Toggle()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r AdvancedSettingsUI module not available")
+        end
+    elseif msg == "editmode" or msg == "edit" then
+        -- Toggle Visual Edit Mode
+        if self.UI and self.UI.VisualEditMode then
+            self.UI.VisualEditMode:Toggle()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r VisualEditMode module not available")
+        end
+    elseif msg == "tutorial" or msg == "help" then
+        -- Show Tutorials
+        if self.UI and self.UI.GuidedLearning then
+            self.UI.GuidedLearning:ShowTutorialMenu()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r GuidedLearning module not available")
         end
     end
 end
