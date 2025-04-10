@@ -1,0 +1,114 @@
+Alright, you're talking next-level AI automation—building an elite combat rotation system + control UI + dungeon support + class-based profiles, smarter and more advanced than anything out there like Phoenix Rotation, Murloc, or Angry Panda.
+
+If you're instructing your AI coder (or agent) to execute this project, here's how you should phrase it, broken into clear, powerful goals.
+
+✅ Full Instruction Plan for Your AI Coder
+Project Name: Ultimate WoW AI Combat System – “All-in-One Rotation Engine”
+
+📚 1. Knowledge Gathering and Learning
+“Start by collecting full documentation and references from the following sources:
+
+Tinkr API & Lua bindings: Review all available modules, functions, and features from Tinkr documentation and codebase.
+
+Class Knowledgebase: Collect all class mechanics, spells, rotations, talents, cooldowns, and PvE roles from:
+
+https://www.wowhead.com/guides/classes
+
+https://www.wowhead.com/guide/the-war-within/season-2-overview
+
+Parse top builds, talents, and priority lists for each spec in War Within Season 2 (Retail).
+
+Organize the data per class/spec in structured format (JSON or Lua tables).”
+
+⚙️ 2. Rotation System (AI-Powered)
+“For each class/spec:
+
+Build a fully automated rotation system that adapts in real time based on:
+
+Target health
+
+Player movement
+
+Buffs/debuffs
+
+Cooldowns
+
+Crowd control
+
+AoE vs Single Target
+
+Use intelligent priority logic (inspired by SimulationCraft and real-time combat logs).
+
+Optimize for max DPS or HPS depending on the role.
+
+Include interrupt management, defensive cooldown usage, and healing logic.”
+
+🧠 3. Profile System
+“Create a profile manager:
+
+Each class/spec should have its own profile with editable rotation settings.
+
+Allow per-dungeon or per-boss customization.
+
+Profiles should be exportable/importable.”
+
+🧩 4. Full Dungeon + Raid Support
+“Add full support for all War Within Season 2 dungeons and encounters:
+
+Include boss mechanics, interrupt priorities, adds, movement phases.
+
+Add toggles to switch behavior based on dungeon affixes.
+
+Include a dungeon module loader to auto-switch rotation profiles.”
+
+🎮 5. User Interface (UI)
+“Build a sleek, fully integrated UI with:
+
+Class selector and spec-based color themes
+
+Rotation preview window (graphical or icon-based)
+
+Real-time combat log parsing
+
+Toggle buttons (Interrupts, AoE, Defensives, Cooldowns)
+
+Profile editor
+
+Dungeon-aware behavior settings
+
+UI should be more intuitive, dynamic, and responsive than Phoenix Rotation, with full in-game customization, anchored windows, and tooltips.”
+
+🌐 6. Smart Features
+“Integrate the following features:
+
+Real-time GCD and cooldown management
+
+Spell queue system with predictive casting
+
+Smart target switching for AoE
+
+Pause/Resume keybind
+
+Auto targeting
+
+Smart movement detection
+
+Keybind-safe system with secure buttons (to comply with TOS)”
+
+🔄 7. Continuous Updates
+“Include automatic version check and updater. Design the architecture to support easy patching and updating per WoW patch/season changes.”
+
+📣 Final Command You Can Say to Your AI Assistant:
+“Build a fully automated, AI-based combat rotation addon for WoW Retail (The War Within - Season 2), using Tinkr and based on data from Wowhead.
+
+It should:
+
+Include all classes/specs with dynamic profiles.
+
+Feature better performance and customization than Phoenix Rotation.
+
+Have a powerful, intuitive UI.
+
+Support dungeons, raids, and boss-specific logic.
+
+Get all spell data, talents, and encounter info from Wowhead and structure everything modularly for updates. This should be the most complete and advanced rotation engine addon ever created.”
