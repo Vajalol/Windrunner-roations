@@ -1,21 +1,25 @@
 local addonName, WR = ...
 
--- SpellQueue module - handles spell queuing and casting
+-- SpellQueue module - handles spell queuing and casting with predictive capabilities
 local Queue = {}
 WR.Queue = Queue
 
 -- State
 local state = {
-    queue = {}, -- The spell queue, entries are {spellId, target, timestamp}
+    queue = {}, -- The spell queue, entries are {spellId, target, timestamp, priority, conditions}
     processingQueue = false,
     lastProcessTime = 0,
-    processInterval = 0.05, -- Process the queue every 50ms
-    maxQueueSize = 3, -- Maximum number of spells in the queue
-    maxAge = 1.0, -- Maximum age of a queued spell in seconds
+    processInterval = 0.02, -- Process the queue every 20ms for better responsiveness
+    maxQueueSize = 5, -- Maximum number of spells in the queue
+    maxAge = 1.5, -- Maximum age of a queued spell in seconds
     gcdRemaining = 0, -- Estimated GCD remaining in seconds
     lastCastSpellId = nil, -- Last spell that was cast
     lastCastTime = 0, -- Time of the last cast
     lastCastSuccess = false, -- Whether the last cast was successful
+    castHistory = {}, -- History of recent casts for analysis
+    castHistoryMaxSize = 20, -- Maximum size of cast history
+    predictiveCastingEnabled = true, -- Whether predictive casting is enabled
+    currentCastPrediction = nil, -- Current spell predicted to be cast next
 }
 
 -- Initialize the spell queue
@@ -147,47 +151,204 @@ function Queue:ProcessQueue()
         end
     end
     
+    -- Sort the queue by priority (higher priority first)
+    table.sort(state.queue, function(a, b)
+        return (a.priority or 0) > (b.priority or 0)
+    end)
+    
     -- Try to cast the next spell in the queue
-    if #state.queue > 0 and state.gcdRemaining <= 0 then
-        local nextSpell = state.queue[1]
-        
-        -- Try to cast the spell
-        local success = false
-        
-        if nextSpell.target then
-            success = WR.API:CastSpell(nextSpell.spellId, nextSpell.target)
-        else
-            success = WR.API:CastSpell(nextSpell.spellId)
+    if #state.queue > 0 then
+        -- Use our GCD module if available
+        local canCast = state.gcdRemaining <= 0
+        if WR.GCD and WR.GCD.CanQueueSpell then
+            canCast = WR.GCD:CanQueueSpell()
         end
         
-        -- If the cast was attempted (success or fail), remove it from the queue
-        if success then
-            table.remove(state.queue, 1)
+        if canCast then
+            -- Find the highest priority spell that meets its conditions
+            local spellToCast = nil
+            local spellIndex = nil
+            
+            for i, spell in ipairs(state.queue) do
+                -- Check if the spell meets its conditions
+                local conditionsMet = true
+                
+                if spell.conditions then
+                    for _, condition in ipairs(spell.conditions) do
+                        if type(condition) == "function" then
+                            if not condition() then
+                                conditionsMet = false
+                                break
+                            end
+                        end
+                    end
+                end
+                
+                -- Check if the spell is castable
+                if conditionsMet and WR.API:IsSpellCastable(spell.spellId, spell.target) then
+                    spellToCast = spell
+                    spellIndex = i
+                    break
+                end
+            end
+            
+            -- Cast the spell if found
+            if spellToCast then
+                local success = false
+                
+                if spellToCast.target then
+                    success = WR.API:CastSpell(spellToCast.spellId, spellToCast.target)
+                else
+                    success = WR.API:CastSpell(spellToCast.spellId)
+                end
+                
+                -- If the cast was attempted, remove it from the queue and record in history
+                if success then
+                    -- Add to cast history before removing from queue
+                    self:AddToCastHistory(spellToCast.spellId, spellToCast.target, spellToCast.priority)
+                    
+                    -- Remove the spell from the queue
+                    table.remove(state.queue, spellIndex)
+                    
+                    -- Perform prediction for next spell
+                    if state.predictiveCastingEnabled then
+                        self:PredictNextCast()
+                    end
+                end
+            end
         end
     end
 end
 
--- Queue a spell for casting
-function Queue:QueueSpell(spellId, target)
+-- Add a spell cast to the history
+function Queue:AddToCastHistory(spellId, target, priority)
+    -- Don't track certain utility spells
+    local ignoreSpells = {
+        -- Common utility spells that don't factor into rotation predictions
+        [1459] = true, -- Arcane Intellect
+        [21562] = true, -- Power Word: Fortitude
+        -- Add more as needed
+    }
+    
+    if ignoreSpells[spellId] then return end
+    
+    -- Add to cast history
+    table.insert(state.castHistory, {
+        spellId = spellId,
+        target = target,
+        timestamp = GetTime(),
+        priority = priority
+    })
+    
+    -- Keep history at max size
+    if #state.castHistory > state.castHistoryMaxSize then
+        table.remove(state.castHistory, 1)
+    end
+end
+
+-- Predict the next cast based on history
+function Queue:PredictNextCast()
+    -- Skip prediction if disabled or insufficient history
+    if not state.predictiveCastingEnabled or #state.castHistory < 5 then
+        state.currentCastPrediction = nil
+        return
+    end
+    
+    -- Simple prediction based on common spell sequences
+    local sequences = {}
+    
+    -- Check for common 2-spell sequences
+    for i = 1, #state.castHistory - 1 do
+        local spell1 = state.castHistory[i].spellId
+        local spell2 = state.castHistory[i+1].spellId
+        
+        local key = tostring(spell1) .. "-" .. tostring(spell2)
+        sequences[key] = (sequences[key] or 0) + 1
+    end
+    
+    -- Check for common 3-spell sequences for better accuracy
+    for i = 1, #state.castHistory - 2 do
+        local spell1 = state.castHistory[i].spellId
+        local spell2 = state.castHistory[i+1].spellId
+        local spell3 = state.castHistory[i+2].spellId
+        
+        local key = tostring(spell1) .. "-" .. tostring(spell2) .. "-" .. tostring(spell3)
+        sequences[key] = (sequences[key] or 0) + 2  -- Weight 3-spell sequences higher
+    end
+    
+    -- Identify most common sequences
+    local bestSequence = nil
+    local bestCount = 0
+    
+    for sequence, count in pairs(sequences) do
+        if count > bestCount then
+            bestSequence = sequence
+            bestCount = count
+        end
+    end
+    
+    -- Extract prediction from best sequence
+    if bestSequence and bestCount >= 2 then
+        local parts = {}
+        for part in bestSequence:gmatch("[^-]+") do
+            table.insert(parts, part)
+        end
+        
+        local lastCastId = state.lastCastSpellId
+        
+        -- For 2-spell sequences
+        if #parts == 2 and tonumber(parts[1]) == lastCastId then
+            state.currentCastPrediction = tonumber(parts[2])
+            return
+        end
+        
+        -- For 3-spell sequences
+        if #parts == 3 then
+            local secondLast = nil
+            if #state.castHistory >= 2 then
+                secondLast = state.castHistory[#state.castHistory-1].spellId
+            end
+            
+            if secondLast and tonumber(parts[1]) == secondLast and tonumber(parts[2]) == lastCastId then
+                state.currentCastPrediction = tonumber(parts[3])
+                return
+            end
+        end
+    end
+    
+    state.currentCastPrediction = nil
+end
+
+-- Queue a spell for casting with priority and conditions
+function Queue:QueueSpell(spellId, target, priority, conditions)
     -- Don't queue if spell is not valid
     if not spellId or not GetSpellInfo(spellId) then
         WR:Debug("Attempted to queue invalid spell:", spellId)
         return false
     end
     
+    -- Default priority
+    priority = priority or 1
+    
     -- Check if spell is already in the queue
     for i, spellData in ipairs(state.queue) do
         if spellData.spellId == spellId then
-            -- Update the timestamp and target for existing entry
+            -- Update the entry with new info
             spellData.timestamp = GetTime()
             spellData.target = target
+            spellData.priority = priority
+            spellData.conditions = conditions
             return true
         end
     end
     
     -- Check if queue is full
     if #state.queue >= state.maxQueueSize then
-        -- Remove the oldest entry
+        -- Instead of removing oldest, remove lowest priority
+        table.sort(state.queue, function(a, b)
+            return (a.priority or 0) < (b.priority or 0)
+        end)
+        
         table.remove(state.queue, 1)
     end
     
@@ -195,12 +356,19 @@ function Queue:QueueSpell(spellId, target)
     table.insert(state.queue, {
         spellId = spellId,
         target = target,
-        timestamp = GetTime()
+        timestamp = GetTime(),
+        priority = priority,
+        conditions = conditions
     })
     
-    WR:Debug("Queued spell:", GetSpellInfo(spellId), "(", spellId, ")", target or "no target")
+    WR:Debug("Queued spell:", GetSpellInfo(spellId), "(", spellId, ") Priority:", priority, target or "no target")
     
     return true
+end
+
+-- Simple version for backward compatibility
+function Queue:QueueSpellSimple(spellId, target)
+    return self:QueueSpell(spellId, target, 1, nil)
 end
 
 -- Clear the spell queue

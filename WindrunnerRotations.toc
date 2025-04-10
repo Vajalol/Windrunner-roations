@@ -16,6 +16,9 @@ Libs\AceGUI-3.0\AceGUI-3.0.xml
 Init.lua
 Config.lua
 Core\API.lua
+Core\GCD.lua
+Core\Condition.lua
+Core\CombatAnalysis.lua
 Core\Rotation.lua
 Core\Targeting.lua
 Core\SpellQueue.lua

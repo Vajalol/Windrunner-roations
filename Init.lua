@@ -101,13 +101,28 @@ function WR:OnInitialize()
         print("Created mock WoW API functions for testing environment")
     end
     
-    -- Initialize core systems
-    if self.Rotation.Initialize then self.Rotation:Initialize() end
-    if self.Target.Initialize then self.Target:Initialize() end
-    if self.Queue.Initialize then self.Queue:Initialize() end
-    if self.Combat.Initialize then self.Combat:Initialize() end
-    if self.Profiles.Initialize then self.Profiles:Initialize() end
-    if self.Dungeons.Initialize then self.Dungeons:Initialize() end
+    -- Initialize core systems in the correct order
+    -- Load GCD tracker first as other systems depend on it
+    if self.GCD and self.GCD.Initialize then self.GCD:Initialize() end
+    
+    -- Then initialize condition system for spell evaluations
+    if self.Condition and self.Condition.Initialize then self.Condition:Initialize() end
+    
+    -- Initialize API system for accessing WoW and Tinkr functionality
+    if self.API and self.API.Initialize then self.API:Initialize() end
+    
+    -- Combat analysis for performance tracking
+    if self.CombatAnalysis and self.CombatAnalysis.Initialize then self.CombatAnalysis:Initialize() end
+    
+    -- Core rotation components
+    if self.Queue and self.Queue.Initialize then self.Queue:Initialize() end
+    if self.Target and self.Target.Initialize then self.Target:Initialize() end
+    if self.Combat and self.Combat.Initialize then self.Combat:Initialize() end
+    if self.Rotation and self.Rotation.Initialize then self.Rotation:Initialize() end
+    
+    -- Configuration and data components
+    if self.Profiles and self.Profiles.Initialize then self.Profiles:Initialize() end
+    if self.Dungeons and self.Dungeons.Initialize then self.Dungeons:Initialize() end
     
     -- Register for events
     self:RegisterEvents()
