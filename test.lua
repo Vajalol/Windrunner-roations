@@ -1,23 +1,61 @@
 local addonName, WR = ...
 
 -- Test class rotations
-print("Testing Mage class rotations")
+print("Testing class rotations")
 
 -- Mock crucial functions if we're in test mode
 if not UnitClass then
-    -- Mock UnitClass to return Mage
-    UnitClass = function() return "Mage", "MAGE" end
+    -- Mock UnitClass to return class
+    UnitClass = function()
+        -- Set the class to test here: MAGE, HUNTER, or WARRIOR
+        local testClass = "HUNTER"
+        
+        if testClass == "MAGE" then
+            return "Mage", "MAGE"
+        elseif testClass == "HUNTER" then
+            return "Hunter", "HUNTER" 
+        elseif testClass == "WARRIOR" then
+            return "Warrior", "WARRIOR"
+        end
+    end
     
     -- Mock spell knowledge
     IsSpellKnown = function(spellId) return true end
     
     -- Mock specs
-    GetSpecialization = function() return 1 end -- Arcane = 1, Fire = 2, Frost = 3
+    GetSpecialization = function() 
+        local _, classToken = UnitClass()
+        if classToken == "MAGE" then
+            return 1 -- Arcane = 1, Fire = 2, Frost = 3
+        elseif classToken == "HUNTER" then
+            return 1 -- Beast Mastery = 1, Marksmanship = 2, Survival = 3
+        elseif classToken == "WARRIOR" then
+            return 1 -- Arms = 1, Fury = 2, Protection = 3
+        end
+        return 1
+    end
+    
     GetSpecializationInfo = function(index)
-        if index == 1 then return 62 -- Arcane 
-        elseif index == 2 then return 63 -- Fire
-        elseif index == 3 then return 64 -- Frost
-        else return nil end
+        local _, classToken = UnitClass()
+        
+        if classToken == "MAGE" then
+            if index == 1 then return 62 -- Arcane 
+            elseif index == 2 then return 63 -- Fire
+            elseif index == 3 then return 64 -- Frost
+            end
+        elseif classToken == "HUNTER" then
+            if index == 1 then return 253 -- Beast Mastery
+            elseif index == 2 then return 254 -- Marksmanship
+            elseif index == 3 then return 255 -- Survival
+            end
+        elseif classToken == "WARRIOR" then
+            if index == 1 then return 71 -- Arms
+            elseif index == 2 then return 72 -- Fury
+            elseif index == 3 then return 73 -- Protection
+            end
+        end
+        
+        return nil
     end
     
     -- Mock unit existence and targeting
@@ -28,10 +66,16 @@ if not UnitClass then
     UnitHealth = function() return 80 end
     UnitHealthMax = function() return 100 end
     UnitPower = function(unit, powerType) 
+        local _, classToken = UnitClass()
+        
         if powerType == Enum.PowerType.Mana then
             return 80 -- 80% mana
         elseif powerType == Enum.PowerType.ArcaneCharges then
             return 3 -- 3 arcane charges
+        elseif powerType == Enum.PowerType.Focus and classToken == "HUNTER" then
+            return 70 -- 70 focus for hunters
+        elseif powerType == Enum.PowerType.Rage and classToken == "WARRIOR" then
+            return 60 -- 60 rage for warriors
         else
             return 0
         end
