@@ -38,6 +38,13 @@ Core\Community.lua
 Core\LearningSystem.lua
 Core\PerformanceOptimizer.lua
 Core\StabilityManager.lua
+Core\ClassKnowledge.lua
+Core\BuildAnalyzer.lua
+Core\ResourceOptimizer.lua
+Core\LegendaryAndSetManager.lua
+Core\PlaystyleManager.lua
+Core\EncounterManager.lua
+Core\RotationEnhancer.lua
 
 # Data
 Data\Classes.lua

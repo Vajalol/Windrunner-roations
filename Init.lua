@@ -38,6 +38,15 @@ WR = {
     
     -- UI elements
     UI = {},
+    
+    -- Enhanced Class Rotation System (Phase 8)
+    ClassKnowledge = {},
+    BuildAnalyzer = {},
+    ResourceOptimizer = {},
+    LegendaryAndSetManager = {},
+    PlaystyleManager = {},
+    EncounterManager = {},
+    RotationEnhancer = {}
 }
 
 -- Verify Tinkr API exists - for demonstration we'll mock Tinkr
@@ -129,6 +138,17 @@ function WR:OnInitialize()
     -- Configuration and data components
     if self.ProfileManager and self.ProfileManager.Initialize then self.ProfileManager:Initialize() end
     if self.DungeonIntelligence and self.DungeonIntelligence.Initialize then self.DungeonIntelligence:Initialize() end
+    
+    -- Enhanced Class Rotation System (Phase 8)
+    if self.ClassKnowledge and self.ClassKnowledge.Initialize then self.ClassKnowledge:Initialize() end
+    if self.BuildAnalyzer and self.BuildAnalyzer.Initialize then self.BuildAnalyzer:Initialize() end
+    if self.ResourceOptimizer and self.ResourceOptimizer.Initialize then self.ResourceOptimizer:Initialize() end
+    if self.LegendaryAndSetManager and self.LegendaryAndSetManager.Initialize then self.LegendaryAndSetManager:Initialize() end
+    if self.PlaystyleManager and self.PlaystyleManager.Initialize then self.PlaystyleManager:Initialize() end
+    if self.EncounterManager and self.EncounterManager.Initialize then self.EncounterManager:Initialize() end
+    
+    -- Initialize the RotationEnhancer last since it depends on the other modules
+    if self.RotationEnhancer and self.RotationEnhancer.Initialize then self.RotationEnhancer:Initialize() end
     
     -- Register for events
     self:RegisterEvents()
@@ -346,6 +366,44 @@ function WR:HandleSlashCommand(msg)
     elseif msg == "reload" then
         -- Reload class module
         self:LoadClassModule()
+    elseif msg:match("^build") then
+        -- Pass to BuildAnalyzer
+        if self.BuildAnalyzer and self.BuildAnalyzer.HandleCommand then
+            self.BuildAnalyzer:HandleCommand(msg:sub(6))
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r BuildAnalyzer module not available")
+        end
+    elseif msg:match("^playstyle") then
+        -- Pass to PlaystyleManager
+        if self.PlaystyleManager and self.PlaystyleManager.HandleCommand then
+            self.PlaystyleManager:HandleCommand(msg:sub(11))
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r PlaystyleManager module not available")
+        end
+    elseif msg:match("^gear") then
+        -- Pass to LegendaryAndSetManager
+        if self.LegendaryAndSetManager and self.LegendaryAndSetManager.ForceScan then
+            self.LegendaryAndSetManager:ForceScan()
+            print("|cFF00FFFF[Windrunner Rotations]|r Rescanned gear for legendary and set effects")
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r LegendaryAndSetManager module not available")
+        end
+    elseif msg:match("^encounter") then
+        -- Pass to EncounterManager
+        if self.EncounterManager and self.EncounterManager.ForceCheckMechanics then
+            self.EncounterManager:ForceCheckMechanics()
+            print("|cFF00FFFF[Windrunner Rotations]|r Checked for active encounter mechanics")
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r EncounterManager module not available")
+        end
+    elseif msg == "enhanced" or msg == "ui" then
+        -- Show enhanced UI
+        if self.RotationEnhancer and self.RotationEnhancer.CreateEnhancedUI then
+            local enhancedUI = self.RotationEnhancer:CreateEnhancedUI(UIParent)
+            enhancedUI:Show()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r Enhanced UI not available")
+        end
     end
 end
 
