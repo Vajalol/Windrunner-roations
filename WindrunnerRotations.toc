@@ -45,4 +45,6 @@ Classes\Mage.lua
 Classes\Hunter.lua
 Classes\Warrior.lua
 Classes\Paladin.lua
+Classes\Priest.lua
+Classes\Druid.lua
 Classes\DemonHunter.lua

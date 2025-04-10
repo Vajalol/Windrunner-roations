@@ -1,843 +1,883 @@
 local addonName, WR = ...
 
--- Profile Manager module - handles saving and loading user-specific rotation profiles
+-- ProfileManager module for handling user profiles and settings
 local ProfileManager = {}
 WR.ProfileManager = ProfileManager
 
--- State
-local state = {
-    currentProfile = "Default",
-    profiles = {},
-    classProfiles = {},
-    defaultSettings = {},
-    profileSettings = {},
-    lastProfileUpdate = 0,
-    profileHistory = {},
-    presetProfiles = {},
-    profileMetadata = {},
-    autosaveEnabled = true,
-    unsavedChanges = false
-}
+-- Profile data
+ProfileManager.profiles = {}
+ProfileManager.defaultProfile = nil
+ProfileManager.currentProfile = nil
+ProfileManager.classProfiles = {}
+ProfileManager.profileHistory = {}
 
--- Initialize the module
+-- Initialize ProfileManager module
 function ProfileManager:Initialize()
-    -- Load saved profiles from saved variables
-    if WR.charDB and WR.charDB.classProfiles then
-        state.classProfiles = WR.charDB.classProfiles
-    end
+    -- Load saved profiles from DB
+    self:LoadProfiles()
     
-    if WR.charDB and WR.charDB.currentProfile then
-        state.currentProfile = WR.charDB.currentProfile
-    end
-    
-    -- Default settings for a new profile
-    state.defaultSettings = {
-        -- General settings
-        enabled = true,
-        enableAutoTargeting = true,
-        enableInterrupts = true,
-        enableDefensives = true,
-        enableCooldowns = false,
-        enableAOE = true,
-        enableDungeonAwareness = true,
-        saveResourcesForBurst = false,
-        autoSwitchTargets = true,
-        rotationSpeed = 100, -- milliseconds
-        
-        -- UI settings
-        minimapIcon = { hide = false },
-        UI = {
-            scale = 1.0,
-            locked = false,
-            position = { point = "CENTER", x = 0, y = 0 },
-            showCooldowns = true,
-            showResourceBar = true,
-            showDebuffs = true,
-            showBuffs = true,
-            iconSize = 32,
-            colorEnabled = true,
-            theme = "dark",
-        },
-        
-        -- Class specific settings
-        classSpecific = {},
-        
-        -- Advanced settings
-        advancedMode = false,
-        customCodeEnabled = false,
-        customPriorities = {},
-        abilityRanks = {},
-        targetingCriteria = {},
-        simulationEnabled = false,
-        
-        -- Dungeon settings
-        dungeonAwarenessLevel = 3, -- 1-5 scale for how much to focus on dungeon mechanics
-        mythicPlusModeEnabled = true,
-        priorityDispelsEnabled = true,
-        interruptPriority = 70, -- 0-100 interrupt chance percentage
-    }
-    
-    -- Create default profile if none exists
-    if not state.classProfiles["Default"] then
-        self:CreateProfile("Default", state.defaultSettings)
-    end
-    
-    -- Load any preset profiles
-    self:LoadPresetProfiles()
+    -- Create default profiles if needed
+    self:EnsureDefaultProfiles()
     
     -- Load the current profile
-    self:LoadProfile(state.currentProfile)
+    self:LoadProfile(self:GetCurrentProfileName())
     
-    -- Create frame for events
-    local frame = CreateFrame("Frame")
-    frame:RegisterEvent("PLAYER_LOGOUT")
+    -- Register callbacks for settings changes
+    self:RegisterCallbacks()
     
-    frame:SetScript("OnEvent", function(self, event, ...)
-        if event == "PLAYER_LOGOUT" then
-            ProfileManager:SaveChanges()
-        end
-    end)
-    
-    WR:Debug("Profile Manager initialized, current profile:", state.currentProfile)
+    WR:Debug("ProfileManager module initialized")
 end
 
--- Load preset profiles for different specs/classes
-function ProfileManager:LoadPresetProfiles()
-    -- Example presets that could be included with the addon
-    state.presetProfiles = {
-        -- Mage presets
-        ["Arcane Mage: Single Target"] = {
-            description = "Optimized for single-target Arcane Mage damage in raid encounters",
-            class = "MAGE",
-            spec = 62, -- Arcane
-            author = "WindrunnerDev",
-            settings = {
-                enableCooldowns = true,
-                enableAOE = false,
-                saveResourcesForBurst = true,
-                classSpecific = {
-                    conserveManaThreshold = 70,
-                    burstManaThreshold = 50,
-                    useCooldownsWithTotM = true,
-                    arcaneBarrageDumpAt = 30,
-                }
-            }
-        },
-        ["Fire Mage: AoE Mythic+"] = {
-            description = "Optimized for AoE Fire Mage damage in Mythic+ dungeons",
-            class = "MAGE",
-            spec = 63, -- Fire
-            author = "WindrunnerDev",
-            settings = {
-                enableCooldowns = true,
-                enableAOE = true,
-                saveResourcesForBurst = false,
-                enableDungeonAwareness = true,
-                dungeonAwarenessLevel = 4,
-                classSpecific = {
-                    flamestrikePriority = 3,
-                    phoenixFlamesChargeThreshold = 2,
-                    heatupConservation = true
-                }
-            }
-        },
-        
-        -- Hunter presets
-        ["Beast Mastery: Raid Single Target"] = {
-            description = "Optimized for single-target Beast Mastery Hunter damage in raids",
-            class = "HUNTER",
-            spec = 253, -- Beast Mastery
-            author = "WindrunnerDev",
-            settings = {
-                enableCooldowns = true,
-                enableAOE = false,
-                saveResourcesForBurst = true,
-                classSpecific = {
-                    aspectTiming = "withBestial",
-                    barbedShotStrategy = "frenzyFocus",
-                    killCommandPriority = 90,
-                    petManagement = "offensive"
-                }
-            }
-        },
-        
-        -- Warrior presets
-        ["Fury Warrior: AoE Cleave"] = {
-            description = "Optimized for Fury Warrior AoE and cleave damage",
-            class = "WARRIOR",
-            spec = 72, -- Fury
-            author = "WindrunnerDev",
-            settings = {
-                enableCooldowns = true,
-                enableAOE = true,
-                saveResourcesForBurst = false,
-                classSpecific = {
-                    whirlwindThreshold = 2,
-                    enragePriority = "high",
-                    executeThreshold = 35,
-                    rampage = "onEnrage"
-                }
-            }
-        },
-        
-        -- Paladin presets
-        ["Retribution Paladin: Burst"] = {
-            description = "Optimized for Retribution Paladin burst damage",
-            class = "PALADIN",
-            spec = 70, -- Retribution
-            author = "WindrunnerDev",
-            settings = {
-                enableCooldowns = true,
-                enableAOE = false,
-                saveResourcesForBurst = true,
-                classSpecific = {
-                    judgmentFirst = true,
-                    holyPowerManagement = "aggressive",
-                    executePhase = "highPriority",
-                    wakeOfAshes = "onCooldown"
-                }
-            }
-        }
-    }
+-- Load profiles from saved variables
+function ProfileManager:LoadProfiles()
+    -- Reset profile data
+    self.profiles = {}
+    self.classProfiles = {}
+    self.profileHistory = {}
     
-    -- Register preset profiles' metadata
-    for name, preset in pairs(state.presetProfiles) do
-        state.profileMetadata[name] = {
-            description = preset.description,
-            class = preset.class,
-            spec = preset.spec,
-            author = preset.author,
-            isPreset = true,
-            lastUpdate = time()
-        }
-    end
-end
-
--- Create a new profile with specific settings
-function ProfileManager:CreateProfile(name, settings)
-    if not name or name == "" then
-        WR:Debug("Invalid profile name")
-        return false
+    -- Load profiles from character DB
+    if WR.charDB and WR.charDB.classProfiles then
+        self.classProfiles = WR.charDB.classProfiles
     end
     
-    -- Don't overwrite existing profiles without explicit confirmation
-    if state.classProfiles[name] and name ~= state.currentProfile then
-        WR:Debug("Profile already exists:", name)
-        return false
+    if WR.charDB and WR.charDB.profileHistory then
+        self.profileHistory = WR.charDB.profileHistory
     end
     
-    -- Create a new profile by combining default settings with provided settings
-    local newSettings = self:CopyTable(state.defaultSettings)
-    if settings then
-        self:MergeSettings(newSettings, settings)
-    end
-    
-    -- Store the profile
-    state.classProfiles[name] = newSettings
-    
-    -- Update metadata
-    state.profileMetadata[name] = {
-        description = settings and settings.description or "Custom profile",
-        class = select(2, UnitClass("player")),
-        spec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil,
-        author = "Player",
-        isPreset = false,
-        lastUpdate = time()
-    }
-    
-    -- Save to DB
-    self:SaveChanges()
-    
-    WR:Debug("Created profile:", name)
-    return true
-end
-
--- Load a profile (preset or custom)
-function ProfileManager:LoadProfile(name)
-    -- First check existing profiles
-    if state.classProfiles[name] then
-        state.profileSettings = self:CopyTable(state.classProfiles[name])
-        state.currentProfile = name
-        
-        -- Save current profile name to DB
-        WR.charDB.currentProfile = name
-        
-        -- Apply settings to the addon
-        self:ApplyProfileSettings()
-        
-        -- Add to history
-        table.insert(state.profileHistory, {
-            name = name,
-            time = time()
-        })
-        
-        -- Keep history to reasonable size
-        if #state.profileHistory > 10 then
-            table.remove(state.profileHistory, 1)
+    -- Load global profiles from global DB
+    if WindrunnerRotationsDB and WindrunnerRotationsDB.profiles then
+        for name, profileData in pairs(WindrunnerRotationsDB.profiles) do
+            self.profiles[name] = profileData
         end
-        
-        WR:Debug("Loaded profile:", name)
-        return true
     end
     
-    -- Then check preset profiles
-    if state.presetProfiles[name] then
-        local preset = state.presetProfiles[name]
-        
-        -- Check if preset is compatible with current class/spec
-        local playerClass = select(2, UnitClass("player"))
-        local playerSpec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil
-        
-        if preset.class ~= playerClass or (preset.spec and preset.spec ~= playerSpec) then
-            WR:Debug("Preset profile not compatible with current class/spec")
-            return false
-        end
-        
-        -- Create new profile from preset
-        local newSettings = self:CopyTable(state.defaultSettings)
-        self:MergeSettings(newSettings, preset.settings)
-        
-        -- Store and apply
-        state.classProfiles[name] = newSettings
-        state.profileSettings = self:CopyTable(newSettings)
-        state.currentProfile = name
-        
-        -- Save current profile name to DB
-        WR.charDB.currentProfile = name
-        
-        -- Apply settings to the addon
-        self:ApplyProfileSettings()
-        
-        -- Add to history
-        table.insert(state.profileHistory, {
-            name = name,
-            time = time()
-        })
-        
-        -- Keep history to reasonable size
-        if #state.profileHistory > 10 then
-            table.remove(state.profileHistory, 1)
-        end
-        
-        WR:Debug("Loaded preset profile:", name)
-        return true
-    end
+    -- Set default profile
+    self.defaultProfile = "Default"
     
-    WR:Debug("Profile not found:", name)
-    return false
-end
-
--- Save current profile
-function ProfileManager:SaveCurrentProfile()
-    if not state.currentProfile or state.currentProfile == "" then
-        WR:Debug("No current profile to save")
-        return false
-    end
-    
-    -- Store current settings to profile
-    state.classProfiles[state.currentProfile] = self:CopyTable(state.profileSettings)
-    
-    -- Update metadata
-    if state.profileMetadata[state.currentProfile] then
-        state.profileMetadata[state.currentProfile].lastUpdate = time()
+    -- Set current profile to the one saved in character DB
+    if WR.charDB and WR.charDB.currentProfile then
+        self.currentProfile = WR.charDB.currentProfile
     else
-        state.profileMetadata[state.currentProfile] = {
-            description = "Custom profile",
-            class = select(2, UnitClass("player")),
-            spec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil,
-            author = "Player",
-            isPreset = false,
-            lastUpdate = time()
-        }
+        self.currentProfile = self.defaultProfile
     end
     
-    -- Mark as having unsaved changes
-    state.unsavedChanges = true
-    
-    -- Autosave if enabled
-    if state.autosaveEnabled then
-        self:SaveChanges()
-    end
-    
-    WR:Debug("Saved current profile:", state.currentProfile)
-    return true
+    WR:Debug("Loaded profiles:", self:GetProfileCount())
 end
 
--- Save current profile with a new name
-function ProfileManager:SaveProfileAs(name)
-    if not name or name == "" then
-        WR:Debug("Invalid profile name")
-        return false
+-- Create default profiles if none exist
+function ProfileManager:EnsureDefaultProfiles()
+    -- Create default profile if it doesn't exist
+    if not self.profiles[self.defaultProfile] then
+        self.profiles[self.defaultProfile] = self:CreateDefaultProfile()
+        self:SaveProfiles()
     end
     
-    -- Store current settings to new profile name
-    state.classProfiles[name] = self:CopyTable(state.profileSettings)
+    -- Create class-specific default profiles
+    local _, playerClass = UnitClass("player")
+    if playerClass then
+        -- Create class default profile if it doesn't exist
+        local classDefaultName = playerClass .. " Default"
+        if not self.profiles[classDefaultName] then
+            self.profiles[classDefaultName] = self:CreateClassDefaultProfile(playerClass)
+            self:SaveProfiles()
+        end
+        
+        -- Create spec default profiles
+        for specIndex = 1, GetNumSpecializations() do
+            local specID = GetSpecializationInfo(specIndex)
+            if specID then
+                local specName = select(2, GetSpecializationInfo(specIndex))
+                if specName then
+                    local specProfileName = playerClass .. " " .. specName
+                    if not self.profiles[specProfileName] then
+                        self.profiles[specProfileName] = self:CreateSpecDefaultProfile(playerClass, specID)
+                        self:SaveProfiles()
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Create a default profile with general settings
+function ProfileManager:CreateDefaultProfile()
+    return {
+        name = "Default",
+        settings = {
+            enabled = true,
+            enableAutoTargeting = true,
+            enableInterrupts = true,
+            enableDefensives = true,
+            enableCooldowns = true,
+            enableAOE = true,
+            enableDungeonAwareness = true,
+            rotationSpeed = 100, -- milliseconds
+            minimapIcon = { hide = false },
+            UI = {
+                scale = 1.0,
+                locked = false,
+                position = { point = "CENTER", x = 0, y = 0 },
+            },
+        },
+        rotationSettings = {
+            -- General rotation settings
+            priorityTargets = true,
+            autoTarget = true,
+            focusInterrupts = true,
+            defensiveThreshold = 60, -- Health percentage
+            burstOnCooldown = false,
+            useMovementAbilities = true,
+            ccControl = true,
+        },
+        dungeonSettings = {
+            -- Dungeon-specific settings
+            enablePathfinding = true,
+            automateInterrupts = true,
+            avoidMechanics = true,
+            autoTaunt = false,
+            autoCC = true,
+            smartTargeting = true,
+            mythicPlusAffixAware = true,
+        },
+        classSettings = {
+            -- Class-specific settings are added in class default profiles
+        },
+        version = WR.version,
+        created = time(),
+        lastModified = time(),
+    }
+end
+
+-- Create a class-specific default profile
+function ProfileManager:CreateClassDefaultProfile(className)
+    -- Start with default profile
+    local profile = self:CreateDefaultProfile()
     
-    -- Update current profile
-    state.currentProfile = name
+    -- Set name
+    profile.name = className .. " Default"
     
-    -- Update metadata
-    state.profileMetadata[name] = {
-        description = "Custom profile",
-        class = select(2, UnitClass("player")),
-        spec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil,
-        author = "Player",
-        isPreset = false,
-        lastUpdate = time()
+    -- Add class-specific settings
+    profile.classSettings = {
+        className = className,
+        useClassDefaults = true,
     }
     
-    -- Save to DB
-    WR.charDB.currentProfile = name
-    self:SaveChanges()
+    -- Adjust based on role
+    if className == "WARRIOR" or className == "DEATHKNIGHT" or className == "DEMONHUNTER" or className == "DRUID" or className == "PALADIN" or className == "MONK" then
+        -- Tank specs might exist for this class
+        profile.rotationSettings.defensiveThreshold = 70
+        profile.dungeonSettings.autoTaunt = true
+    end
     
-    WR:Debug("Saved profile as:", name)
-    return true
+    if className == "PRIEST" or className == "DRUID" or className == "PALADIN" or className == "MONK" or className == "SHAMAN" then
+        -- Healing specs might exist for this class
+        profile.rotationSettings.focusHealing = true
+        profile.dungeonSettings.healingPriority = "Tank"
+    end
+    
+    return profile
 end
 
--- Delete a profile
-function ProfileManager:DeleteProfile(name)
-    if not name or name == "" or name == "Default" then
-        WR:Debug("Cannot delete Default profile or invalid name")
-        return false
+-- Create a spec-specific default profile
+function ProfileManager:CreateSpecDefaultProfile(className, specID)
+    -- Start with class default profile
+    local classProfile = self:GetProfile(className .. " Default") or self:CreateClassDefaultProfile(className)
+    local profile = self:CloneProfile(classProfile)
+    
+    -- Get spec name
+    local specName = select(2, GetSpecializationInfoByID(specID))
+    if not specName then
+        specName = "Unknown"
     end
     
-    if not state.classProfiles[name] then
-        WR:Debug("Profile not found:", name)
-        return false
+    -- Set name
+    profile.name = className .. " " .. specName
+    
+    -- Add spec-specific settings
+    profile.classSettings.specID = specID
+    profile.classSettings.specName = specName
+    
+    -- Adjust settings based on spec role
+    local role = select(5, GetSpecializationInfoByID(specID))
+    
+    if role == "TANK" then
+        profile.rotationSettings.defensiveThreshold = 70
+        profile.dungeonSettings.autoTaunt = true
+        profile.rotationSettings.burstOnCooldown = false
+    elseif role == "HEALER" then
+        profile.rotationSettings.focusHealing = true
+        profile.dungeonSettings.healingPriority = "Tank"
+        profile.rotationSettings.burstOnCooldown = false
+    elseif role == "DAMAGER" then
+        profile.rotationSettings.burstOnCooldown = true
+        profile.rotationSettings.defensiveThreshold = 50
     end
     
-    -- Remove profile
-    state.classProfiles[name] = nil
-    
-    -- Also remove metadata
-    state.profileMetadata[name] = nil
-    
-    -- If this was the current profile, switch to Default
-    if state.currentProfile == name then
-        self:LoadProfile("Default")
+    -- Spec-specific tweaks
+    if className == "MAGE" then
+        if specName == "Fire" then
+            profile.rotationSettings.burstAlignment = "Combustion"
+        elseif specName == "Arcane" then
+            profile.rotationSettings.burstAlignment = "ArcanePower"
+        elseif specName == "Frost" then
+            profile.rotationSettings.burstAlignment = "IcyVeins"
+        end
+    elseif className == "WARRIOR" then
+        if specName == "Arms" then
+            profile.rotationSettings.burstAlignment = "Colossus"
+        elseif specName == "Fury" then
+            profile.rotationSettings.burstAlignment = "Recklessness"
+        end
+    elseif className == "DRUID" then
+        if specName == "Balance" then
+            profile.rotationSettings.burstAlignment = "Celestial"
+        elseif specName == "Feral" then
+            profile.rotationSettings.burstAlignment = "Berserk"
+        end
     end
     
-    -- Save changes
-    self:SaveChanges()
-    
-    WR:Debug("Deleted profile:", name)
-    return true
+    return profile
 end
 
--- Save changes to DB
-function ProfileManager:SaveChanges()
+-- Clone a profile
+function ProfileManager:CloneProfile(sourceProfile)
+    if not sourceProfile then return self:CreateDefaultProfile() end
+    
+    -- Deep copy the profile
+    local profile = {}
+    for k, v in pairs(sourceProfile) do
+        if type(v) == "table" then
+            profile[k] = {}
+            for k2, v2 in pairs(v) do
+                profile[k][k2] = v2
+            end
+        else
+            profile[k] = v
+        end
+    end
+    
+    return profile
+end
+
+-- Load a specific profile
+function ProfileManager:LoadProfile(profileName)
+    -- Default to Default profile if the requested one doesn't exist
+    if not profileName or not self.profiles[profileName] then
+        profileName = self.defaultProfile
+    end
+    
+    -- Get the profile data
+    local profileData = self.profiles[profileName]
+    
+    -- Set as current profile
+    self.currentProfile = profileName
+    
     -- Save to character DB
-    WR.charDB.classProfiles = state.classProfiles
+    if WR.charDB then
+        WR.charDB.currentProfile = profileName
+    end
     
-    state.unsavedChanges = false
-    state.lastProfileUpdate = time()
+    -- Apply settings
+    self:ApplyProfileSettings(profileData)
     
-    WR:Debug("Saved all profile changes to DB")
-    return true
+    -- Add to history
+    self:AddToProfileHistory(profileName)
+    
+    WR:Debug("Loaded profile:", profileName)
+    
+    -- Broadcast profile changed event
+    WR:TriggerEvent("PROFILE_CHANGED", profileName, profileData)
+    
+    return profileData
 end
 
--- Apply current profile settings to the addon
-function ProfileManager:ApplyProfileSettings()
+-- Apply profile settings to the addon
+function ProfileManager:ApplyProfileSettings(profileData)
+    if not profileData or not profileData.settings then return end
+    
     -- Apply general settings
-    WR.Config:Set("enabled", state.profileSettings.enabled)
-    WR.Config:Set("enableAutoTargeting", state.profileSettings.enableAutoTargeting)
-    WR.Config:Set("enableInterrupts", state.profileSettings.enableInterrupts)
-    WR.Config:Set("enableDefensives", state.profileSettings.enableDefensives)
-    WR.Config:Set("enableCooldowns", state.profileSettings.enableCooldowns)
-    WR.Config:Set("enableAOE", state.profileSettings.enableAOE)
-    WR.Config:Set("enableDungeonAwareness", state.profileSettings.enableDungeonAwareness)
-    WR.Config:Set("saveResourcesForBurst", state.profileSettings.saveResourcesForBurst)
-    WR.Config:Set("autoSwitchTargets", state.profileSettings.autoSwitchTargets)
-    WR.Config:Set("rotationSpeed", state.profileSettings.rotationSpeed)
+    for key, value in pairs(profileData.settings) do
+        if key ~= "UI" and key ~= "minimapIcon" then
+            WR.db[key] = value
+        end
+    end
     
     -- Apply UI settings
-    if WR.UI then
-        WR.UI:ApplySettings(state.profileSettings.UI)
+    if profileData.settings.UI then
+        for key, value in pairs(profileData.settings.UI) do
+            WR.db.UI[key] = value
+        end
     end
     
-    -- Apply class-specific settings
-    local playerClass = select(2, UnitClass("player"))
-    if state.profileSettings.classSpecific and WR.Classes and WR.Classes[playerClass] then
-        -- Pass class-specific settings to the class module
-        for key, value in pairs(state.profileSettings.classSpecific) do
-            if WR.Classes[playerClass].SetSetting then
-                WR.Classes[playerClass]:SetSetting(key, value)
+    -- Apply minimap icon settings
+    if profileData.settings.minimapIcon then
+        for key, value in pairs(profileData.settings.minimapIcon) do
+            WR.db.minimapIcon[key] = value
+        end
+    end
+    
+    -- Apply rotation settings if available
+    if profileData.rotationSettings and WR.Rotation then
+        for key, value in pairs(profileData.rotationSettings) do
+            WR.Rotation:SetSetting(key, value)
+        end
+    end
+    
+    -- Apply dungeon settings if available
+    if profileData.dungeonSettings and WR.DungeonIntelligence then
+        for key, value in pairs(profileData.dungeonSettings) do
+            -- Apply setting to DungeonIntelligence module
+            if type(WR.DungeonIntelligence[key]) ~= "function" then
+                WR.DungeonIntelligence[key] = value
             end
         end
     end
     
-    -- Apply dungeon settings
-    if WR.DungeonIntelligence then
-        WR.DungeonIntelligence:SetEnabled(state.profileSettings.enableDungeonAwareness)
-        
-        if state.profileSettings.dungeonAwarenessLevel then
-            WR.DungeonIntelligence:SetFeatureEnabled("targetPriority", state.profileSettings.dungeonAwarenessLevel >= 2)
-            WR.DungeonIntelligence:SetFeatureEnabled("interruptPriority", state.profileSettings.dungeonAwarenessLevel >= 1)
-            WR.DungeonIntelligence:SetFeatureEnabled("dispelPriority", state.profileSettings.dungeonAwarenessLevel >= 2)
-            WR.DungeonIntelligence:SetFeatureEnabled("avoidance", state.profileSettings.dungeonAwarenessLevel >= 3)
-            WR.DungeonIntelligence:SetFeatureEnabled("patrolWarning", state.profileSettings.dungeonAwarenessLevel >= 4)
-            WR.DungeonIntelligence:SetFeatureEnabled("tacticalAdvice", state.profileSettings.dungeonAwarenessLevel >= 5)
+    -- Apply class settings if available
+    if profileData.classSettings and WR.Classes then
+        local _, playerClass = UnitClass("player")
+        if playerClass and WR.Classes[playerClass] and profileData.classSettings.className == playerClass then
+            local classModule = WR.Classes[playerClass]
+            
+            -- Set class-specific settings
+            for key, value in pairs(profileData.classSettings) do
+                if key ~= "className" and key ~= "specID" and key ~= "specName" and
+                   type(classModule[key]) ~= "function" then
+                    classModule[key] = value
+                end
+            end
+            
+            -- If current specialization matches profile's spec, apply spec settings
+            if profileData.classSettings.specID and profileData.classSettings.specID == WR.currentSpec then
+                -- Apply spec-specific settings
+                if classModule.LoadSpecSettings then
+                    classModule:LoadSpecSettings(profileData.classSettings)
+                end
+            end
         end
     end
-    
-    WR:Debug("Applied profile settings from:", state.currentProfile)
-    return true
 end
 
--- Update a specific profile setting
-function ProfileManager:UpdateSetting(key, value, section)
-    if not key then
-        WR:Debug("Invalid setting key")
-        return false
-    end
-    
-    -- Update in different sections
-    if section == "UI" then
-        if not state.profileSettings.UI then
-            state.profileSettings.UI = {}
+-- Add a profile to the history
+function ProfileManager:AddToProfileHistory(profileName)
+    -- Check if this profile is already in history
+    for i, name in ipairs(self.profileHistory) do
+        if name == profileName then
+            -- Remove it so we can add it to the front
+            table.remove(self.profileHistory, i)
+            break
         end
-        state.profileSettings.UI[key] = value
-    elseif section == "classSpecific" then
-        if not state.profileSettings.classSpecific then
-            state.profileSettings.classSpecific = {}
-        end
-        state.profileSettings.classSpecific[key] = value
-    else
-        -- Update in main settings
-        state.profileSettings[key] = value
     end
     
-    -- Apply the changed setting
-    if section == "UI" and WR.UI then
-        local settings = {}
-        settings[key] = value
-        WR.UI:ApplySettings(settings)
-    elseif section == "classSpecific" then
-        local playerClass = select(2, UnitClass("player"))
-        if WR.Classes and WR.Classes[playerClass] and WR.Classes[playerClass].SetSetting then
-            WR.Classes[playerClass]:SetSetting(key, value)
-        end
-    else
-        WR.Config:Set(key, value)
+    -- Add to front of history
+    table.insert(self.profileHistory, 1, profileName)
+    
+    -- Limit history to 10 entries
+    while #self.profileHistory > 10 do
+        table.remove(self.profileHistory)
     end
     
-    -- Mark as having unsaved changes
-    state.unsavedChanges = true
-    
-    -- Autosave if enabled
-    if state.autosaveEnabled then
-        self:SaveCurrentProfile()
+    -- Save to character DB
+    if WR.charDB then
+        WR.charDB.profileHistory = self.profileHistory
     end
-    
-    WR:Debug("Updated setting:", key, "=", value, section and ("in " .. section) or "")
-    return true
 end
 
--- Get all profiles
-function ProfileManager:GetProfiles()
-    local profiles = {}
-    
-    -- Include saved profiles
-    for name, _ in pairs(state.classProfiles) do
-        local metadata = state.profileMetadata[name] or {
-            description = "Custom profile",
-            class = select(2, UnitClass("player")),
-            spec = nil,
-            author = "Player",
-            isPreset = false,
-            lastUpdate = 0
-        }
-        
-        table.insert(profiles, {
-            name = name,
-            description = metadata.description,
-            class = metadata.class,
-            spec = metadata.spec,
-            author = metadata.author,
-            isPreset = metadata.isPreset,
-            lastUpdate = metadata.lastUpdate,
-            isCurrent = (name == state.currentProfile)
-        })
+-- Save all profiles to DB
+function ProfileManager:SaveProfiles()
+    -- Save to global DB
+    if not WindrunnerRotationsDB then
+        WindrunnerRotationsDB = {}
     end
     
-    -- Include available presets not already saved
-    for name, preset in pairs(state.presetProfiles) do
-        if not state.classProfiles[name] then
-            table.insert(profiles, {
-                name = name,
-                description = preset.description,
-                class = preset.class,
-                spec = preset.spec,
-                author = preset.author,
-                isPreset = true,
-                lastUpdate = 0,
-                isCurrent = false
-            })
-        end
+    WindrunnerRotationsDB.profiles = {}
+    
+    for name, profileData in pairs(self.profiles) do
+        WindrunnerRotationsDB.profiles[name] = profileData
     end
     
-    return profiles
+    -- Save to character DB
+    if WR.charDB then
+        WR.charDB.classProfiles = self.classProfiles
+        WR.charDB.profileHistory = self.profileHistory
+        WR.charDB.currentProfile = self.currentProfile
+    end
+    
+    WR:Debug("Saved profiles to DB")
 end
 
--- Get the current profile name
+-- Get the name of the current profile
+function ProfileManager:GetCurrentProfileName()
+    return self.currentProfile or self.defaultProfile
+end
+
+-- Get profile data by name
+function ProfileManager:GetProfile(profileName)
+    return self.profiles[profileName]
+end
+
+-- Get the current profile data
 function ProfileManager:GetCurrentProfile()
-    return state.currentProfile
+    return self:GetProfile(self:GetCurrentProfileName())
 end
 
--- Get a specific profile setting
-function ProfileManager:GetSetting(key, section)
-    if not key then
-        WR:Debug("Invalid setting key")
-        return nil
+-- Create a new profile
+function ProfileManager:CreateProfile(profileName, basedOn)
+    if not profileName or profileName == "" then
+        profileName = "Profile " .. tostring(self:GetProfileCount() + 1)
     end
     
-    if section == "UI" then
-        if not state.profileSettings.UI then
-            return nil
+    -- Check if profile already exists
+    if self.profiles[profileName] then
+        -- Append a number to make it unique
+        local i = 1
+        local newName = profileName .. " " .. tostring(i)
+        while self.profiles[newName] do
+            i = i + 1
+            newName = profileName .. " " .. tostring(i)
         end
-        return state.profileSettings.UI[key]
-    elseif section == "classSpecific" then
-        if not state.profileSettings.classSpecific then
-            return nil
-        end
-        return state.profileSettings.classSpecific[key]
-    else
-        -- Get from main settings
-        return state.profileSettings[key]
-    end
-end
-
--- Get all settings from current profile
-function ProfileManager:GetAllSettings()
-    return self:CopyTable(state.profileSettings)
-end
-
--- Reset current profile to defaults
-function ProfileManager:ResetCurrentProfile()
-    -- Store default settings to current profile
-    state.profileSettings = self:CopyTable(state.defaultSettings)
-    
-    -- Apply settings
-    self:ApplyProfileSettings()
-    
-    -- Save changes
-    self:SaveCurrentProfile()
-    
-    WR:Debug("Reset profile to defaults:", state.currentProfile)
-    return true
-end
-
--- Import a profile from a string
-function ProfileManager:ImportProfile(profileStr, name)
-    if not profileStr or profileStr == "" then
-        WR:Debug("Invalid profile string")
-        return false
-    end
-    
-    -- Try to deserialize the profile
-    local success, profileData = self:DeserializeProfile(profileStr)
-    if not success then
-        WR:Debug("Failed to deserialize profile")
-        return false
-    end
-    
-    -- Name validation
-    if not name or name == "" then
-        name = profileData.name or "Imported Profile"
-    end
-    
-    -- Check if compatible with current class
-    local playerClass = select(2, UnitClass("player"))
-    if profileData.class and profileData.class ~= playerClass then
-        WR:Debug("Profile is not compatible with current class")
-        return false
-    end
-    
-    -- Create profile with the imported settings
-    self:CreateProfile(name, profileData.settings)
-    
-    -- Import metadata
-    if profileData.metadata then
-        state.profileMetadata[name] = profileData.metadata
-        state.profileMetadata[name].lastUpdate = time()
-    end
-    
-    -- Load the new profile
-    self:LoadProfile(name)
-    
-    WR:Debug("Imported profile as:", name)
-    return true
-end
-
--- Export a profile to a string
-function ProfileManager:ExportProfile(name)
-    name = name or state.currentProfile
-    
-    if not name or not state.classProfiles[name] then
-        WR:Debug("Invalid profile name")
-        return nil
-    end
-    
-    -- Create export data structure
-    local exportData = {
-        name = name,
-        class = select(2, UnitClass("player")),
-        spec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil,
-        settings = state.classProfiles[name],
-        metadata = state.profileMetadata[name] or {
-            description = "Custom profile",
-            class = select(2, UnitClass("player")),
-            spec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil,
-            author = "Player",
-            isPreset = false,
-            lastUpdate = time()
-        },
-        exportVersion = 1,
-        exportTime = time()
-    }
-    
-    -- Serialize to string
-    local exportStr = self:SerializeProfile(exportData)
-    
-    WR:Debug("Exported profile:", name)
-    return exportStr
-end
-
--- Serialize profile to string
-function ProfileManager:SerializeProfile(profileData)
-    -- Simple serialization to string
-    -- In a real addon, this would use proper serialization like AceSerializer
-    return WR:TableToString(profileData)
-end
-
--- Deserialize profile from string
-function ProfileManager:DeserializeProfile(profileStr)
-    -- Simple deserialization from string
-    -- In a real addon, this would use proper deserialization like AceSerializer
-    local success, profileData = pcall(function() return WR:StringToTable(profileStr) end)
-    return success, profileData
-end
-
--- Enable/disable autosave
-function ProfileManager:SetAutosave(enabled)
-    state.autosaveEnabled = enabled
-    
-    WR:Debug("Autosave", enabled and "enabled" or "disabled")
-    return true
-end
-
--- Check if there are unsaved changes
-function ProfileManager:HasUnsavedChanges()
-    return state.unsavedChanges
-end
-
--- Get recently used profiles
-function ProfileManager:GetRecentProfiles()
-    -- Sort by most recent first
-    local sorted = self:CopyTable(state.profileHistory)
-    table.sort(sorted, function(a, b) return a.time > b.time end)
-    
-    local result = {}
-    local added = {}
-    
-    -- Deduplicate
-    for _, entry in ipairs(sorted) do
-        if not added[entry.name] and state.classProfiles[entry.name] then
-            table.insert(result, entry.name)
-            added[entry.name] = true
-        end
-    end
-    
-    return result
-end
-
--- Create a new profile from current class/spec
-function ProfileManager:CreateProfileFromCurrentSpec()
-    local playerClass = select(2, UnitClass("player"))
-    local specID = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil
-    local specName = specID and select(2, GetSpecializationInfoByID(specID)) or "Unknown"
-    
-    local name = playerClass .. ": " .. specName
-    
-    -- Ensure unique name
-    local counter = 1
-    local baseName = name
-    while state.classProfiles[name] do
-        counter = counter + 1
-        name = baseName .. " " .. counter
-    end
-    
-    -- Get class-specific settings from class module
-    local classSettings = {}
-    if WR.Classes and WR.Classes[playerClass] then
-        -- Ideally the class module would export its current settings
-        -- For now, we'll just use default class-specific settings
-        classSettings = {
-            classSpecific = {}
-        }
+        profileName = newName
     end
     
     -- Create the profile
-    self:CreateProfile(name, classSettings)
+    local baseProfile
+    if basedOn and self.profiles[basedOn] then
+        baseProfile = self:CloneProfile(self.profiles[basedOn])
+    else
+        baseProfile = self:CloneProfile(self:GetCurrentProfile())
+    end
     
-    -- Load the new profile
-    self:LoadProfile(name)
+    -- Set the new profile name
+    baseProfile.name = profileName
+    baseProfile.created = time()
+    baseProfile.lastModified = time()
     
-    WR:Debug("Created profile from current spec:", name)
+    -- Add to profiles list
+    self.profiles[profileName] = baseProfile
+    
+    -- Save profiles
+    self:SaveProfiles()
+    
+    WR:Debug("Created new profile:", profileName)
+    
+    return profileName
+end
+
+-- Delete a profile
+function ProfileManager:DeleteProfile(profileName)
+    -- Don't delete the default profile
+    if profileName == self.defaultProfile then
+        return false
+    end
+    
+    -- Remove from profiles list
+    self.profiles[profileName] = nil
+    
+    -- If this was the current profile, switch to default
+    if self.currentProfile == profileName then
+        self:LoadProfile(self.defaultProfile)
+    end
+    
+    -- Remove from history
+    for i, name in ipairs(self.profileHistory) do
+        if name == profileName then
+            table.remove(self.profileHistory, i)
+            break
+        end
+    end
+    
+    -- Save profiles
+    self:SaveProfiles()
+    
+    WR:Debug("Deleted profile:", profileName)
+    
+    return true
+end
+
+-- Rename a profile
+function ProfileManager:RenameProfile(oldName, newName)
+    -- Check if the old profile exists
+    if not self.profiles[oldName] then
+        return false
+    end
+    
+    -- Check if the new name would conflict
+    if self.profiles[newName] then
+        return false
+    end
+    
+    -- Get the profile data
+    local profileData = self.profiles[oldName]
+    
+    -- Update the name
+    profileData.name = newName
+    profileData.lastModified = time()
+    
+    -- Add to profiles with new name
+    self.profiles[newName] = profileData
+    
+    -- Remove old name
+    self.profiles[oldName] = nil
+    
+    -- Update current profile if needed
+    if self.currentProfile == oldName then
+        self.currentProfile = newName
+    end
+    
+    -- Update history
+    for i, name in ipairs(self.profileHistory) do
+        if name == oldName then
+            self.profileHistory[i] = newName
+            break
+        end
+    end
+    
+    -- Save profiles
+    self:SaveProfiles()
+    
+    WR:Debug("Renamed profile:", oldName, "to", newName)
+    
+    return true
+end
+
+-- Update a profile with new settings
+function ProfileManager:UpdateProfile(profileName, newSettings)
+    -- Check if the profile exists
+    if not self.profiles[profileName] then
+        return false
+    end
+    
+    -- Get the profile data
+    local profileData = self.profiles[profileName]
+    
+    -- Update settings
+    if newSettings.settings then
+        for key, value in pairs(newSettings.settings) do
+            profileData.settings[key] = value
+        end
+    end
+    
+    -- Update rotation settings
+    if newSettings.rotationSettings then
+        if not profileData.rotationSettings then
+            profileData.rotationSettings = {}
+        end
+        
+        for key, value in pairs(newSettings.rotationSettings) do
+            profileData.rotationSettings[key] = value
+        end
+    end
+    
+    -- Update dungeon settings
+    if newSettings.dungeonSettings then
+        if not profileData.dungeonSettings then
+            profileData.dungeonSettings = {}
+        end
+        
+        for key, value in pairs(newSettings.dungeonSettings) do
+            profileData.dungeonSettings[key] = value
+        end
+    end
+    
+    -- Update class settings
+    if newSettings.classSettings then
+        if not profileData.classSettings then
+            profileData.classSettings = {}
+        end
+        
+        for key, value in pairs(newSettings.classSettings) do
+            profileData.classSettings[key] = value
+        end
+    end
+    
+    -- Update timestamp
+    profileData.lastModified = time()
+    
+    -- Save profiles
+    self:SaveProfiles()
+    
+    -- If this is the current profile, apply settings
+    if self.currentProfile == profileName then
+        self:ApplyProfileSettings(profileData)
+    end
+    
+    WR:Debug("Updated profile:", profileName)
+    
+    return true
+end
+
+-- Get list of all profiles
+function ProfileManager:GetProfileList()
+    local list = {}
+    
+    for name, _ in pairs(self.profiles) do
+        table.insert(list, name)
+    end
+    
+    table.sort(list)
+    
+    return list
+end
+
+-- Get number of profiles
+function ProfileManager:GetProfileCount()
+    local count = 0
+    
+    for _ in pairs(self.profiles) do
+        count = count + 1
+    end
+    
+    return count
+end
+
+-- Get list of recently used profiles
+function ProfileManager:GetRecentProfiles(count)
+    count = count or 5
+    
+    local list = {}
+    
+    for i = 1, math.min(count, #self.profileHistory) do
+        table.insert(list, self.profileHistory[i])
+    end
+    
+    return list
+end
+
+-- Export a profile to string
+function ProfileManager:ExportProfile(profileName)
+    -- Get the profile
+    local profile = self:GetProfile(profileName)
+    if not profile then
+        return nil
+    end
+    
+    -- Convert to string
+    local serialized = self:Serialize(profile)
+    
+    -- Encode for safe transmission
+    local encoded = self:Encode(serialized)
+    
+    return encoded
+end
+
+-- Import a profile from string
+function ProfileManager:ImportProfile(encoded)
+    -- Decode
+    local serialized = self:Decode(encoded)
+    if not serialized then
+        return nil, "Invalid encoded data"
+    end
+    
+    -- Deserialize
+    local success, profile = self:Deserialize(serialized)
+    if not success or not profile or type(profile) ~= "table" or not profile.name then
+        return nil, "Invalid profile data"
+    end
+    
+    -- Check for version compatibility
+    if profile.version and profile.version > WR.version then
+        return nil, "Profile is from a newer version of the addon"
+    end
+    
+    -- Create the profile with a temporary name
+    local tempName = "Imported " .. profile.name
+    
+    -- Check if profile already exists
+    if self.profiles[tempName] then
+        -- Append a number to make it unique
+        local i = 1
+        local newName = tempName .. " " .. tostring(i)
+        while self.profiles[newName] do
+            i = i + 1
+            newName = tempName .. " " .. tostring(i)
+        end
+        tempName = newName
+    end
+    
+    -- Set the name
+    profile.name = tempName
+    profile.imported = true
+    profile.importedAt = time()
+    
+    -- Add to profiles
+    self.profiles[tempName] = profile
+    
+    -- Save profiles
+    self:SaveProfiles()
+    
+    WR:Debug("Imported profile:", tempName)
+    
+    return tempName
+end
+
+-- Register callbacks for settings changes
+function ProfileManager:RegisterCallbacks()
+    -- Register callback for when settings change
+    WR:RegisterCallback("SETTINGS_CHANGED", function(key, value)
+        self:OnSettingChanged(key, value)
+    end)
+    
+    -- Register callback for when specialization changes
+    WR:RegisterCallback("SPECIALIZATION_CHANGED", function(specID)
+        self:OnSpecializationChanged(specID)
+    end)
+    
+    -- Register callback for when entering a dungeon
+    WR:RegisterCallback("DUNGEON_CHANGED", function(dungeonInfo)
+        self:OnDungeonChanged(dungeonInfo)
+    end)
+end
+
+-- Handle setting changes
+function ProfileManager:OnSettingChanged(key, value)
+    -- Update the current profile
+    local currentProfile = self:GetCurrentProfile()
+    if not currentProfile then return end
+    
+    -- Check which category the setting belongs to
+    if currentProfile.settings[key] ~= nil then
+        -- General setting
+        currentProfile.settings[key] = value
+    elseif key:find("rotation.") == 1 then
+        -- Rotation setting
+        local rotationKey = key:sub(10)
+        if not currentProfile.rotationSettings then
+            currentProfile.rotationSettings = {}
+        end
+        currentProfile.rotationSettings[rotationKey] = value
+    elseif key:find("dungeon.") == 1 then
+        -- Dungeon setting
+        local dungeonKey = key:sub(9)
+        if not currentProfile.dungeonSettings then
+            currentProfile.dungeonSettings = {}
+        end
+        currentProfile.dungeonSettings[dungeonKey] = value
+    elseif key:find("class.") == 1 then
+        -- Class setting
+        local classKey = key:sub(7)
+        if not currentProfile.classSettings then
+            currentProfile.classSettings = {}
+        end
+        currentProfile.classSettings[classKey] = value
+    end
+    
+    -- Update timestamp
+    currentProfile.lastModified = time()
+    
+    -- Save profiles
+    self:SaveProfiles()
+end
+
+-- Handle specialization changes
+function ProfileManager:OnSpecializationChanged(specID)
+    -- Check if we have a spec-specific profile
+    local _, playerClass = UnitClass("player")
+    local specName = select(2, GetSpecializationInfoByID(specID))
+    
+    if playerClass and specName then
+        local specProfileName = playerClass .. " " .. specName
+        
+        -- Check if this profile exists
+        if self.profiles[specProfileName] then
+            -- Switch to the spec profile
+            self:LoadProfile(specProfileName)
+        else
+            -- Create a spec-specific profile
+            self:CreateProfile(specProfileName, playerClass .. " Default")
+            self:LoadProfile(specProfileName)
+        end
+    end
+end
+
+-- Handle dungeon changes
+function ProfileManager:OnDungeonChanged(dungeonInfo)
+    -- For future implementation - could auto-switch to dungeon-specific profiles
+    -- For now, we just log
+    if dungeonInfo then
+        WR:Debug("Entered dungeon:", dungeonInfo.name)
+    else
+        WR:Debug("Left dungeon")
+    end
+end
+
+-- Simplified serialization (would use AceSerializer in a real addon)
+function ProfileManager:Serialize(data)
+    return WR.Util.serialize(data)
+end
+
+-- Simplified deserialization
+function ProfileManager:Deserialize(serialized)
+    return pcall(WR.Util.deserialize, serialized)
+end
+
+-- Simple encoding/decoding (would use LibDeflate in a real addon)
+function ProfileManager:Encode(data)
+    -- Base64 encode
+    return WR.Util.encode(data)
+end
+
+-- Simple decoding
+function ProfileManager:Decode(encoded)
+    -- Base64 decode
+    return WR.Util.decode(encoded)
+end
+
+-- Save a class-specific profile
+function ProfileManager:SaveClassProfile(profileData, name)
+    if not name or name == "" then
+        local _, playerClass = UnitClass("player")
+        local spec = GetSpecialization()
+        local specName = spec and select(2, GetSpecializationInfo(spec)) or "Unknown"
+        
+        name = playerClass .. " " .. specName .. " Custom"
+    end
+    
+    -- Create new profile or update existing
+    if self.profiles[name] then
+        self:UpdateProfile(name, profileData)
+    else
+        -- Clone current profile
+        local newProfile = self:CloneProfile(self:GetCurrentProfile())
+        
+        -- Apply new data
+        for key, value in pairs(profileData) do
+            if type(value) == "table" then
+                if not newProfile[key] then
+                    newProfile[key] = {}
+                end
+                
+                for k, v in pairs(value) do
+                    newProfile[key][k] = v
+                end
+            else
+                newProfile[key] = value
+            end
+        end
+        
+        -- Set name and timestamps
+        newProfile.name = name
+        newProfile.created = time()
+        newProfile.lastModified = time()
+        
+        -- Save to profiles
+        self.profiles[name] = newProfile
+        self:SaveProfiles()
+        
+        -- Switch to new profile
+        self:LoadProfile(name)
+    end
+    
+    -- Save to class profiles
+    local _, playerClass = UnitClass("player")
+    if not self.classProfiles[playerClass] then
+        self.classProfiles[playerClass] = {}
+    end
+    
+    self.classProfiles[playerClass][name] = true
+    self:SaveProfiles()
+    
     return name
 end
 
--- Utility function: Deep copy a table
-function ProfileManager:CopyTable(tbl)
-    if type(tbl) ~= "table" then return tbl end
-    
-    local copy = {}
-    for k, v in pairs(tbl) do
-        if type(v) == "table" then
-            copy[k] = self:CopyTable(v)
-        else
-            copy[k] = v
-        end
-    end
-    
-    return copy
-end
-
--- Utility function: Merge settings tables
-function ProfileManager:MergeSettings(target, source)
-    if type(target) ~= "table" or type(source) ~= "table" then return target end
-    
-    for k, v in pairs(source) do
-        if type(v) == "table" and type(target[k]) == "table" then
-            self:MergeSettings(target[k], v)
-        else
-            target[k] = v
-        end
-    end
-    
-    return target
-end
-
--- Get compatible presets for current class/spec
-function ProfileManager:GetCompatiblePresets()
-    local result = {}
-    local playerClass = select(2, UnitClass("player"))
-    local playerSpec = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil
-    
-    for name, preset in pairs(state.presetProfiles) do
-        if preset.class == playerClass and (not preset.spec or preset.spec == playerSpec) then
-            table.insert(result, {
-                name = name,
-                description = preset.description,
-                author = preset.author
-            })
-        end
-    end
-    
-    return result
-end
-
--- Initialize the module
-ProfileManager:Initialize()
-
+-- Return module
 return ProfileManager

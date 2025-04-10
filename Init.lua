@@ -287,7 +287,8 @@ function WR:LoadClassModule()
             "Shaman",
             "Monk",
             "DemonHunter",
-            "DeathKnight"
+            "DeathKnight",
+            "Evoker"
         }
         
         for _, className in ipairs(classFiles) do

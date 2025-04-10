@@ -1,676 +1,287 @@
 local addonName, WR = ...
 
--- Dungeon Intelligence module - advanced knowledge about dungeon mechanics and priorities
+-- DungeonIntelligence module for handling dungeon-specific tactics
 local DungeonIntelligence = {}
 WR.DungeonIntelligence = DungeonIntelligence
 
--- State
-local state = {
-    currentDungeon = nil,
-    currentZoneID = nil,
-    enableDungeonIntelligence = true,
-    dungeonData = {},
-    importantNPCs = {},
-    bossEncounters = {},
-    dungeonMechanics = {},
-    interruptPriorities = {},
-    avoidanceAreas = {},
-    instantKillAbilities = {},
-    priorityDispels = {},
-    priorityTargets = {},
-    patrollingEnemies = {},
-    dangerousAffixes = {},
-    mythicPlusTimers = {},
-    currentBossFight = nil,
-    activeFeatures = {
-        targetPriority = true,
-        interruptPriority = true,
-        dispelPriority = true,
-        avoidance = true,
-        patrolWarning = true,
-        tacticalAdvice = true
-    }
-}
+-- Current dungeon info
+DungeonIntelligence.currentDungeon = nil
+DungeonIntelligence.currentBoss = nil
+DungeonIntelligence.inMythicPlus = false
+DungeonIntelligence.mythicPlusLevel = 0
+DungeonIntelligence.mythicPlusAffixes = {}
+DungeonIntelligence.enemyPriorities = {}
+DungeonIntelligence.interruptPriorities = {}
+DungeonIntelligence.avoidableMechanics = {}
+DungeonIntelligence.tactics = {}
+
+-- Dungeon difficulty constants
+local DUNGEON_DIFFICULTY_NORMAL = 1
+local DUNGEON_DIFFICULTY_HEROIC = 2
+local DUNGEON_DIFFICULTY_MYTHIC = 23
+local DUNGEON_DIFFICULTY_MYTHIC_PLUS = 8
+
+-- Mythic Plus affix IDs
+local AFFIX_TYRANNICAL = 9
+local AFFIX_FORTIFIED = 10
+local AFFIX_INSPIRING = 122
+local AFFIX_SANGUINE = 8
+local AFFIX_VOLCANIC = 3
+local AFFIX_GRIEVOUS = 12
+local AFFIX_RAGING = 6
+local AFFIX_NECROTIC = 4
+local AFFIX_BOLSTERING = 7
+local AFFIX_SKITTISH = 2
+local AFFIX_EXPLOSIVE = 13
+local AFFIX_QUAKING = 14
+local AFFIX_BURSTING = 11
+local AFFIX_STORMING = 124
+local AFFIX_SPITEFUL = 123
+local AFFIX_THUNDERING = 132
+local AFFIX_ENTANGLING = 134
+local AFFIX_AFFLICTED = 136
+local AFFIX_INCORPOREAL = 135
+
+-- Enemy types
+local ENEMY_TYPE_NORMAL = 1
+local ENEMY_TYPE_ELITE = 2
+local ENEMY_TYPE_MINIBOSS = 3
+local ENEMY_TYPE_BOSS = 4
+
+-- Priority levels
+local PRIORITY_LOW = 1
+local PRIORITY_MEDIUM = 2
+local PRIORITY_HIGH = 3
+local PRIORITY_CRITICAL = 4
 
 -- Initialize the module
 function DungeonIntelligence:Initialize()
-    -- Load saved variables
-    state.enableDungeonIntelligence = WR.Config:Get("enableDungeonIntelligence", true)
-    state.activeFeatures.targetPriority = WR.Config:Get("targetPriorityEnabled", true)
-    state.activeFeatures.interruptPriority = WR.Config:Get("interruptPriorityEnabled", true)
-    state.activeFeatures.dispelPriority = WR.Config:Get("dispelPriorityEnabled", true)
-    state.activeFeatures.avoidance = WR.Config:Get("avoidanceEnabled", true)
-    state.activeFeatures.patrolWarning = WR.Config:Get("patrolWarningEnabled", true)
-    state.activeFeatures.tacticalAdvice = WR.Config:Get("tacticalAdviceEnabled", true)
-    
-    -- Create frame for receiving events
-    local frame = CreateFrame("Frame")
-    frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    frame:RegisterEvent("CHALLENGE_MODE_START")
-    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("ENCOUNTER_START")
-    frame:RegisterEvent("ENCOUNTER_END")
-    
-    frame:SetScript("OnEvent", function(self, event, ...)
-        if event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
-            DungeonIntelligence:UpdateCurrentDungeon()
-        elseif event == "CHALLENGE_MODE_START" then
-            DungeonIntelligence:OnMythicPlusStart(...)
-        elseif event == "ENCOUNTER_START" then
-            DungeonIntelligence:OnEncounterStart(...)
-        elseif event == "ENCOUNTER_END" then
-            DungeonIntelligence:OnEncounterEnd(...)
-        end
+    -- Register callback for when targets change
+    WR.Target:RegisterCallback("TargetChanged", function(targetInfo)
+        self:OnTargetChanged(targetInfo)
     end)
     
     -- Load dungeon data
     self:LoadDungeonData()
     
-    -- Check if we're already in a dungeon
+    -- Initialize the current dungeon
     self:UpdateCurrentDungeon()
     
-    WR:Debug("Dungeon Intelligence module initialized")
+    WR:Debug("DungeonIntelligence module initialized")
 end
 
--- Update the current dungeon based on the player's location
-function DungeonIntelligence:UpdateCurrentDungeon()
-    local zoneID = C_Map.GetBestMapForUnit("player")
-    if not zoneID then return end
+-- Load dungeon data from the data store
+function DungeonIntelligence:LoadDungeonData()
+    if not WR.Data or not WR.Data.Dungeons then
+        WR:Debug("Dungeon data not available")
+        return
+    end
     
-    -- Check if the zone ID changed
-    if zoneID == state.currentZoneID then return end
-    
-    state.currentZoneID = zoneID
-    state.currentDungeon = nil
-    
-    -- Check if we're in a known dungeon
-    for dungeonName, dungeonInfo in pairs(state.dungeonData) do
-        for _, mapID in ipairs(dungeonInfo.mapIDs) do
-            if mapID == zoneID then
-                state.currentDungeon = dungeonName
-                WR:Debug("Detected dungeon:", dungeonName)
-                
-                -- Load the specific dungeon data
-                self:LoadCurrentDungeonData()
-                return
+    -- Process dungeon data to create lookup tables
+    for dungeonId, dungeonData in pairs(WR.Data.Dungeons) do
+        -- Process enemy priorities
+        if dungeonData.enemies then
+            for enemyId, enemyData in pairs(dungeonData.enemies) do
+                self.enemyPriorities[enemyId] = enemyData.priority or PRIORITY_MEDIUM
+            end
+        end
+        
+        -- Process interrupt priorities
+        if dungeonData.interrupts then
+            for spellId, priority in pairs(dungeonData.interrupts) do
+                self.interruptPriorities[spellId] = priority
+            end
+        end
+        
+        -- Process avoidable mechanics
+        if dungeonData.avoidable then
+            for mechId, mechData in pairs(dungeonData.avoidable) do
+                self.avoidableMechanics[mechId] = mechData
+            end
+        end
+        
+        -- Process boss tactics
+        if dungeonData.bosses then
+            for bossId, bossData in pairs(dungeonData.bosses) do
+                if bossData.tactics then
+                    self.tactics[bossId] = bossData.tactics
+                end
             end
         end
     end
     
-    WR:Debug("No dungeon detected for zone ID:", zoneID)
+    WR:Debug("Loaded dungeon data: ", #self.enemyPriorities, " enemies, ", 
+             #self.interruptPriorities, " interrupt priorities, ",
+             #self.avoidableMechanics, " avoidable mechanics, ",
+             #self.tactics, " boss tactics")
 end
 
--- On Mythic+ start
-function DungeonIntelligence:OnMythicPlusStart(challengeMapID)
-    if not state.currentDungeon then return end
-    
-    WR:Debug("Mythic+ started:", state.currentDungeon)
-    
-    -- Record the start time for the timer
-    if state.mythicPlusTimers[state.currentDungeon] then
-        state.mythicPlusTimers[state.currentDungeon].startTime = GetTime()
-        state.mythicPlusTimers[state.currentDungeon].isActive = true
+-- Update the current dungeon information
+function DungeonIntelligence:UpdateCurrentDungeon()
+    -- Get current map ID and instance info
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, 
+          instanceID, instanceGroupSize, LfgDungeonID = GetInstanceInfo()
+          
+    -- Check if we're in a dungeon
+    if instanceType ~= "party" then
+        self.currentDungeon = nil
+        self.inMythicPlus = false
+        self.mythicPlusLevel = 0
+        self.mythicPlusAffixes = {}
+        return
     end
     
-    -- Apply any special handling for the current affix combination
-    self:ProcessMythicPlusAffixes()
+    -- Set current dungeon information
+    self.currentDungeon = {
+        id = instanceID,
+        name = name,
+        mapID = mapID,
+        difficulty = difficultyID
+    }
+    
+    -- Check if we're in a Mythic+ dungeon
+    if difficultyID == DUNGEON_DIFFICULTY_MYTHIC_PLUS then
+        self.inMythicPlus = true
+        
+        -- Get Mythic+ level
+        local mythicPlusLevel = C_ChallengeMode.GetActiveKeystoneInfo()
+        self.mythicPlusLevel = mythicPlusLevel or 0
+        
+        -- Get active affixes
+        self.mythicPlusAffixes = {}
+        local affixes = C_MythicPlus.GetCurrentAffixes()
+        if affixes then
+            for _, affixInfo in ipairs(affixes) do
+                table.insert(self.mythicPlusAffixes, affixInfo.id)
+            end
+        end
+        
+        -- Adjust tactical decisions based on Mythic+ level and affixes
+        self:AdjustForMythicPlus()
+    else
+        self.inMythicPlus = false
+        self.mythicPlusLevel = 0
+        self.mythicPlusAffixes = {}
+    end
+    
+    WR:Debug("Updated current dungeon: ", name, " (", instanceID, "), Mythic+: ", 
+             self.inMythicPlus, ", Level: ", self.mythicPlusLevel)
+             
+    -- Broadcast dungeon update event
+    WR:TriggerEvent("DUNGEON_CHANGED", self.currentDungeon)
 end
 
--- On boss encounter start
-function DungeonIntelligence:OnEncounterStart(encounterID, encounterName, difficultyID, groupSize)
-    if not state.currentDungeon then return end
+-- Adjust tactical decisions based on Mythic+ level and affixes
+function DungeonIntelligence:AdjustForMythicPlus()
+    -- Increase priority of certain mechanics based on affixes
+    if self:HasAffix(AFFIX_TYRANNICAL) then
+        -- Increase priority of boss mechanics
+        self:AdjustBossMechanicPriorities(1)
+    end
     
-    WR:Debug("Boss encounter started:", encounterName)
+    if self:HasAffix(AFFIX_FORTIFIED) then
+        -- Increase priority of trash mechanics
+        self:AdjustTrashMechanicPriorities(1)
+    end
     
-    -- Find and store the current boss fight data
-    for _, boss in ipairs(state.bossEncounters) do
-        if boss.encounterID == encounterID then
-            state.currentBossFight = boss
-            
-            -- Adjust rotations based on this specific boss fight
-            self:AdjustForBossFight(boss)
-            break
+    if self:HasAffix(AFFIX_INSPIRING) then
+        -- Mark inspired mobs as non-interruptible but higher priority targets
+        self:HandleInspiringAffix()
+    end
+    
+    if self:HasAffix(AFFIX_EXPLOSIVE) then
+        -- Add explosive orbs as high priority targets
+        self:HandleExplosiveAffix()
+    end
+    
+    -- Other affix adjustments would be implemented here
+end
+
+-- Increase boss mechanic priorities
+function DungeonIntelligence:AdjustBossMechanicPriorities(increase)
+    -- Iterate through available boss mechanics and increase their priority
+    for mechId, mechData in pairs(self.avoidableMechanics) do
+        if mechData.isBossMechanic then
+            mechData.priority = math.min(PRIORITY_CRITICAL, (mechData.priority or PRIORITY_MEDIUM) + increase)
         end
     end
 end
 
--- On boss encounter end
-function DungeonIntelligence:OnEncounterEnd(encounterID, encounterName, difficultyID, groupSize, success)
-    if not state.currentDungeon then return end
-    
-    WR:Debug("Boss encounter ended:", encounterName, success == 1 and "Success" or "Failed")
-    
-    -- Clear any boss-specific adjustments
-    state.currentBossFight = nil
-    
-    -- Reset rotations to normal
-    self:ResetBossFightAdjustments()
+-- Increase trash mechanic priorities
+function DungeonIntelligence:AdjustTrashMechanicPriorities(increase)
+    -- Iterate through available trash mechanics and increase their priority
+    for mechId, mechData in pairs(self.avoidableMechanics) do
+        if not mechData.isBossMechanic then
+            mechData.priority = math.min(PRIORITY_CRITICAL, (mechData.priority or PRIORITY_MEDIUM) + increase)
+        end
+    end
 end
 
--- Load the dungeon data for all supported dungeons
-function DungeonIntelligence:LoadDungeonData()
-    -- The War Within Season 2 Dungeons (Example data - would be populated with actual dungeon data)
-    state.dungeonData = {
-        ["Dawn of the Infinite: Galakrond's Fall"] = {
-            mapIDs = {2579},
-            bosses = {
-                "Chronikar",
-                "Manifested Timeways",
-                "Blight of Galakrond",
-                "Iridikron the Stonescaled",
-                "Tyr, the Infinite Keeper",
-            },
-            timer = 39 * 60, -- 39 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Dawn of the Infinite: Murozond's Rise"] = {
-            mapIDs = {2580},
-            bosses = {
-                "Chrono-Lord Deios",
-                "Manifested Timeways",
-                "Andantenormu",
-                "Morchie",
-                "Time-Lost Battlefield",
-                "Chrono-Lord Deios",
-            },
-            timer = 39 * 60, -- 39 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Waycrest Manor"] = {
-            mapIDs = {1862},
-            bosses = {
-                "Heartsbane Triad",
-                "Soulbound Goliath",
-                "Raal the Gluttonous",
-                "Lord and Lady Waycrest",
-                "Gorak Tul",
-            },
-            timer = 38 * 60, -- 38 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Black Rook Hold"] = {
-            mapIDs = {1501},
-            bosses = {
-                "The Amalgam of Souls",
-                "Illysanna Ravencrest",
-                "Smashspite the Hateful",
-                "Lord Kur'talos Ravencrest",
-            },
-            timer = 40 * 60, -- 40 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Atal'Dazar"] = {
-            mapIDs = {1763},
-            bosses = {
-                "Priestess Alun'za",
-                "Vol'kaal",
-                "Rezan",
-                "Yazma",
-            },
-            timer = 30 * 60, -- 30 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Darkheart Thicket"] = {
-            mapIDs = {1466},
-            bosses = {
-                "Archdruid Glaidalis",
-                "Oakheart",
-                "Dresaron",
-                "Shade of Xavius",
-            },
-            timer = 30 * 60, -- 30 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["The Everbloom"] = {
-            mapIDs = {1279},
-            bosses = {
-                "Witherbark",
-                "Ancient Protectors",
-                "Archmage Sol",
-                "Xeri'tac",
-                "Yalnu",
-            },
-            timer = 30 * 60, -- 30 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-        ["Throne of the Tides"] = {
-            mapIDs = {1043},
-            bosses = {
-                "Lady Naz'jar",
-                "Commander Ulthok, the Festering Prince",
-                "Mindbender Ghur'sha",
-                "Ozumat",
-            },
-            timer = 33 * 60, -- 33 minutes
-            covenant = nil   -- No dungeon-specific covenant
-        },
-    }
-    
-    -- Initialize timers for all dungeons
-    for dungeonName, _ in pairs(state.dungeonData) do
-        state.mythicPlusTimers[dungeonName] = {
-            startTime = 0,
-            isActive = false
-        }
-    end
-
-    -- Load specific data for War Within season 2 (this would be more extensive in actual implementation)
-    self:LoadWarWithinSeason2Data()
+-- Handle Inspiring affix by marking mobs and adjusting priorities
+function DungeonIntelligence:HandleInspiringAffix()
+    -- Logic to detect mobs with the Inspiring buff
+    -- And adjust tactics accordingly
+    -- This would interact with the real-time combat scanning
 end
 
--- Load War Within Season 2 specific data
-function DungeonIntelligence:LoadWarWithinSeason2Data()
-    -- Example of specific dungeon data - in a real implementation, this would contain comprehensive data
-    
-    -- Key enemies that should be prioritized in targeting
-    state.importantNPCs = {
-        -- Dawn of the Infinite: Galakrond's Fall
-        [206068] = { name = "Infinite Timeslicer", priority = 90, note = "High priority kill target, dangerous cleave" },
-        [206139] = { name = "Infinite Chronoweaver", priority = 95, note = "High priority interrupt target, time warp" },
-        
-        -- Waycrest Manor
-        [131677] = { name = "Heartsbane Runeweaver", priority = 85, note = "Priority interrupt target" },
-        [135329] = { name = "Matron Bryndle", priority = 90, note = "Casts Soul Manipulation, high priority" },
-        
-        -- Black Rook Hold
-        [98280] = { name = "Risen Arcanist", priority = 90, note = "Casts powerful AoE, interrupt priority" },
-        [98275] = { name = "Risen Companion", priority = 30, note = "Low priority add" },
-        
-        -- Atal'Dazar
-        [122971] = { name = "Dazar'ai Augur", priority = 85, note = "Powerful healer, high priority" },
-        [125977] = { name = "Reanimation Totem", priority = 100, note = "Highest priority, destroys immediately" },
-        
-        -- Darkheart Thicket
-        [95771] = { name = "Dreadsoul Ruiner", priority = 80, note = "Casts Fear, interrupt priority" },
-        [100531] = { name = "Bloodtainted Fury", priority = 85, note = "AoE damage, high priority" },
-        
-        -- The Everbloom
-        [81820] = { name = "Everbloom Naturalist", priority = 80, note = "Healer, high priority" },
-        [81985] = { name = "Everbloom Tender", priority = 90, note = "Priority interrupt target" },
-        
-        -- Throne of the Tides
-        [40577] = { name = "Naz'jar Oracle", priority = 85, note = "Healer, high priority" },
-        [40788] = { name = "Minion of Ghur'sha", priority = 90, note = "Dangerous, high priority" }
-    }
-    
-    -- Critical spells to interrupt
-    state.interruptPriorities = {
-        -- Dawn of the Infinite
-        [413013] = { name = "Chronoburst", priority = 95, note = "Must interrupt, heavy damage" },
-        [412505] = { name = "Temporal Strike", priority = 90, note = "High priority, slows time" },
-        
-        -- Waycrest Manor
-        [263943] = { name = "Etch", priority = 90, note = "Must interrupt, heavy damage" },
-        [263891] = { name = "Grasping Thorns", priority = 85, note = "CC ability, interrupt if possible" },
-        
-        -- Black Rook Hold
-        [200248] = { name = "Arcane Blitz", priority = 90, note = "Heavy magic damage, interrupt" },
-        [197974] = { name = "Bonecrushing Strike", priority = 85, note = "Physical damage, interrupt if possible" },
-        
-        -- Atal'Dazar
-        [253517] = { name = "Mending Word", priority = 95, note = "Healing spell, must interrupt" },
-        [253544] = { name = "Bwonsamdi's Mantle", priority = 90, note = "Damage buff, high priority interrupt" },
-        
-        -- Darkheart Thicket
-        [200658] = { name = "Star Shower", priority = 90, note = "AoE damage, high priority" },
-        [204667] = { name = "Nightmare Bolt", priority = 95, note = "Heavy single target damage, must interrupt" },
-        
-        -- The Everbloom
-        [169839] = { name = "Pyroblast", priority = 90, note = "Heavy fire damage, high priority" },
-        [164965] = { name = "Choking Vines", priority = 95, note = "CC effect, must interrupt" },
-        
-        -- Throne of the Tides
-        [76813] = { name = "Bubbling Surge", priority = 95, note = "AoE damage + knockback, must interrupt" },
-        [75992] = { name = "Lightning Surge", priority = 90, note = "Magic damage, high priority interrupt" }
-    }
-    
-    -- Boss encounters with specific mechanics
-    state.bossEncounters = {
-        {
-            encounterID = 2673,
-            name = "Chronikar",
-            dungeon = "Dawn of the Infinite: Galakrond's Fall",
-            mechanics = {
-                {
-                    id = "temporal_barrage",
-                    name = "Temporal Barrage",
-                    description = "Avoid the telegraphed barrage zones",
-                    type = "AVOID_AREA"
-                },
-                {
-                    id = "infinite_annihilation",
-                    name = "Infinite Annihilation",
-                    description = "Dispel this debuff immediately",
-                    type = "PRIORITY_DISPEL"
-                }
-            },
-            priority_targets = {
-                { id = 198933, name = "Infinite Keeper", priority = 90 }
-            }
-        },
-        {
-            encounterID = 2666,
-            name = "Tyr, the Infinite Keeper",
-            dungeon = "Dawn of the Infinite: Galakrond's Fall",
-            mechanics = {
-                {
-                    id = "titanic_blow",
-                    name = "Titanic Blow",
-                    description = "Tank swap or use defensive cooldown",
-                    type = "TANK_SWAP"
-                },
-                {
-                    id = "divine_matrix",
-                    name = "Divine Matrix",
-                    description = "Spread out to avoid chain damage",
-                    type = "SPREAD"
-                }
-            }
-        },
-        {
-            encounterID = 2677,
-            name = "Lord and Lady Waycrest",
-            dungeon = "Waycrest Manor",
-            mechanics = {
-                {
-                    id = "virulent_pathogen",
-                    name = "Virulent Pathogen",
-                    description = "Disease that should be dispelled",
-                    type = "PRIORITY_DISPEL"
-                },
-                {
-                    id = "discordant_cadenza",
-                    name = "Discordant Cadenza",
-                    description = "Interrupt this cast priority",
-                    type = "PRIORITY_INTERRUPT"
-                }
-            },
-            priority_targets = {
-                { id = 131527, name = "Lord Waycrest", priority = 80 },
-                { id = 131545, name = "Lady Waycrest", priority = 100 }
-            }
-        }
-        -- Additional boss encounters would be defined here
-    }
-    
-    -- Dangerous areas to avoid
-    state.avoidanceAreas = {
-        {
-            dungeonID = "Dawn of the Infinite: Galakrond's Fall",
-            areas = {
-                {
-                    id = "time_sink",
-                    name = "Time Sink",
-                    description = "Slowing pool on the ground, avoid standing in it",
-                    visual_id = 123456 -- Visual ID for detection
-                },
-                {
-                    id = "chronoburst_aoe",
-                    name = "Chronoburst AoE",
-                    description = "Telegraphed explosion, move out quickly",
-                    visual_id = 123457
-                }
-            }
-        },
-        {
-            dungeonID = "Waycrest Manor",
-            areas = {
-                {
-                    id = "rotten_expulsion",
-                    name = "Rotten Expulsion",
-                    description = "Poison pool, avoid standing in it",
-                    visual_id = 123458
-                },
-                {
-                    id = "soul_harvest",
-                    name = "Soul Harvest",
-                    description = "Soul extraction channel, move away",
-                    visual_id = 123459
-                }
-            }
-        }
-        -- Other dungeons' avoidance areas would be defined here
-    }
-    
-    -- Abilities that can result in instant death if not handled properly
-    state.instantKillAbilities = {
-        [410904] = { name = "Infinite Annihilation", description = "Move away from affected player" },
-        [260512] = { name = "Soul Harvest", description = "Break the channel immediately" }
-        -- More abilities would be listed here
-    }
-    
-    -- Priority dispels by dungeon
-    state.priorityDispels = {
-        ["Dawn of the Infinite: Galakrond's Fall"] = {
-            [410905] = { name = "Chronal Detonation", priority = 95, type = "Magic" },
-            [413208] = { name = "Time Stasis", priority = 90, type = "Magic" }
-        },
-        ["Waycrest Manor"] = {
-            [260900] = { name = "Soul Manipulation", priority = 95, type = "Magic" },
-            [263891] = { name = "Grasping Thorns", priority = 90, type = "Magic" }
-        }
-        -- Other dungeons' priority dispels would be defined here
-    }
-    
-    -- Patrolling enemies to be aware of
-    state.patrollingEnemies = {
-        ["Dawn of the Infinite: Galakrond's Fall"] = {
-            { id = 206147, name = "Infinite Riftweaver", patrol_path = "Central area", danger_level = "High" },
-            { id = 206069, name = "Infinite Slayer", patrol_path = "Side corridors", danger_level = "Medium" }
-        },
-        ["Waycrest Manor"] = {
-            { id = 131812, name = "Heartsbane Soulcharmer", patrol_path = "Upper halls", danger_level = "High" },
-            { id = 135474, name = "Thistle Acolyte", patrol_path = "Garden area", danger_level = "Medium" }
-        }
-        -- Other dungeons' patrolling enemies would be defined here
-    }
-    
-    -- Dangerous affixes to be aware of
-    state.dangerousAffixes = {
-        [10] = { name = "Fortified", advice = "Focus on efficient AoE for trash packs" },
-        [11] = { name = "Tyrannical", advice = "Save cooldowns for boss fights" },
-        [12] = { name = "Grievous", advice = "Prioritize healing when players drop below 90% health" },
-        [123] = { name = "Spiteful", advice = "Kite the shades when they spawn on trash deaths" },
-        [124] = { name = "Storming", advice = "Watch for tornados in melee range, move out" },
-        [135] = { name = "Afflicted", advice = "Move away from group when debuffed" }
-        -- Other affixes would be defined here
-    }
+-- Handle Explosive affix by adding orbs as high priority targets
+function DungeonIntelligence:HandleExplosiveAffix()
+    -- Add explosive orbs to the priority target list
+    self.enemyPriorities[120651] = PRIORITY_CRITICAL  -- Explosive ID
 end
 
--- Load data specific to the current dungeon
-function DungeonIntelligence:LoadCurrentDungeonData()
-    if not state.currentDungeon then return end
-    
-    WR:Debug("Loading data for dungeon:", state.currentDungeon)
-    
-    -- This would load more specific data for the current dungeon
-    -- For demonstration, we're using the general data already loaded
-end
-
--- Get NPC priority for the targeting system
-function DungeonIntelligence:GetEnemyPriority(npcID)
-    if not state.enableDungeonIntelligence or not state.activeFeatures.targetPriority then
-        return nil
+-- Check if a specific affix is active
+function DungeonIntelligence:HasAffix(affixID)
+    for _, activeAffixId in ipairs(self.mythicPlusAffixes) do
+        if activeAffixId == affixID then
+            return true
+        end
     end
-    
-    if not npcID or not state.importantNPCs[npcID] then
-        return nil
-    end
-    
-    return state.importantNPCs[npcID].priority
-end
-
--- Get interrupt priority for a spell
-function DungeonIntelligence:GetInterruptPriority(spellID)
-    if not state.enableDungeonIntelligence or not state.activeFeatures.interruptPriority then
-        return nil
-    end
-    
-    if not spellID or not state.interruptPriorities[spellID] then
-        return nil
-    end
-    
-    return state.interruptPriorities[spellID].priority
-end
-
--- Get dispel priority for a spell
-function DungeonIntelligence:GetDispelPriority(spellID)
-    if not state.enableDungeonIntelligence or not state.activeFeatures.dispelPriority then
-        return nil
-    end
-    
-    if not spellID or not state.currentDungeon or not state.priorityDispels[state.currentDungeon] then
-        return nil
-    end
-    
-    local dispelInfo = state.priorityDispels[state.currentDungeon][spellID]
-    if not dispelInfo then
-        return nil
-    end
-    
-    return dispelInfo.priority
-end
-
--- Check if a position is in a dangerous area
-function DungeonIntelligence:IsPositionDangerous(x, y, z)
-    if not state.enableDungeonIntelligence or not state.activeFeatures.avoidance then
-        return false
-    end
-    
-    if not state.currentDungeon then
-        return false
-    end
-    
-    -- This would involve more complex spatial calculations
-    -- For demonstration, we're simply returning false
     return false
 end
 
--- Process current Mythic+ affixes
-function DungeonIntelligence:ProcessMythicPlusAffixes()
-    -- Get active affixes
-    local activeAffixes = C_MythicPlus.GetCurrentAffixes()
-    if not activeAffixes then return end
+-- React to target changes
+function DungeonIntelligence:OnTargetChanged(targetInfo)
+    if not targetInfo or not targetInfo.guid then return end
     
-    WR:Debug("Processing Mythic+ affixes")
+    local unitGUID = targetInfo.guid
+    local unitID = targetInfo.id or "target"
     
-    -- Adjust behavior based on affixes
-    for _, affixInfo in ipairs(activeAffixes) do
-        local affixID = affixInfo.id
+    -- Get NPC ID from GUID
+    local _, _, _, _, _, npcID = strsplit("-", unitGUID)
+    npcID = tonumber(npcID)
+    
+    if not npcID then return end
+    
+    -- Check if this is a boss
+    if self:IsBoss(npcID) then
+        self.currentBoss = npcID
+        self:LoadBossTactics(npcID)
+    else
+        -- Check if this is a priority target
+        local priority = self:GetEnemyPriority(npcID)
+        if priority >= PRIORITY_HIGH then
+            -- Mark as high priority target
+            WR:Debug("High priority target detected: ", UnitName(unitID), " (", npcID, ")")
+        end
         
-        if state.dangerousAffixes[affixID] then
-            local affixName = state.dangerousAffixes[affixID].name
-            local advice = state.dangerousAffixes[affixID].advice
-            
-            WR:Debug("Active affix:", affixName, "-", advice)
-            
-            -- Make specific adjustments based on afflixes
-            if affixID == 10 then -- Fortified
-                -- Adjust for Fortified: prioritize AoE
-                if WR.Rotation then
-                    WR.Rotation:AdjustForAffix("fortified")
-                end
-            elseif affixID == 11 then -- Tyrannical
-                -- Adjust for Tyrannical: focus on boss damage
-                if WR.Rotation then
-                    WR.Rotation:AdjustForAffix("tyrannical")
-                end
-            elseif affixID == 12 then -- Grievous
-                -- Adjust for Grievous: prioritize healing/self-healing
-                if WR.Rotation then
-                    WR.Rotation:AdjustForAffix("grievous")
-                end
-            end
-            -- More affix handling would be added here
-        end
+        -- Check for interrupt priorities
+        self:ScanForInterruptPriorities(unitID)
     end
 end
 
--- Adjust rotation for a specific boss fight
-function DungeonIntelligence:AdjustForBossFight(boss)
-    if not WR.Rotation then return end
-    
-    WR:Debug("Adjusting rotation for boss:", boss.name)
-    
-    -- Example specific adjustments
-    if boss.name == "Chronikar" then
-        -- Adjust for Chronikar: increase movement, prepare for high damage
-        WR.Rotation:AdjustForBoss("chronikar")
-    elseif boss.name == "Tyr, the Infinite Keeper" then
-        -- Adjust for Tyr: tank swap mechanic, spread requirement
-        WR.Rotation:AdjustForBoss("tyr")
-    elseif boss.name == "Lord and Lady Waycrest" then
-        -- Adjust for Lord and Lady Waycrest: priority switching, dispel focus
-        WR.Rotation:AdjustForBoss("waycrest")
-    end
-    
-    -- Apply any priority target adjustments
-    if boss.priority_targets then
-        for _, target in ipairs(boss.priority_targets) do
-            state.priorityTargets[target.id] = target.priority
-        end
-    end
-end
-
--- Reset adjustments made for boss fights
-function DungeonIntelligence:ResetBossFightAdjustments()
-    if not WR.Rotation then return end
-    
-    WR:Debug("Resetting boss fight adjustments")
-    
-    WR.Rotation:ResetBossAdjustments()
-    
-    -- Clear any priority targets
-    wipe(state.priorityTargets)
-end
-
--- Get a list of priority interrupt spell IDs
-function DungeonIntelligence:GetInterruptPrioritySpells()
-    local result = {}
-    
-    for spellID, data in pairs(state.interruptPriorities) do
-        result[spellID] = data.priority
-    end
-    
-    return result
-end
-
--- Get a list of priority dispel spell IDs for the current dungeon
-function DungeonIntelligence:GetDispelPrioritySpells()
-    if not state.currentDungeon or not state.priorityDispels[state.currentDungeon] then
-        return {}
-    end
-    
-    local result = {}
-    
-    for spellID, data in pairs(state.priorityDispels[state.currentDungeon]) do
-        result[spellID] = data.priority
-    end
-    
-    return result
-end
-
--- Get a table of patrolling enemies for the current dungeon
-function DungeonIntelligence:GetPatrollingEnemies()
-    if not state.currentDungeon or not state.patrollingEnemies[state.currentDungeon] then
-        return {}
-    end
-    
-    return state.patrollingEnemies[state.currentDungeon]
-end
-
--- Check if a specific NPC is patrolling in the current dungeon
-function DungeonIntelligence:IsPatrollingEnemy(npcID)
-    if not state.enableDungeonIntelligence or not state.activeFeatures.patrolWarning then
+-- Check if the NPC is a dungeon boss
+function DungeonIntelligence:IsBoss(npcID)
+    if not self.currentDungeon or not WR.Data.Dungeons[self.currentDungeon.id] then
         return false
     end
     
-    if not state.currentDungeon or not state.patrollingEnemies[state.currentDungeon] then
-        return false
-    end
+    local dungeonData = WR.Data.Dungeons[self.currentDungeon.id]
+    if not dungeonData.bosses then return false end
     
-    for _, patrol in ipairs(state.patrollingEnemies[state.currentDungeon]) do
-        if patrol.id == npcID then
+    for bossId, _ in pairs(dungeonData.bosses) do
+        if bossId == npcID then
             return true
         end
     end
@@ -678,118 +289,233 @@ function DungeonIntelligence:IsPatrollingEnemy(npcID)
     return false
 end
 
--- Get information about the current mythic+ run
-function DungeonIntelligence:GetMythicPlusInfo()
-    if not state.currentDungeon then
-        return nil
+-- Load specific tactics for a boss
+function DungeonIntelligence:LoadBossTactics(bossID)
+    if not self.tactics[bossID] then return end
+    
+    local bossTactics = self.tactics[bossID]
+    
+    -- Apply tactics to rotation system
+    if bossTactics.prioritySpells then
+        for spellId, priority in pairs(bossTactics.prioritySpells) do
+            WR.Rotation:ModifySpellPriority(spellId, priority)
+        end
     end
     
-    -- Get the current timer info
-    local timerInfo = state.mythicPlusTimers[state.currentDungeon]
-    if not timerInfo or not timerInfo.isActive then
-        return nil
+    if bossTactics.avoidancePhases then
+        for phaseId, phaseData in pairs(bossTactics.avoidancePhases) do
+            -- Set up phase detection and avoidance logic
+            -- This would involve registering for combat events
+        end
     end
     
-    local now = GetTime()
-    local elapsed = now - timerInfo.startTime
-    local totalTime = state.dungeonData[state.currentDungeon].timer
-    local remaining = totalTime - elapsed
-    
-    -- Calculate timing thresholds
-    local threeChestTime = totalTime * 0.6 -- 60% of the timer
-    local twoChestTime = totalTime * 0.8 -- 80% of the timer
-    local oneChestTime = totalTime -- 100% of the timer
-    
-    local chestLevel = 0
-    if elapsed <= threeChestTime then
-        chestLevel = 3
-    elseif elapsed <= twoChestTime then
-        chestLevel = 2
-    elseif elapsed <= oneChestTime then
-        chestLevel = 1
+    if bossTactics.interruptPriorities then
+        for spellId, priority in pairs(bossTactics.interruptPriorities) do
+            self.interruptPriorities[spellId] = priority
+        end
     end
     
-    return {
-        dungeonName = state.currentDungeon,
-        timeElapsed = elapsed,
-        timeRemaining = remaining,
-        totalTime = totalTime,
-        chestLevel = chestLevel,
-        threeChestTimeRemaining = threeChestTime - elapsed,
-        twoChestTimeRemaining = twoChestTime - elapsed,
-        oneChestTimeRemaining = oneChestTime - elapsed
-    }
-end
-
--- Enable or disable the dungeon intelligence module
-function DungeonIntelligence:SetEnabled(enabled)
-    state.enableDungeonIntelligence = enabled
-    WR.Config:Set("enableDungeonIntelligence", enabled)
+    WR:Debug("Loaded tactics for boss: ", bossID)
     
-    WR:Debug("Dungeon Intelligence", enabled and "enabled" or "disabled")
+    -- Broadcast boss update event
+    WR:TriggerEvent("BOSS_CHANGED", bossID)
 end
 
--- Check if the module is enabled
-function DungeonIntelligence:IsEnabled()
-    return state.enableDungeonIntelligence
+-- Scan a unit for castable abilities that should be interrupted
+function DungeonIntelligence:ScanForInterruptPriorities(unitID)
+    if not UnitCanAttack("player", unitID) then return end
+    
+    -- Check if the unit is casting
+    local name, _, _, startTime, endTime, _, _, notInterruptible, spellId = UnitCastingInfo(unitID)
+    
+    if spellId and not notInterruptible then
+        local priority = self:GetInterruptPriority(spellId)
+        if priority >= PRIORITY_HIGH then
+            -- Add to interrupt queue with priority
+            WR.Rotation:AddInterruptTarget(unitID, spellId, priority)
+        end
+    end
+    
+    -- Also check for channeled spells
+    name, _, _, startTime, endTime, _, notInterruptible, spellId = UnitChannelInfo(unitID)
+    
+    if spellId and not notInterruptible then
+        local priority = self:GetInterruptPriority(spellId)
+        if priority >= PRIORITY_HIGH then
+            -- Add to interrupt queue with priority
+            WR.Rotation:AddInterruptTarget(unitID, spellId, priority)
+        end
+    end
 end
 
--- Enable or disable a specific feature
-function DungeonIntelligence:SetFeatureEnabled(feature, enabled)
-    if state.activeFeatures[feature] ~= nil then
-        state.activeFeatures[feature] = enabled
-        WR.Config:Set(feature .. "Enabled", enabled)
-        
-        WR:Debug("Feature", feature, enabled and "enabled" or "disabled")
-        return true
+-- Get the priority of an enemy
+function DungeonIntelligence:GetEnemyPriority(npcID)
+    return self.enemyPriorities[npcID] or PRIORITY_MEDIUM
+end
+
+-- Get the priority of interrupting a spell
+function DungeonIntelligence:GetInterruptPriority(spellId)
+    return self.interruptPriorities[spellId] or PRIORITY_MEDIUM
+end
+
+-- Check for avoidable mechanics
+function DungeonIntelligence:CheckAvoidableMechanics()
+    -- This would scan for void zones, GTFO triggers, etc.
+    -- And trigger movement commands if needed
+    
+    -- For example, checking for fire on the ground:
+    for i = 1, 40 do
+        local _, _, _, _, _, _, _, _, _, spellId = UnitDebuff("player", i)
+        if spellId and self.avoidableMechanics[spellId] then
+            local mechanic = self.avoidableMechanics[spellId]
+            if mechanic.priority >= PRIORITY_HIGH then
+                -- Trigger avoidance behavior
+                WR:Debug("High priority avoidable mechanic detected: ", spellId)
+                WR.Rotation:TriggerAvoidance(mechanic)
+                return true
+            end
+        end
     end
     
     return false
 end
 
--- Check if a specific feature is enabled
-function DungeonIntelligence:IsFeatureEnabled(feature)
-    return state.activeFeatures[feature] or false
-end
-
--- Get the current dungeon name
-function DungeonIntelligence:GetCurrentDungeon()
-    return state.currentDungeon
-end
-
--- Get boss encounter data for the current dungeon
-function DungeonIntelligence:GetBossEncountersForCurrentDungeon()
-    if not state.currentDungeon then
-        return {}
-    end
+-- Get enemy forces count for current pull (for M+ route planning)
+function DungeonIntelligence:GetCurrentPullForces()
+    if not self.inMythicPlus then return 0 end
     
-    local result = {}
-    
-    for _, boss in ipairs(state.bossEncounters) do
-        if boss.dungeon == state.currentDungeon then
-            table.insert(result, boss)
+    -- In a real addon, this would use the actual M+ enemy forces data
+    local forces = 0
+    for unit in WR.Target:IterateEnemies() do
+        local guid = UnitGUID(unit)
+        if guid then
+            local _, _, _, _, _, npcID = strsplit("-", guid)
+            npcID = tonumber(npcID)
+            
+            -- Get enemy forces value from data
+            if npcID and WR.Data.Dungeons[self.currentDungeon.id] and 
+               WR.Data.Dungeons[self.currentDungeon.id].enemyForces and
+               WR.Data.Dungeons[self.currentDungeon.id].enemyForces[npcID] then
+                forces = forces + WR.Data.Dungeons[self.currentDungeon.id].enemyForces[npcID]
+            end
         end
     end
     
-    return result
+    return forces
 end
 
--- Get data about dangerous zones in the current dungeon
-function DungeonIntelligence:GetDangerousAreasForCurrentDungeon()
-    if not state.currentDungeon then
-        return {}
-    end
+-- Adjust rotation based on current dungeon conditions
+function DungeonIntelligence:GetDungeonRotationAdjustments()
+    local adjustments = {
+        useDefensives = false,
+        prioritizeAOE = false,
+        prioritizeSingleTarget = false,
+        useBurstCooldowns = false,
+    }
     
-    for _, areaInfo in ipairs(state.avoidanceAreas) do
-        if areaInfo.dungeonID == state.currentDungeon then
-            return areaInfo.areas
+    -- Check if we're in combat with a boss
+    if self.currentBoss and UnitExists("boss1") then
+        adjustments.useBurstCooldowns = true
+        
+        -- Check boss health percentage for burst windows
+        local bossHealth = UnitHealth("boss1") / UnitHealthMax("boss1") * 100
+        
+        -- Common timing for burst cooldowns
+        if bossHealth < 30 or (bossHealth > 80 and bossHealth < 95) then
+            adjustments.useBurstCooldowns = true
+        end
+        
+        -- Check for specific boss mechanics
+        if self.tactics[self.currentBoss] then
+            local phase = self:GetCurrentBossPhase()
+            if phase and self.tactics[self.currentBoss].phases and 
+               self.tactics[self.currentBoss].phases[phase] then
+                local phaseData = self.tactics[self.currentBoss].phases[phase]
+                
+                -- Apply phase-specific adjustments
+                if phaseData.aoe then
+                    adjustments.prioritizeAOE = true
+                end
+                
+                if phaseData.defensives then
+                    adjustments.useDefensives = true
+                end
+                
+                if phaseData.burst then
+                    adjustments.useBurstCooldowns = true
+                end
+            end
+        end
+    else
+        -- For trash packs, check enemy count
+        local enemyCount = WR.Target:GetEnemyCount(10)
+        
+        if enemyCount >= 4 then
+            adjustments.prioritizeAOE = true
+        else
+            adjustments.prioritizeSingleTarget = true
+        end
+        
+        -- If in Mythic+, check affixes
+        if self.inMythicPlus then
+            if self:HasAffix(AFFIX_RAGING) and 
+               self:HasLowHealthEnemy(35) then
+                adjustments.useDefensives = true
+            end
+            
+            if self:HasAffix(AFFIX_NECROTIC) and 
+               self:GetNecroticStacks() > 15 then
+                adjustments.useDefensives = true
+            end
+            
+            -- Additional affix-specific adjustments
         end
     end
     
-    return {}
+    return adjustments
 end
 
--- Initialize the module
-DungeonIntelligence:Initialize()
+-- Get the current boss phase
+function DungeonIntelligence:GetCurrentBossPhase()
+    if not self.currentBoss then return nil end
+    
+    -- This would normally use boss health, DBM/BW events, or other indicators
+    -- For demo purposes, just use boss health percentage
+    if UnitExists("boss1") then
+        local bossHealth = UnitHealth("boss1") / UnitHealthMax("boss1") * 100
+        
+        if bossHealth < 30 then
+            return "phase3"
+        elseif bossHealth < 60 then
+            return "phase2"
+        else
+            return "phase1"
+        end
+    end
+    
+    return nil
+end
 
+-- Check if there's a low health enemy
+function DungeonIntelligence:HasLowHealthEnemy(threshold)
+    for unit in WR.Target:IterateEnemies() do
+        if UnitExists(unit) and UnitHealth(unit) / UnitHealthMax(unit) * 100 < threshold then
+            return true
+        end
+    end
+    return false
+end
+
+-- Get current Necrotic stacks
+function DungeonIntelligence:GetNecroticStacks()
+    for i = 1, 40 do
+        local name, _, count, _, _, _, _, _, _, spellId = UnitDebuff("player", i)
+        if spellId == 209858 then -- Necrotic Wound
+            return count or 0
+        end
+    end
+    return 0
+end
+
+-- Return the module
 return DungeonIntelligence
