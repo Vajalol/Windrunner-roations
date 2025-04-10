@@ -50,3 +50,7 @@ Classes\Druid.lua
 Classes\DemonHunter.lua
 Classes\DeathKnight.lua
 Classes\Evoker.lua
+Classes\Monk.lua
+Classes\Warlock.lua
+Classes\Shaman.lua
+Classes\Rogue.lua
