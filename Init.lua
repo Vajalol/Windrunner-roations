@@ -105,11 +105,17 @@ function WR:OnInitialize()
     -- Load GCD tracker first as other systems depend on it
     if self.GCD and self.GCD.Initialize then self.GCD:Initialize() end
     
+    -- Initialize API system for accessing WoW and Tinkr functionality
+    if self.API and self.API.Initialize then self.API:Initialize() end
+    
     -- Then initialize condition system for spell evaluations
     if self.Condition and self.Condition.Initialize then self.Condition:Initialize() end
     
-    -- Initialize API system for accessing WoW and Tinkr functionality
-    if self.API and self.API.Initialize then self.API:Initialize() end
+    -- Initialize aura tracking system
+    if self.Auras and self.Auras.Initialize then self.Auras:Initialize() end
+    
+    -- Initialize cooldown tracking system
+    if self.Cooldown and self.Cooldown.Initialize then self.Cooldown:Initialize() end
     
     -- Combat analysis for performance tracking
     if self.CombatAnalysis and self.CombatAnalysis.Initialize then self.CombatAnalysis:Initialize() end

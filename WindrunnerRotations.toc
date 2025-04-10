@@ -22,6 +22,8 @@ Core\CombatAnalysis.lua
 Core\Rotation.lua
 Core\Targeting.lua
 Core\SpellQueue.lua
+Core\Cooldown.lua
+Core\Auras.lua
 Core\Combat.lua
 Core\Profiles.lua
 Core\Dungeons.lua
