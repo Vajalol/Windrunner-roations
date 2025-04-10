@@ -42,6 +42,10 @@ UI\ProfileUI.lua
 UI\EnhancedUI.lua
 UI\SettingsUI.lua
 UI\ClassHUD.lua
+UI\AnimationSystem.lua
+UI\ResponsiveLayout.lua
+UI\ClassTheme.lua
+UI\ProfileIntegration.lua
 
 # Classes
 Classes\Base.lua
