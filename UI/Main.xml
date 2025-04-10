@@ -1,0 +1,126 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+    <!-- Main UI frame templates -->
+    <Frame name="WindrunnerRotationsButtonTemplate" virtual="true">
+        <Size x="40" y="40"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="BG" setAllPoints="true">
+                    <Color r="0.1" g="0.1" b="0.1" a="0.8"/>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture parentKey="Icon" setAllPoints="true"/>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString parentKey="Count" inherits="NumberFontNormal" justifyH="RIGHT">
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Keybind" inherits="NumberFontNormalSmall" justifyH="CENTER">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="1" y="-3"/>
+                    </Anchors>
+                </FontString>
+                <Texture parentKey="Border" file="Interface\Buttons\UI-ActionButton-Border" setAllPoints="true" hidden="true" alphaMode="ADD">
+                    <Color r="1" g="1" b="1" a="0.8"/>
+                </Texture>
+                <Texture parentKey="Cooldown" file="Interface\Cooldown\starburst" alphaMode="ADD" hidden="true" setAllPoints="true"/>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Cooldown parentKey="CooldownFrame" inherits="CooldownFrameTemplate" setAllPoints="true" hidden="false"/>
+        </Frames>
+        <Scripts>
+            <OnEnter>
+                if self.tooltipTitle and self.tooltipText then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                    GameTooltip:SetText(self.tooltipTitle, 1, 1, 1);
+                    GameTooltip:AddLine(self.tooltipText, nil, nil, nil, true);
+                    GameTooltip:Show();
+                end
+            </OnEnter>
+            <OnLeave>
+                GameTooltip:Hide();
+            </OnLeave>
+        </Scripts>
+    </Frame>
+    
+    <!-- Information display templates -->
+    <Frame name="WindrunnerRotationsInfoBlockTemplate" virtual="true">
+        <Size x="180" y="30"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="BG" setAllPoints="true">
+                    <Color r="0.1" g="0.1" b="0.1" a="0.5"/>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Label" inherits="GameFontNormalSmall" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="5" y="-2"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Value" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Anchors>
+                        <Anchor point="BOTTOMLEFT" x="5" y="2"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+    
+    <!-- Rotation icon template -->
+    <Button name="WindrunnerRotationsRotationButtonTemplate" inherits="WindrunnerRotationsButtonTemplate" virtual="true">
+        <Scripts>
+            <OnLoad>
+                self:RegisterForClicks("LeftButtonUp", "RightButtonUp");
+            </OnLoad>
+            <OnClick>
+                if button == "LeftButton" then
+                    -- Cast the spell (handled by addon code)
+                elseif button == "RightButton" then
+                    -- Open spell configuration
+                end
+            </OnClick>
+        </Scripts>
+    </Button>
+    
+    <!-- Toggle button template -->
+    <Button name="WindrunnerRotationsToggleButtonTemplate" virtual="true">
+        <Size x="120" y="25"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture parentKey="BG" setAllPoints="true">
+                    <Color r="0.1" g="0.1" b="0.1" a="0.8"/>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture parentKey="Icon" hidden="false">
+                    <Size x="20" y="20"/>
+                    <Anchors>
+                        <Anchor point="LEFT" x="2" y="0"/>
+                    </Anchors>
+                </Texture>
+                <FontString parentKey="Text" inherits="GameFontNormalSmall" justifyH="CENTER">
+                    <Anchors>
+                        <Anchor point="CENTER" x="10" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+            <Layer level="HIGHLIGHT">
+                <Texture parentKey="Highlight" setAllPoints="true" alphaMode="ADD">
+                    <Color r="0.3" g="0.3" b="0.3" a="0.3"/>
+                </Texture>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick>
+                -- Toggle state (handled by addon code)
+            </OnClick>
+        </Scripts>
+    </Button>
+    
+    <!-- Class-specific UI elements will be created programmatically -->
+</Ui>

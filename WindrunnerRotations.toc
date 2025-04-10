@@ -1,0 +1,40 @@
+## Interface: 100200
+## Title: Windrunner Rotations
+## Notes: Advanced combat rotation system for The War Within Season 2
+## Author: WindrunnerDev
+## Version: 1.0.0
+## SavedVariables: WindrunnerRotationsDB
+## SavedVariablesPerCharacter: WindrunnerRotationsCharDB
+
+# Libraries
+Libs\LibStub\LibStub.lua
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+
+# Core
+Init.lua
+Config.lua
+Core\API.lua
+Core\Rotation.lua
+Core\Targeting.lua
+Core\SpellQueue.lua
+Core\Combat.lua
+Core\Profiles.lua
+Core\Dungeons.lua
+
+# Data
+Data\Classes.lua
+Data\Spells.lua
+Data\Dungeons.lua
+
+# UI
+UI\Main.xml
+UI\Main.lua
+UI\ClassIcons.lua
+
+# Classes
+Classes\Mage.lua
+Classes\Hunter.lua
+Classes\Warrior.lua
+Classes\DemonHunter.lua
