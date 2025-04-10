@@ -1,766 +1,809 @@
 local addonName, WR = ...
 
--- Mage Class Module
+-- Mage Class module
 local Mage = {}
+WR.Classes = WR.Classes or {}
 WR.Classes.MAGE = Mage
 
--- Specialization IDs
-local ARCANE_SPEC = 62
-local FIRE_SPEC = 63
-local FROST_SPEC = 64
+-- Inherit from BaseClass
+setmetatable(Mage, {__index = WR.BaseClass})
 
--- Mage spells
-local SPELLS = {
-    -- Shared
-    ARCANE_INTELLECT = 1459,
-    BLINK = 1953,
-    COUNTERSPELL = 2139,
-    FROST_NOVA = 122,
-    ICE_BLOCK = 45438,
-    POLYMORPH = 118,
-    SLOW_FALL = 130,
-    SPELLSTEAL = 30449,
-    TIME_WARP = 80353,
-    ALTER_TIME = 342245,
-    
-    -- Arcane
-    ARCANE_BLAST = 30451,
-    ARCANE_BARRAGE = 44425,
-    ARCANE_MISSILES = 5143,
-    ARCANE_EXPLOSION = 1449,
-    ARCANE_POWER = 12042,
-    PRESENCE_OF_MIND = 205025,
-    EVOCATION = 12051,
-    TOUCH_OF_THE_MAGI = 321507,
-    RADIANT_SPARK = 376103,
-    
-    -- Fire
-    FIREBALL = 133,
-    FIRE_BLAST = 108853,
-    PYROBLAST = 11366,
-    FLAMESTRIKE = 2120,
-    PHOENIX_FLAMES = 257541,
-    SCORCH = 2948,
-    COMBUSTION = 190319,
-    DRAGONS_BREATH = 31661,
-    
-    -- Frost
-    FROSTBOLT = 116,
-    ICE_LANCE = 30455,
-    FLURRY = 44614,
-    FROZEN_ORB = 84714,
-    BLIZZARD = 190356,
-    ICY_VEINS = 12472,
-    CONE_OF_COLD = 120,
-    SUMMON_WATER_ELEMENTAL = 31687,
-}
+-- Resource type for mages (mana)
+Mage.resourceType = Enum.PowerType.Mana
 
--- Buff IDs
-local BUFFS = {
-    -- Arcane
-    ARCANE_POWER = 12042,
-    CLEARCASTING = 263725,
-    ARCANE_FAMILIAR = 210126,
-    
-    -- Fire
-    COMBUSTION = 190319,
-    HEATING_UP = 48107,
-    HOT_STREAK = 48108,
-    
-    -- Frost
-    ICY_VEINS = 12472,
-    BRAIN_FREEZE = 190446,
-    FINGERS_OF_FROST = 44544,
-}
+-- Define spec IDs
+local SPEC_ARCANE = 62
+local SPEC_FIRE = 63
+local SPEC_FROST = 64
 
--- Debuff IDs
-local DEBUFFS = {
-    -- Arcane
-    TOUCH_OF_THE_MAGI = 321507,
-    RADIANT_SPARK = 376103,
-    
-    -- Fire
-    IGNITE = 12654,
-    
-    -- Frost
-    WINTERS_CHILL = 228358,
-}
-
--- Arcane State
-local arcaneState = {
-    arcaneCharges = 0,
-    clearcastingProc = false,
-    touchOfTheMagi = false,
-    radiantSpark = false,
-    arcanePower = false,
-    evocation = false,
-    manaPct = 100,
-}
-
--- Fire State
-local fireState = {
-    heatingUp = false,
-    hotStreak = false,
-    combustion = false,
-    igniteActive = false,
-}
-
--- Frost State
-local frostState = {
-    brainFreeze = false,
-    fingersOfFrost = false,
-    icyVeins = false,
-    wintersChill = false,
-    frozenTarget = false,
-}
-
--- Initialize the Mage module
+-- Class initialization
 function Mage:Initialize()
-    WR:Debug("Initializing Mage module")
+    -- Inherit base initialization
+    WR.BaseClass.Initialize(self)
     
-    -- Register spell cast events
-    local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-    eventFrame:RegisterEvent("UNIT_AURA")
-    eventFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
-    eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    eventFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+    -- Register Specializations
+    self:RegisterSpec(SPEC_ARCANE, "Arcane")
+    self:RegisterSpec(SPEC_FIRE, "Fire")
+    self:RegisterSpec(SPEC_FROST, "Frost")
     
-    eventFrame:SetScript("OnEvent", function(self, event, ...)
-        if event == "UNIT_SPELLCAST_SUCCEEDED" then
-            local unit, _, spellID = ...
-            if unit == "player" then
-                Mage:OnSpellCast(spellID)
+    -- Shared spell IDs across all mage specs
+    self.spells = {
+        -- Common mage abilities
+        ARCANE_INTELLECT = 1459,
+        COUNTERSPELL = 2139,
+        BLINK = 1953,
+        ICE_BLOCK = 45438,
+        MIRROR_IMAGE = 55342,
+        FROST_NOVA = 122,
+        REMOVE_CURSE = 475,
+        SPELLSTEAL = 30449,
+        TIME_WARP = 80353,
+        INVISIBILITY = 66,
+        SLOW_FALL = 130,
+        CONJURE_REFRESHMENT = 116136,
+        FOCUS_MAGIC = 321358,
+        
+        -- Covenant abilities
+        RADIANT_SPARK = 307443,  -- Kyrian
+        DEATHBORNE = 324220,     -- Necrolord
+        MIRRORS_OF_TORMENT = 314793, -- Venthyr
+        SHIFTING_POWER = 314791, -- Night Fae
+    }
+    
+    -- Load shared mage data
+    self:LoadSharedMageData()
+    
+    WR:Debug("Mage module initialized")
+end
+
+-- Load shared spell and mechanics data for all mage specs
+function Mage:LoadSharedMageData()
+    -- Register important buffs
+    WR.Auras:RegisterImportantAura(self.spells.ARCANE_INTELLECT, 30, true, false)
+    WR.Auras:RegisterImportantAura(self.spells.FOCUS_MAGIC, 40, true, false)
+    
+    -- Setup cooldown tracking
+    WR.Cooldown:StartTracking(self.spells.COUNTERSPELL)
+    WR.Cooldown:StartTracking(self.spells.BLINK)
+    WR.Cooldown:StartTracking(self.spells.ICE_BLOCK)
+    WR.Cooldown:StartTracking(self.spells.MIRROR_IMAGE)
+    
+    -- Time Warp triggers Temporal Displacement
+    WR.Cooldown:RegisterCooldownTrigger(self.spells.TIME_WARP, 80354, 600)
+    
+    -- Set up interrupt rotation (shared by all specs)
+    self.interruptRotation = {
+        { spell = self.spells.COUNTERSPELL }
+    }
+    
+    -- Set up defensive rotation (shared by all specs)
+    self.defensiveRotation = {
+        { spell = self.spells.ICE_BLOCK, threshold = 15 } -- Use Ice Block at very low health
+    }
+end
+
+-- Load a specific specialization
+function Mage:LoadSpec(specId)
+    -- Call the base class method to set up common components
+    WR.BaseClass.LoadSpec(self, specId)
+    
+    -- Load specific spec data
+    if specId == SPEC_ARCANE then
+        self:LoadArcaneSpec()
+    elseif specId == SPEC_FIRE then
+        self:LoadFireSpec()
+    elseif specId == SPEC_FROST then
+        self:LoadFrostSpec()
+    end
+    
+    WR:Debug("Loaded mage spec:", self.specData.name)
+    return true
+end
+
+-- Load Arcane specialization
+function Mage:LoadArcaneSpec()
+    -- Arcane-specific spells
+    self.spells.ARCANE_BLAST = 30451
+    self.spells.ARCANE_BARRAGE = 44425
+    self.spells.ARCANE_MISSILES = 5143
+    self.spells.ARCANE_EXPLOSION = 1449
+    self.spells.ARCANE_POWER = 12042
+    self.spells.EVOCATION = 12051
+    self.spells.PRESENCE_OF_MIND = 205025
+    self.spells.TOUCH_OF_THE_MAGI = 321507
+    self.spells.ARCANE_FAMILIAR = 205022
+    self.spells.PRISMATIC_BARRIER = 235450
+    self.spells.RUNE_OF_POWER = 116011
+    self.spells.ARCANE_ORB = 153626
+    self.spells.NETHER_TEMPEST = 114923
+    self.spells.SUPERNOVA = 157980
+    
+    -- Setup cooldown and aura tracking for Arcane
+    WR.Cooldown:StartTracking(self.spells.ARCANE_POWER)
+    WR.Cooldown:StartTracking(self.spells.EVOCATION)
+    WR.Cooldown:StartTracking(self.spells.PRESENCE_OF_MIND)
+    WR.Cooldown:StartTracking(self.spells.TOUCH_OF_THE_MAGI)
+    
+    -- Check for Arcane Familiar and track if necessary
+    if IsSpellKnown(self.spells.ARCANE_FAMILIAR) then
+        WR.Auras:RegisterImportantAura(self.spells.ARCANE_FAMILIAR, 80, true, false)
+    end
+    
+    -- Define Arcane rotation, prioritizing abilities in order
+    self.singleTargetRotation = {
+        -- Maintain Arcane Familiar buff if we have it
+        { 
+            spell = self.spells.ARCANE_FAMILIAR, 
+            condition = function(self) 
+                return IsSpellKnown(self.spells.ARCANE_FAMILIAR) and 
+                       not self:HasBuff(self.spells.ARCANE_FAMILIAR) 
+            end 
+        },
+        
+        -- Use Touch of the Magi on cooldown, preferably with Arcane Power coming up
+        { 
+            spell = self.spells.TOUCH_OF_THE_MAGI, 
+            condition = function(self) 
+                local apCD = self:GetSpellCooldown(self.spells.ARCANE_POWER)
+                return apCD < 5 or apCD > 25
+            end 
+        },
+        
+        -- Use Arcane Power for burst damage
+        { 
+            spell = self.spells.ARCANE_POWER,
+            condition = function(self)
+                return self:HasBuff(self.spells.TOUCH_OF_THE_MAGI) or
+                       self:GetSpellCooldown(self.spells.TOUCH_OF_THE_MAGI) > 25
             end
-        elseif event == "UNIT_AURA" then
-            local unit = ...
-            if unit == "player" or unit == "target" then
-                Mage:UpdateAuras(unit)
+        },
+        
+        -- Use Presence of Mind with Arcane Blast during burst
+        { 
+            spell = self.spells.PRESENCE_OF_MIND,
+            condition = function(self)
+                return self:HasBuff(self.spells.ARCANE_POWER)
             end
-        elseif event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_SPECIALIZATION_CHANGED" then
-            Mage:UpdateTalents()
-        elseif event == "SPELL_UPDATE_COOLDOWN" then
-            Mage:UpdateCooldowns()
-        end
-    end)
-    
-    -- Load the current specialization
-    self:UpdateTalents()
-    self:UpdateAuras("player")
-    self:UpdateAuras("target")
-}
-
--- Handle spell casts
-function Mage:OnSpellCast(spellID)
-    local specID = WR.currentSpec
-    
-    -- Update specialization-specific state
-    if specID == ARCANE_SPEC then
-        self:HandleArcaneSpellCast(spellID)
-    elseif specID == FIRE_SPEC then
-        self:HandleFireSpellCast(spellID)
-    elseif specID == FROST_SPEC then
-        self:HandleFrostSpellCast(spellID)
-    end
-end
-
--- Handle Arcane spell casts
-function Mage:HandleArcaneSpellCast(spellID)
-    -- Track Arcane Charges
-    if spellID == SPELLS.ARCANE_BLAST then
-        if arcaneState.arcaneCharges < 4 then
-            arcaneState.arcaneCharges = arcaneState.arcaneCharges + 1
-        end
-    elseif spellID == SPELLS.ARCANE_BARRAGE then
-        arcaneState.arcaneCharges = 0
-    end
-    
-    -- Track major cooldowns
-    if spellID == SPELLS.TOUCH_OF_THE_MAGI then
-        arcaneState.touchOfTheMagi = true
-    elseif spellID == SPELLS.RADIANT_SPARK then
-        arcaneState.radiantSpark = true
-    elseif spellID == SPELLS.ARCANE_POWER then
-        arcaneState.arcanePower = true
-    elseif spellID == SPELLS.EVOCATION then
-        arcaneState.evocation = true
-    end
-end
-
--- Handle Fire spell casts
-function Mage:HandleFireSpellCast(spellID)
-    -- Clear Heating Up if we cast a non-crit spell
-    if spellID == SPELLS.COMBUSTION then
-        fireState.combustion = true
-    end
-    
-    -- Reset Heating Up or Hot Streak after using it
-    if spellID == SPELLS.PYROBLAST or spellID == SPELLS.FLAMESTRIKE then
-        -- Hot Streak is consumed when Pyroblast/Flamestrike is cast
-        if fireState.hotStreak then
-            fireState.hotStreak = false
-        end
-    end
-}
-
--- Handle Frost spell casts
-function Mage:HandleFrostSpellCast(spellID)
-    -- Track Frost procs usage
-    if spellID == SPELLS.FLURRY and frostState.brainFreeze then
-        frostState.brainFreeze = false
-    elseif spellID == SPELLS.ICE_LANCE and frostState.fingersOfFrost then
-        frostState.fingersOfFrost = false
-    elseif spellID == SPELLS.ICY_VEINS then
-        frostState.icyVeins = true
-    elseif spellID == SPELLS.FROZEN_ORB then
-        -- Frozen Orb can generate Fingers of Frost procs
-    end
-}
-
--- Update auras
-function Mage:UpdateAuras(unit)
-    local specID = WR.currentSpec
-    
-    if unit == "player" then
-        -- Update Arcane auras
-        if specID == ARCANE_SPEC then
-            arcaneState.clearcastingProc = AuraUtil.FindAuraByID(BUFFS.CLEARCASTING, "player") ~= nil
-            arcaneState.arcanePower = AuraUtil.FindAuraByID(BUFFS.ARCANE_POWER, "player") ~= nil
-            arcaneState.arcaneCharges = UnitPower("player", Enum.PowerType.ArcaneCharges) or 0
-            arcaneState.manaPct = UnitPower("player", Enum.PowerType.Mana) / UnitPowerMax("player", Enum.PowerType.Mana) * 100
+        },
         
-        -- Update Fire auras
-        elseif specID == FIRE_SPEC then
-            fireState.heatingUp = AuraUtil.FindAuraByID(BUFFS.HEATING_UP, "player") ~= nil
-            fireState.hotStreak = AuraUtil.FindAuraByID(BUFFS.HOT_STREAK, "player") ~= nil
-            fireState.combustion = AuraUtil.FindAuraByID(BUFFS.COMBUSTION, "player") ~= nil
-        
-        -- Update Frost auras
-        elseif specID == FROST_SPEC then
-            frostState.brainFreeze = AuraUtil.FindAuraByID(BUFFS.BRAIN_FREEZE, "player") ~= nil
-            frostState.fingersOfFrost = AuraUtil.FindAuraByID(BUFFS.FINGERS_OF_FROST, "player") ~= nil
-            frostState.icyVeins = AuraUtil.FindAuraByID(BUFFS.ICY_VEINS, "player") ~= nil
-        end
-    end
-    
-    if unit == "target" then
-        -- Update target debuffs based on spec
-        if specID == ARCANE_SPEC then
-            arcaneState.touchOfTheMagi = AuraUtil.FindAuraByID(DEBUFFS.TOUCH_OF_THE_MAGI, "target", "PLAYER|HARMFUL") ~= nil
-            arcaneState.radiantSpark = AuraUtil.FindAuraByID(DEBUFFS.RADIANT_SPARK, "target", "PLAYER|HARMFUL") ~= nil
-        
-        elseif specID == FIRE_SPEC then
-            fireState.igniteActive = AuraUtil.FindAuraByID(DEBUFFS.IGNITE, "target", "PLAYER|HARMFUL") ~= nil
-        
-        elseif specID == FROST_SPEC then
-            frostState.wintersChill = AuraUtil.FindAuraByID(DEBUFFS.WINTERS_CHILL, "target", "PLAYER|HARMFUL") ~= nil
-            
-            -- Check if target is frozen (for Ice Lance bonus)
-            local frozen = false
-            local rootTypes = {"ROOT", "STUN", "FROZEN"}
-            for i = 1, 40 do
-                local _, _, _, debuffType = UnitDebuff("target", i)
-                if debuffType and tContains(rootTypes, debuffType) then
-                    frozen = true
-                    break
-                end
+        -- Use Rune of Power before burst or when idle with high mana
+        { 
+            spell = self.spells.RUNE_OF_POWER,
+            condition = function(self)
+                local apCD = self:GetSpellCooldown(self.spells.ARCANE_POWER)
+                local totmCD = self:GetSpellCooldown(self.spells.TOUCH_OF_THE_MAGI)
+                return (apCD < 5 or totmCD < 5) or 
+                       (apCD > 15 and totmCD > 15 and self:GetResourcePct() > 80)
             end
-            frostState.frozenTarget = frozen
-        end
-    end
-end
-
--- Update talents
-function Mage:UpdateTalents()
-    WR:Debug("Updating Mage talents")
-    
-    -- Get current spec information
-    local specID = GetSpecializationInfo(GetSpecialization())
-    
-    -- Load the appropriate rotation for the current spec
-    self:LoadSpec(specID)
-}
-
--- Update cooldowns
-function Mage:UpdateCooldowns()
-    -- Not critical for this implementation
-end
-
--- Load a specific specialization rotation
-function Mage:LoadSpec(specID)
-    WR:Debug("Loading Mage spec: " .. (specID or "Unknown"))
-    
-    -- Clear any existing rotation
-    WR.Rotation:RegisterRotationFunction(specID, nil)
-    
-    -- Register the appropriate rotation function
-    if specID == ARCANE_SPEC then
-        WR.Rotation:RegisterRotationFunction(specID, self.ArcaneRotation)
-        WR:Debug("Registered Arcane Mage rotation")
-    elseif specID == FIRE_SPEC then
-        WR.Rotation:RegisterRotationFunction(specID, self.FireRotation)
-        WR:Debug("Registered Fire Mage rotation")
-    elseif specID == FROST_SPEC then
-        WR.Rotation:RegisterRotationFunction(specID, self.FrostRotation)
-        WR:Debug("Registered Frost Mage rotation")
-    end
-    
-    -- Register utility functions
-    WR.Rotation:RegisterPreCombatAction("MageBuffs", self.PreCombatAction)
-    WR.Rotation:RegisterCombatAction("MageInterrupt", self.InterruptAction)
-    WR.Rotation:RegisterCombatAction("MageDefensive", self.DefensiveAction)
-}
-
--- Apply a profile
-function Mage:ApplyProfile(profile)
-    -- Implement profile application
-    WR:Debug("Applying Mage profile: " .. (profile.name or "Unknown"))
-    
-    -- Here we would configure the rotation priorities based on the profile
-    -- For now, just acknowledge the profile application
-}
-
--- Pre-combat actions
-function Mage.PreCombatAction()
-    -- Check for Arcane Intellect
-    local hasIntellect = AuraUtil.FindAuraByID(SPELLS.ARCANE_INTELLECT, "player")
-    if not hasIntellect and WR.API:IsSpellCastable(SPELLS.ARCANE_INTELLECT) then
-        WR:Debug("Casting Arcane Intellect")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_INTELLECT)
-    end
-    
-    return false
-end
-
--- Interrupt action
-function Mage.InterruptAction()
-    -- Only attempt to interrupt if enabled
-    if not WR.Rotation:IsCombatActionEnabled("interrupts") then
-        return false
-    end
-    
-    -- Check if Counterspell is available
-    if WR.Rotation:ShouldUseInterrupt() and WR.API:IsSpellCastable(SPELLS.COUNTERSPELL, "target") then
-        WR:Debug("Casting Counterspell")
-        return WR.Queue:CastSpell(SPELLS.COUNTERSPELL, "target")
-    end
-    
-    return false
-end
-
--- Defensive action
-function Mage.DefensiveAction()
-    -- Only attempt to use defensives if enabled
-    if not WR.Rotation:IsCombatActionEnabled("defensives") then
-        return false
-    end
-    
-    local playerHealth = WR.API:UnitHealthPercent("player")
-    
-    -- Ice Block at very low health
-    if playerHealth < 20 and WR.API:IsSpellCastable(SPELLS.ICE_BLOCK) then
-        WR:Debug("Casting Ice Block (emergency)")
-        return WR.Queue:CastSpell(SPELLS.ICE_BLOCK)
-    end
-    
-    -- Alter Time for health recovery
-    if playerHealth < 50 and WR.API:IsSpellCastable(SPELLS.ALTER_TIME) then
-        WR:Debug("Casting Alter Time (defensive)")
-        return WR.Queue:CastSpell(SPELLS.ALTER_TIME)
-    end
-    
-    return false
-end
-
--- ARCANE ROTATION
-function Mage.ArcaneRotation(inCombat)
-    -- If not in combat, try to buff up
-    if not inCombat then
-        -- Ensure Arcane Intellect is up
-        local hasIntellect = AuraUtil.FindAuraByID(SPELLS.ARCANE_INTELLECT, "player")
-        if not hasIntellect and WR.API:IsSpellCastable(SPELLS.ARCANE_INTELLECT) then
-            WR:Debug("Casting Arcane Intellect")
-            return WR.Queue:CastSpell(SPELLS.ARCANE_INTELLECT)
-        end
+        },
         
-        return false
-    end
-    
-    -- Don't cast if player is currently casting or channeling
-    if UnitCastingInfo("player") or UnitChannelInfo("player") then
-        return false
-    end
-    
-    -- Check if we have a valid target
-    if not WR.Target:HasValidTarget() then
-        WR.Target:GetBestTarget(40)
-        return false
-    end
-    
-    -- Update Arcane state
-    arcaneState.arcaneCharges = UnitPower("player", Enum.PowerType.ArcaneCharges) or 0
-    arcaneState.manaPct = UnitPower("player", Enum.PowerType.Mana) / UnitPowerMax("player", Enum.PowerType.Mana) * 100
-    arcaneState.clearcastingProc = AuraUtil.FindAuraByID(BUFFS.CLEARCASTING, "player") ~= nil
-    arcaneState.touchOfTheMagi = AuraUtil.FindAuraByID(DEBUFFS.TOUCH_OF_THE_MAGI, "target", "PLAYER|HARMFUL") ~= nil
-    arcaneState.radiantSpark = AuraUtil.FindAuraByID(DEBUFFS.RADIANT_SPARK, "target", "PLAYER|HARMFUL") ~= nil
-    arcaneState.arcanePower = AuraUtil.FindAuraByID(BUFFS.ARCANE_POWER, "player") ~= nil
-    
-    -- Low mana, need to regen
-    if arcaneState.manaPct < 15 and WR.API:IsSpellCastable(SPELLS.EVOCATION) then
-        WR:Debug("Casting Evocation (low mana)")
-        return WR.Queue:CastSpell(SPELLS.EVOCATION)
-    end
-    
-    -- AOE rotation
-    if WR.Rotation:ShouldUseAOE() and WR.Rotation:HasMultipleEnemies(3, 10) then
-        return Mage.ArcaneAOERotation()
-    end
-    
-    -- Cooldown phase - burst when available
-    if WR.Rotation:ShouldUseCooldowns() then
-        -- Touch of the Magi -> Radiant Spark -> Arcane Power sequence
-        if WR.API:IsSpellCastable(SPELLS.TOUCH_OF_THE_MAGI) and 
-           arcaneState.arcaneCharges >= 4 and
-           not arcaneState.touchOfTheMagi then
-            WR:Debug("Casting Touch of the Magi (cooldown)")
-            return WR.Queue:CastSpell(SPELLS.TOUCH_OF_THE_MAGI, "target")
-        end
+        -- Use Arcane Orb when below 4 Arcane Charges
+        { 
+            spell = self.spells.ARCANE_ORB,
+            condition = function(self)
+                local charges = UnitPower("player", Enum.PowerType.ArcaneCharges)
+                return charges < 4
+            end
+        },
         
-        if arcaneState.touchOfTheMagi and 
-           WR.API:IsSpellCastable(SPELLS.RADIANT_SPARK) and 
-           not arcaneState.radiantSpark then
-            WR:Debug("Casting Radiant Spark (cooldown)")
-            return WR.Queue:CastSpell(SPELLS.RADIANT_SPARK, "target")
-        end
+        -- Use Evocation when low on mana
+        { 
+            spell = self.spells.EVOCATION,
+            condition = function(self)
+                return self:GetResourcePct() < 20 and
+                       not self:HasBuff(self.spells.ARCANE_POWER)
+            end
+        },
         
-        if arcaneState.touchOfTheMagi and arcaneState.radiantSpark and 
-           WR.API:IsSpellCastable(SPELLS.ARCANE_POWER) and 
-           not arcaneState.arcanePower then
-            WR:Debug("Casting Arcane Power (cooldown)")
-            return WR.Queue:CastSpell(SPELLS.ARCANE_POWER)
-        end
-    end
+        -- Use Arcane Missiles when proc is available and high mana
+        { 
+            spell = self.spells.ARCANE_MISSILES,
+            condition = function(self)
+                return self:HasBuff(203128) and -- Clearcasting proc
+                       (self:GetResourcePct() > 40 or self:HasBuff(self.spells.ARCANE_POWER))
+            end
+        },
+        
+        -- Dump Arcane charges with Arcane Barrage when mana is low
+        { 
+            spell = self.spells.ARCANE_BARRAGE,
+            condition = function(self)
+                local charges = UnitPower("player", Enum.PowerType.ArcaneCharges)
+                return (charges >= 4 and self:GetResourcePct() < 40) or
+                       (self:GetResourcePct() < 20)
+            end
+        },
+        
+        -- Use Arcane Blast as filler when we have enough mana
+        { 
+            spell = self.spells.ARCANE_BLAST,
+            condition = function(self)
+                return self:GetResourcePct() > 30 or 
+                       self:HasBuff(self.spells.ARCANE_POWER)
+            end
+        },
+        
+        -- Use Arcane Barrage as fallback
+        { spell = self.spells.ARCANE_BARRAGE }
+    }
     
-    -- Presence of Mind for quick Arcane Blasts during burst
-    if (arcaneState.touchOfTheMagi or arcaneState.arcanePower) and 
-       WR.API:IsSpellCastable(SPELLS.PRESENCE_OF_MIND) then
-        WR:Debug("Casting Presence of Mind (burst)")
-        return WR.Queue:CastSpell(SPELLS.PRESENCE_OF_MIND)
-    end
+    -- Define AoE rotation for Arcane
+    self.aoeRotation = {
+        -- Maintain Arcane Familiar buff if we have it
+        { 
+            spell = self.spells.ARCANE_FAMILIAR, 
+            condition = function(self) 
+                return IsSpellKnown(self.spells.ARCANE_FAMILIAR) and 
+                       not self:HasBuff(self.spells.ARCANE_FAMILIAR) 
+            end 
+        },
+        
+        -- Use Touch of the Magi on cooldown in AoE
+        { spell = self.spells.TOUCH_OF_THE_MAGI },
+        
+        -- Use Arcane Power for burst AoE damage
+        { spell = self.spells.ARCANE_POWER },
+        
+        -- Use Arcane Orb for AoE damage and charges
+        { spell = self.spells.ARCANE_ORB },
+        
+        -- Use Supernova if available
+        { spell = self.spells.SUPERNOVA },
+        
+        -- Use Nether Tempest if talented
+        { 
+            spell = self.spells.NETHER_TEMPEST,
+            condition = function(self)
+                local charges = UnitPower("player", Enum.PowerType.ArcaneCharges)
+                return charges >= 3 and not self:HasDebuff(self.spells.NETHER_TEMPEST)
+            end
+        },
+        
+        -- Spend Arcane Charges with Arcane Explosion
+        { 
+            spell = self.spells.ARCANE_EXPLOSION,
+            condition = function(self)
+                return self:GetResourcePct() > 30 or self:HasBuff(self.spells.ARCANE_POWER)
+            end
+        },
+        
+        -- Use Evocation when low on mana
+        { 
+            spell = self.spells.EVOCATION,
+            condition = function(self)
+                return self:GetResourcePct() < 20 and not self:HasBuff(self.spells.ARCANE_POWER)
+            end
+        },
+        
+        -- Use Arcane Barrage to dump charges when low on mana
+        { 
+            spell = self.spells.ARCANE_BARRAGE,
+            condition = function(self)
+                local charges = UnitPower("player", Enum.PowerType.ArcaneCharges)
+                return charges >= 4 and self:GetResourcePct() < 40
+            end
+        }
+    }
     
-    -- Use Arcane Missiles with Clearcasting proc
-    if arcaneState.clearcastingProc and
-       WR.API:IsSpellCastable(SPELLS.ARCANE_MISSILES) then
-        WR:Debug("Casting Arcane Missiles (Clearcasting)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_MISSILES, "target")
-    end
-    
-    -- Dump Arcane Charges with Arcane Barrage when Touch of the Magi is about to expire
-    if arcaneState.touchOfTheMagi and WR.API:IsSpellCastable(SPELLS.ARCANE_BARRAGE) then
-        local _, _, _, _, duration, expireTime = AuraUtil.FindAuraByID(DEBUFFS.TOUCH_OF_THE_MAGI, "target", "PLAYER|HARMFUL")
-        if expireTime and (expireTime - GetTime()) < 1.5 then
-            WR:Debug("Casting Arcane Barrage (TotM expiring)")
-            return WR.Queue:CastSpell(SPELLS.ARCANE_BARRAGE, "target")
-        end
-    end
-    
-    -- Maintain rotation: Arcane Blast to build charges
-    if arcaneState.arcaneCharges < 4 and WR.API:IsSpellCastable(SPELLS.ARCANE_BLAST) then
-        WR:Debug("Casting Arcane Blast (build charges)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_BLAST, "target")
-    end
-    
-    -- Arcane Barrage to dump charges when mana is getting low
-    if arcaneState.arcaneCharges >= 4 and arcaneState.manaPct < 40 and 
-       not arcaneState.touchOfTheMagi and not arcaneState.arcanePower and
-       WR.API:IsSpellCastable(SPELLS.ARCANE_BARRAGE) then
-        WR:Debug("Casting Arcane Barrage (conserve mana)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_BARRAGE, "target")
-    end
-    
-    -- Continue casting Arcane Blast at 4 charges during burst phases
-    if arcaneState.arcaneCharges >= 4 and (arcaneState.touchOfTheMagi or arcaneState.arcanePower) and
-       WR.API:IsSpellCastable(SPELLS.ARCANE_BLAST) then
-        WR:Debug("Casting Arcane Blast (burst)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_BLAST, "target")
-    end
-    
-    -- Default to Arcane Blast if nothing else is better
-    if WR.API:IsSpellCastable(SPELLS.ARCANE_BLAST) then
-        WR:Debug("Casting Arcane Blast (default)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_BLAST, "target")
-    end
-    
-    return false
+    -- Define burst rotation
+    self.burstRotation = {
+        { spell = self.spells.TOUCH_OF_THE_MAGI },
+        { spell = self.spells.RUNE_OF_POWER },
+        { spell = self.spells.ARCANE_POWER },
+        { spell = self.spells.PRESENCE_OF_MIND },
+        
+        -- Use covenant abilities during burst if available
+        { 
+            spell = self.spells.RADIANT_SPARK,
+            condition = function(self) return IsSpellKnown(self.spells.RADIANT_SPARK) end
+        },
+        { 
+            spell = self.spells.DEATHBORNE,
+            condition = function(self) return IsSpellKnown(self.spells.DEATHBORNE) end
+        },
+        { 
+            spell = self.spells.MIRRORS_OF_TORMENT,
+            condition = function(self) return IsSpellKnown(self.spells.MIRRORS_OF_TORMENT) end
+        },
+        { 
+            spell = self.spells.SHIFTING_POWER,
+            condition = function(self) return IsSpellKnown(self.spells.SHIFTING_POWER) end
+        }
+    }
 end
 
--- Arcane AOE rotation
-function Mage.ArcaneAOERotation()
-    -- Touch of the Magi is great for AOE
-    if WR.Rotation:ShouldUseCooldowns() and 
-       WR.API:IsSpellCastable(SPELLS.TOUCH_OF_THE_MAGI) and
-       not arcaneState.touchOfTheMagi then
-        WR:Debug("Casting Touch of the Magi (AOE)")
-        return WR.Queue:CastSpell(SPELLS.TOUCH_OF_THE_MAGI, "target")
-    end
+-- Load Fire specialization
+function Mage:LoadFireSpec()
+    -- Fire-specific spells
+    self.spells.FIREBALL = 133
+    self.spells.PYROBLAST = 11366
+    self.spells.FIRE_BLAST = 108853
+    self.spells.PHOENIX_FLAMES = 257541
+    self.spells.DRAGONS_BREATH = 31661
+    self.spells.FLAMESTRIKE = 2120
+    self.spells.LIVING_BOMB = 44457
+    self.spells.COMBUSTION = 190319
+    self.spells.BLAST_WAVE = 157981
+    self.spells.METEOR = 153561
+    self.spells.FLAME_PATCH = 205037
+    self.spells.PYROCLASM = 269650
+    self.spells.RUNE_OF_POWER = 116011
+    self.spells.BLAZING_BARRIER = 235313
     
-    -- AOE with Arcane Explosion
-    if WR.API:IsSpellCastable(SPELLS.ARCANE_EXPLOSION) then
-        WR:Debug("Casting Arcane Explosion (AOE)")
-        return WR.Queue:CastSpell(SPELLS.ARCANE_EXPLOSION)
-    end
+    -- Setup cooldown and aura tracking for Fire
+    WR.Cooldown:StartTracking(self.spells.COMBUSTION)
+    WR.Cooldown:StartTracking(self.spells.FIRE_BLAST)
+    WR.Cooldown:StartTracking(self.spells.PHOENIX_FLAMES)
+    WR.Cooldown:StartTracking(self.spells.DRAGONS_BREATH)
+    WR.Cooldown:StartTracking(self.spells.METEOR)
     
-    return false
-end
-
--- FIRE ROTATION
-function Mage.FireRotation(inCombat)
-    -- If not in combat, try to buff up
-    if not inCombat then
-        -- Ensure Arcane Intellect is up
-        local hasIntellect = AuraUtil.FindAuraByID(SPELLS.ARCANE_INTELLECT, "player")
-        if not hasIntellect and WR.API:IsSpellCastable(SPELLS.ARCANE_INTELLECT) then
-            WR:Debug("Casting Arcane Intellect")
-            return WR.Queue:CastSpell(SPELLS.ARCANE_INTELLECT)
-        end
+    -- Track Hot Streak and Heating Up procs
+    WR.Auras:RegisterImportantAura(48108, 90, true, false) -- Hot Streak
+    WR.Auras:RegisterImportantAura(48107, 80, true, false) -- Heating Up
+    
+    -- Define Fire rotation, prioritizing abilities in order
+    self.singleTargetRotation = {
+        -- Maintain Blazing Barrier
+        { 
+            spell = self.spells.BLAZING_BARRIER, 
+            condition = function(self) 
+                return not self:HasBuff(self.spells.BLAZING_BARRIER) 
+            end 
+        },
         
-        return false
-    end
-    
-    -- Don't cast if player is currently casting or channeling
-    if UnitCastingInfo("player") or UnitChannelInfo("player") then
-        return false
-    end
-    
-    -- Check if we have a valid target
-    if not WR.Target:HasValidTarget() then
-        WR.Target:GetBestTarget(40)
-        return false
-    end
-    
-    -- Update Fire state
-    fireState.heatingUp = AuraUtil.FindAuraByID(BUFFS.HEATING_UP, "player") ~= nil
-    fireState.hotStreak = AuraUtil.FindAuraByID(BUFFS.HOT_STREAK, "player") ~= nil
-    fireState.combustion = AuraUtil.FindAuraByID(BUFFS.COMBUSTION, "player") ~= nil
-    
-    -- Combustion (main cooldown)
-    if WR.Rotation:ShouldUseCooldowns() and 
-       WR.API:IsSpellCastable(SPELLS.COMBUSTION) and
-       not fireState.combustion then
-        WR:Debug("Casting Combustion (cooldown)")
-        return WR.Queue:CastSpell(SPELLS.COMBUSTION)
-    end
-    
-    -- AOE rotation
-    if WR.Rotation:ShouldUseAOE() and WR.Rotation:HasMultipleEnemies(3, 10) then
-        return Mage.FireAOERotation()
-    end
-    
-    -- Use Hot Streak procs
-    if fireState.hotStreak and WR.API:IsSpellCastable(SPELLS.PYROBLAST) then
-        WR:Debug("Casting Pyroblast (Hot Streak)")
-        return WR.Queue:CastSpell(SPELLS.PYROBLAST, "target")
-    end
-    
-    -- Use Fire Blast during Heating Up to convert to Hot Streak
-    if fireState.heatingUp and WR.API:IsSpellCastable(SPELLS.FIRE_BLAST) then
-        WR:Debug("Casting Fire Blast (convert Heating Up)")
-        return WR.Queue:CastSpell(SPELLS.FIRE_BLAST, "target")
-    end
-    
-    -- Use Phoenix Flames when available
-    if WR.API:IsSpellCastable(SPELLS.PHOENIX_FLAMES) and 
-       not fireState.heatingUp and not fireState.hotStreak then
-        WR:Debug("Casting Phoenix Flames")
-        return WR.Queue:CastSpell(SPELLS.PHOENIX_FLAMES, "target")
-    end
-    
-    -- Use Dragon's Breath if target is close
-    if WR.API:UnitDistance("target") < 10 and WR.API:IsSpellCastable(SPELLS.DRAGONS_BREATH) then
-        WR:Debug("Casting Dragon's Breath (close range)")
-        return WR.Queue:CastSpell(SPELLS.DRAGONS_BREATH)
-    end
-    
-    -- Use Scorch when moving
-    if WR.API:IsMoving() and WR.API:IsSpellCastable(SPELLS.SCORCH) then
-        WR:Debug("Casting Scorch (movement)")
-        return WR.Queue:CastSpell(SPELLS.SCORCH, "target")
-    end
-    
-    -- Default to Fireball
-    if WR.API:IsSpellCastable(SPELLS.FIREBALL) then
-        WR:Debug("Casting Fireball (default)")
-        return WR.Queue:CastSpell(SPELLS.FIREBALL, "target")
-    end
-    
-    return false
-end
-
--- Fire AOE rotation
-function Mage.FireAOERotation()
-    -- Use Hot Streak for Flamestrike instead of Pyroblast in AOE
-    if fireState.hotStreak and WR.API:IsSpellCastable(SPELLS.FLAMESTRIKE) then
-        WR:Debug("Casting Flamestrike (Hot Streak AOE)")
-        return WR.Queue:CastSpell(SPELLS.FLAMESTRIKE, "target")
-    end
-    
-    -- Fire Blast during Heating Up to get Hot Streak in AOE
-    if fireState.heatingUp and WR.API:IsSpellCastable(SPELLS.FIRE_BLAST) then
-        WR:Debug("Casting Fire Blast (convert Heating Up in AOE)")
-        return WR.Queue:CastSpell(SPELLS.FIRE_BLAST, "target")
-    end
-    
-    -- Phoenix Flames for AOE and to generate Heating Up
-    if WR.API:IsSpellCastable(SPELLS.PHOENIX_FLAMES) then
-        WR:Debug("Casting Phoenix Flames (AOE)")
-        return WR.Queue:CastSpell(SPELLS.PHOENIX_FLAMES, "target")
-    end
-    
-    -- Dragon's Breath for AOE damage and control
-    if WR.API:IsSpellCastable(SPELLS.DRAGONS_BREATH) then
-        WR:Debug("Casting Dragon's Breath (AOE)")
-        return WR.Queue:CastSpell(SPELLS.DRAGONS_BREATH)
-    end
-    
-    -- Flamestrike for AOE if we have lots of targets
-    local targetCount = WR.Target:GetTargetCount(10)
-    if targetCount >= 5 and WR.API:IsSpellCastable(SPELLS.FLAMESTRIKE) then
-        WR:Debug("Casting Flamestrike (AOE)")
-        return WR.Queue:CastSpell(SPELLS.FLAMESTRIKE, "target")
-    end
-    
-    -- Fireball as default AOE filler
-    if WR.API:IsSpellCastable(SPELLS.FIREBALL) then
-        WR:Debug("Casting Fireball (AOE filler)")
-        return WR.Queue:CastSpell(SPELLS.FIREBALL, "target")
-    end
-    
-    return false
-end
-
--- FROST ROTATION
-function Mage.FrostRotation(inCombat)
-    -- If not in combat, try to buff up
-    if not inCombat then
-        -- Ensure Arcane Intellect is up
-        local hasIntellect = AuraUtil.FindAuraByID(SPELLS.ARCANE_INTELLECT, "player")
-        if not hasIntellect and WR.API:IsSpellCastable(SPELLS.ARCANE_INTELLECT) then
-            WR:Debug("Casting Arcane Intellect")
-            return WR.Queue:CastSpell(SPELLS.ARCANE_INTELLECT)
-        end
+        -- Use Rune of Power before Combustion or when available
+        { 
+            spell = self.spells.RUNE_OF_POWER,
+            condition = function(self)
+                local combustionCD = self:GetSpellCooldown(self.spells.COMBUSTION)
+                return combustionCD < 5 or
+                       (combustionCD > 20 and not self:SpellOnCooldown(self.spells.RUNE_OF_POWER))
+            end
+        },
         
-        -- Summon Water Elemental if not active
-        if not UnitExists("pet") and WR.API:IsSpellCastable(SPELLS.SUMMON_WATER_ELEMENTAL) then
-            WR:Debug("Casting Summon Water Elemental")
-            return WR.Queue:CastSpell(SPELLS.SUMMON_WATER_ELEMENTAL)
-        end
+        -- Use Combustion for burst
+        { spell = self.spells.COMBUSTION },
         
-        return false
-    end
+        -- Use Meteor with Combustion or on cooldown
+        { 
+            spell = self.spells.METEOR,
+            condition = function(self)
+                return self:HasBuff(self.spells.COMBUSTION) or
+                       not self:SpellOnCooldown(self.spells.METEOR)
+            end
+        },
+        
+        -- Use Pyroblast with Hot Streak
+        { 
+            spell = self.spells.PYROBLAST,
+            condition = function(self)
+                return self:HasBuff(48108) -- Hot Streak
+            end
+        },
+        
+        -- Use Fire Blast with Heating Up to get Hot Streak
+        { 
+            spell = self.spells.FIRE_BLAST,
+            condition = function(self)
+                return self:HasBuff(48107) and -- Heating Up
+                       not self:HasBuff(48108) and -- Not Hot Streak
+                       self:SpellHasCharges(self.spells.FIRE_BLAST)
+            end
+        },
+        
+        -- Use Phoenix Flames with Heating Up when Fire Blast charges are depleted
+        { 
+            spell = self.spells.PHOENIX_FLAMES,
+            condition = function(self)
+                return self:HasBuff(48107) and -- Heating Up
+                       not self:HasBuff(48108) and -- Not Hot Streak
+                       not self:SpellHasCharges(self.spells.FIRE_BLAST) and
+                       self:SpellHasCharges(self.spells.PHOENIX_FLAMES)
+            end
+        },
+        
+        -- Use Phoenix Flames to generate Heating Up during Combustion
+        { 
+            spell = self.spells.PHOENIX_FLAMES,
+            condition = function(self)
+                return self:HasBuff(self.spells.COMBUSTION) and
+                       self:SpellHasCharges(self.spells.PHOENIX_FLAMES)
+            end
+        },
+        
+        -- Use Pyroblast with Pyroclasm proc
+        { 
+            spell = self.spells.PYROBLAST,
+            condition = function(self)
+                return self:HasBuff(self.spells.PYROCLASM)
+            end
+        },
+        
+        -- Use Dragon's Breath when close
+        { 
+            spell = self.spells.DRAGONS_BREATH,
+            condition = function(self)
+                return WR.API:UnitDistance("target") <= 8
+            end
+        },
+        
+        -- Use Living Bomb if talented
+        { 
+            spell = self.spells.LIVING_BOMB,
+            condition = function(self)
+                return IsSpellKnown(self.spells.LIVING_BOMB) and
+                       not self:HasDebuff(self.spells.LIVING_BOMB)
+            end
+        },
+        
+        -- Use Fireball as filler
+        { spell = self.spells.FIREBALL }
+    }
     
-    -- Don't cast if player is currently casting or channeling
-    if UnitCastingInfo("player") or UnitChannelInfo("player") then
-        return false
-    end
+    -- Define AoE rotation for Fire
+    self.aoeRotation = {
+        -- Maintain Blazing Barrier
+        { 
+            spell = self.spells.BLAZING_BARRIER, 
+            condition = function(self) 
+                return not self:HasBuff(self.spells.BLAZING_BARRIER) 
+            end 
+        },
+        
+        -- Use Combustion for burst AoE
+        { spell = self.spells.COMBUSTION },
+        
+        -- Use Rune of Power before Combustion
+        { 
+            spell = self.spells.RUNE_OF_POWER,
+            condition = function(self)
+                return self:HasBuff(self.spells.COMBUSTION) or
+                       self:GetSpellCooldown(self.spells.COMBUSTION) < 5
+            end
+        },
+        
+        -- Use Meteor for AoE
+        { spell = self.spells.METEOR },
+        
+        -- Use Flamestrike with Hot Streak in AoE
+        { 
+            spell = self.spells.FLAMESTRIKE,
+            condition = function(self)
+                return self:HasBuff(48108) -- Hot Streak
+            end
+        },
+        
+        -- Use Fire Blast with Heating Up to get Hot Streak
+        { 
+            spell = self.spells.FIRE_BLAST,
+            condition = function(self)
+                return self:HasBuff(48107) and -- Heating Up
+                       not self:HasBuff(48108) and -- Not Hot Streak
+                       self:SpellHasCharges(self.spells.FIRE_BLAST)
+            end
+        },
+        
+        -- Use Phoenix Flames for AoE damage
+        { 
+            spell = self.spells.PHOENIX_FLAMES,
+            condition = function(self)
+                return self:SpellHasCharges(self.spells.PHOENIX_FLAMES)
+            end
+        },
+        
+        -- Use Living Bomb for AoE
+        {
+            spell = self.spells.LIVING_BOMB,
+            condition = function(self)
+                return IsSpellKnown(self.spells.LIVING_BOMB)
+            end
+        },
+        
+        -- Use Blast Wave for AoE if talented
+        { 
+            spell = self.spells.BLAST_WAVE,
+            condition = function(self)
+                return IsSpellKnown(self.spells.BLAST_WAVE)
+            end
+        },
+        
+        -- Use Dragon's Breath for AoE
+        { spell = self.spells.DRAGONS_BREATH },
+        
+        -- Use Flamestrike as filler in AoE
+        { spell = self.spells.FLAMESTRIKE }
+    }
     
-    -- Check if we have a valid target
-    if not WR.Target:HasValidTarget() then
-        WR.Target:GetBestTarget(40)
-        return false
-    end
-    
-    -- Update Frost state
-    frostState.brainFreeze = AuraUtil.FindAuraByID(BUFFS.BRAIN_FREEZE, "player") ~= nil
-    frostState.fingersOfFrost = AuraUtil.FindAuraByID(BUFFS.FINGERS_OF_FROST, "player") ~= nil
-    frostState.icyVeins = AuraUtil.FindAuraByID(BUFFS.ICY_VEINS, "player") ~= nil
-    frostState.wintersChill = AuraUtil.FindAuraByID(DEBUFFS.WINTERS_CHILL, "target", "PLAYER|HARMFUL") ~= nil
-    
-    -- Icy Veins (main cooldown)
-    if WR.Rotation:ShouldUseCooldowns() and 
-       WR.API:IsSpellCastable(SPELLS.ICY_VEINS) and
-       not frostState.icyVeins then
-        WR:Debug("Casting Icy Veins (cooldown)")
-        return WR.Queue:CastSpell(SPELLS.ICY_VEINS)
-    end
-    
-    -- Frozen Orb (secondary cooldown)
-    if WR.Rotation:ShouldUseCooldowns() and WR.API:IsSpellCastable(SPELLS.FROZEN_ORB) then
-        WR:Debug("Casting Frozen Orb (cooldown)")
-        return WR.Queue:CastSpell(SPELLS.FROZEN_ORB, "target")
-    end
-    
-    -- AOE rotation
-    if WR.Rotation:ShouldUseAOE() and WR.Rotation:HasMultipleEnemies(3, 10) then
-        return Mage.FrostAOERotation()
-    end
-    
-    -- Brain Freeze proc for Flurry
-    if frostState.brainFreeze and WR.API:IsSpellCastable(SPELLS.FLURRY) then
-        WR:Debug("Casting Flurry (Brain Freeze)")
-        return WR.Queue:CastSpell(SPELLS.FLURRY, "target")
-    end
-    
-    -- Ice Lance with Fingers of Frost proc
-    if frostState.fingersOfFrost and WR.API:IsSpellCastable(SPELLS.ICE_LANCE) then
-        WR:Debug("Casting Ice Lance (Fingers of Frost)")
-        return WR.Queue:CastSpell(SPELLS.ICE_LANCE, "target")
-    end
-    
-    -- Ice Lance against Frozen targets
-    if frostState.frozenTarget and WR.API:IsSpellCastable(SPELLS.ICE_LANCE) then
-        WR:Debug("Casting Ice Lance (Frozen target)")
-        return WR.Queue:CastSpell(SPELLS.ICE_LANCE, "target")
-    end
-    
-    -- Ice Lance after Winter's Chill
-    if frostState.wintersChill and WR.API:IsSpellCastable(SPELLS.ICE_LANCE) then
-        WR:Debug("Casting Ice Lance (Winter's Chill)")
-        return WR.Queue:CastSpell(SPELLS.ICE_LANCE, "target")
-    end
-    
-    -- Default to Frostbolt
-    if WR.API:IsSpellCastable(SPELLS.FROSTBOLT) then
-        WR:Debug("Casting Frostbolt (default)")
-        return WR.Queue:CastSpell(SPELLS.FROSTBOLT, "target")
-    end
-    
-    return false
+    -- Define burst rotation
+    self.burstRotation = {
+        { spell = self.spells.RUNE_OF_POWER },
+        { spell = self.spells.COMBUSTION },
+        
+        -- Use covenant abilities during burst
+        { 
+            spell = self.spells.RADIANT_SPARK,
+            condition = function(self) return IsSpellKnown(self.spells.RADIANT_SPARK) end
+        },
+        { 
+            spell = self.spells.DEATHBORNE,
+            condition = function(self) return IsSpellKnown(self.spells.DEATHBORNE) end
+        },
+        { 
+            spell = self.spells.MIRRORS_OF_TORMENT,
+            condition = function(self) return IsSpellKnown(self.spells.MIRRORS_OF_TORMENT) end
+        },
+        { 
+            spell = self.spells.SHIFTING_POWER,
+            condition = function(self) return IsSpellKnown(self.spells.SHIFTING_POWER) end
+        }
+    }
 end
 
--- Frost AOE rotation
-function Mage.FrostAOERotation()
-    -- Blizzard for consistent AOE
-    if WR.API:IsSpellCastable(SPELLS.BLIZZARD) then
-        WR:Debug("Casting Blizzard (AOE)")
-        return WR.Queue:CastSpell(SPELLS.BLIZZARD, "target")
+-- Load Frost specialization
+function Mage:LoadFrostSpec()
+    -- Frost-specific spells
+    self.spells.FROSTBOLT = 116
+    self.spells.ICE_LANCE = 30455
+    self.spells.FLURRY = 44614
+    self.spells.FROZEN_ORB = 84714
+    self.spells.BLIZZARD = 190356
+    self.spells.CONE_OF_COLD = 120
+    self.spells.ICY_VEINS = 12472
+    self.spells.RAY_OF_FROST = 205021
+    self.spells.GLACIAL_SPIKE = 199786
+    self.spells.COMET_STORM = 153595
+    self.spells.ICE_FORM = 198144
+    self.spells.ICE_BARRIER = 11426
+    self.spells.EBONBOLT = 257537
+    self.spells.RUNE_OF_POWER = 116011
+    
+    -- Setup cooldown and aura tracking for Frost
+    WR.Cooldown:StartTracking(self.spells.ICY_VEINS)
+    WR.Cooldown:StartTracking(self.spells.FROZEN_ORB)
+    WR.Cooldown:StartTracking(self.spells.BLIZZARD)
+    WR.Cooldown:StartTracking(self.spells.COMET_STORM)
+    WR.Cooldown:StartTracking(self.spells.EBONBOLT)
+    
+    -- Track Brain Freeze and Fingers of Frost procs
+    WR.Auras:RegisterImportantAura(190446, 90, true, false) -- Brain Freeze
+    WR.Auras:RegisterImportantAura(44544, 80, true, false) -- Fingers of Frost
+    
+    -- Define Frost rotation, prioritizing abilities in order
+    self.singleTargetRotation = {
+        -- Maintain Ice Barrier
+        { 
+            spell = self.spells.ICE_BARRIER, 
+            condition = function(self) 
+                return not self:HasBuff(self.spells.ICE_BARRIER) 
+            end 
+        },
+        
+        -- Use Rune of Power before Icy Veins or when available
+        { 
+            spell = self.spells.RUNE_OF_POWER,
+            condition = function(self)
+                local ivCD = self:GetSpellCooldown(self.spells.ICY_VEINS)
+                return ivCD < 5 or (ivCD > 20 and not self:SpellOnCooldown(self.spells.RUNE_OF_POWER))
+            end
+        },
+        
+        -- Use Icy Veins for burst
+        { spell = self.spells.ICY_VEINS },
+        
+        -- Use Frozen Orb on cooldown
+        { spell = self.spells.FROZEN_ORB },
+        
+        -- Use Ebonbolt to gain Brain Freeze when we don't have it
+        { 
+            spell = self.spells.EBONBOLT,
+            condition = function(self)
+                return not self:HasBuff(190446) -- Brain Freeze
+            end
+        },
+        
+        -- Use Glacial Spike if available and we have Brain Freeze
+        { 
+            spell = self.spells.GLACIAL_SPIKE,
+            condition = function(self)
+                return self:HasBuff(190446) -- Brain Freeze
+            end
+        },
+        
+        -- Use Flurry with Brain Freeze proc
+        { 
+            spell = self.spells.FLURRY,
+            condition = function(self)
+                return self:HasBuff(190446) -- Brain Freeze
+            end
+        },
+        
+        -- Use Ice Lance with Fingers of Frost proc
+        { 
+            spell = self.spells.ICE_LANCE,
+            condition = function(self)
+                return self:HasBuff(44544) -- Fingers of Frost
+            end
+        },
+        
+        -- Use Comet Storm if talented
+        { 
+            spell = self.spells.COMET_STORM,
+            condition = function(self)
+                return IsSpellKnown(self.spells.COMET_STORM)
+            end
+        },
+        
+        -- Use Ray of Frost if talented
+        { 
+            spell = self.spells.RAY_OF_FROST,
+            condition = function(self)
+                return IsSpellKnown(self.spells.RAY_OF_FROST)
+            end
+        },
+        
+        -- Use Glacial Spike at 5 icicles when not waiting for Brain Freeze
+        { 
+            spell = self.spells.GLACIAL_SPIKE,
+            condition = function(self)
+                return not IsSpellKnown(self.spells.EBONBOLT) or
+                       self:SpellOnCooldown(self.spells.EBONBOLT)
+            end
+        },
+        
+        -- Use Cone of Cold when close
+        { 
+            spell = self.spells.CONE_OF_COLD,
+            condition = function(self)
+                return WR.API:UnitDistance("target") <= 8
+            end
+        },
+        
+        -- Use Frostbolt as filler
+        { spell = self.spells.FROSTBOLT }
+    }
+    
+    -- Define AoE rotation for Frost
+    self.aoeRotation = {
+        -- Maintain Ice Barrier
+        { 
+            spell = self.spells.ICE_BARRIER, 
+            condition = function(self) 
+                return not self:HasBuff(self.spells.ICE_BARRIER) 
+            end 
+        },
+        
+        -- Use Icy Veins for burst AoE
+        { spell = self.spells.ICY_VEINS },
+        
+        -- Use Rune of Power before Icy Veins
+        { 
+            spell = self.spells.RUNE_OF_POWER,
+            condition = function(self)
+                return self:HasBuff(self.spells.ICY_VEINS) or
+                       self:GetSpellCooldown(self.spells.ICY_VEINS) < 5
+            end
+        },
+        
+        -- Use Frozen Orb for AoE and procs
+        { spell = self.spells.FROZEN_ORB },
+        
+        -- Use Blizzard for AoE damage
+        { spell = self.spells.BLIZZARD },
+        
+        -- Use Comet Storm for AoE
+        { 
+            spell = self.spells.COMET_STORM,
+            condition = function(self)
+                return IsSpellKnown(self.spells.COMET_STORM)
+            end
+        },
+        
+        -- Use Cone of Cold for AoE
+        { spell = self.spells.CONE_OF_COLD },
+        
+        -- Use Ice Lance with Fingers of Frost procs in AoE
+        { 
+            spell = self.spells.ICE_LANCE,
+            condition = function(self)
+                return self:HasBuff(44544) -- Fingers of Frost
+            end
+        },
+        
+        -- Use Ebonbolt to gain Brain Freeze
+        { spell = self.spells.EBONBOLT },
+        
+        -- Use Flurry with Brain Freeze proc
+        { 
+            spell = self.spells.FLURRY,
+            condition = function(self)
+                return self:HasBuff(190446) -- Brain Freeze
+            end
+        },
+        
+        -- Use Glacial Spike at 5 icicles or with Brain Freeze
+        { 
+            spell = self.spells.GLACIAL_SPIKE,
+            condition = function(self)
+                return self:HasBuff(190446) -- Brain Freeze
+            end
+        },
+        
+        -- Use Frostbolt to generate icicles and procs
+        { spell = self.spells.FROSTBOLT }
+    }
+    
+    -- Define burst rotation
+    self.burstRotation = {
+        { spell = self.spells.RUNE_OF_POWER },
+        { spell = self.spells.ICY_VEINS },
+        { spell = self.spells.FROZEN_ORB },
+        
+        -- Use covenant abilities during burst
+        { 
+            spell = self.spells.RADIANT_SPARK,
+            condition = function(self) return IsSpellKnown(self.spells.RADIANT_SPARK) end
+        },
+        { 
+            spell = self.spells.DEATHBORNE,
+            condition = function(self) return IsSpellKnown(self.spells.DEATHBORNE) end
+        },
+        { 
+            spell = self.spells.MIRRORS_OF_TORMENT,
+            condition = function(self) return IsSpellKnown(self.spells.MIRRORS_OF_TORMENT) end
+        },
+        { 
+            spell = self.spells.SHIFTING_POWER,
+            condition = function(self) return IsSpellKnown(self.spells.SHIFTING_POWER) end
+        }
+    }
+end
+
+-- Class-specific pre-rotation checks
+function Mage:ClassSpecificChecks()
+    -- Check for class-specific conditions
+    
+    -- Check if we need to apply Arcane Intellect
+    if not self:HasBuff(self.spells.ARCANE_INTELLECT) and 
+       not self:SpellOnCooldown(self.spells.ARCANE_INTELLECT) then
+        WR.Queue:Add(self.spells.ARCANE_INTELLECT)
+        return false
     end
     
-    -- Cone of Cold if enemies are close
-    if WR.API:UnitDistance("target") < 10 and WR.API:IsSpellCastable(SPELLS.CONE_OF_COLD) then
-        WR:Debug("Casting Cone of Cold (AOE)")
-        return WR.Queue:CastSpell(SPELLS.CONE_OF_COLD)
+    -- Add class-specific barriers based on spec
+    local barrierSpell = nil
+    if self.currentSpec == SPEC_ARCANE then
+        barrierSpell = self.spells.PRISMATIC_BARRIER
+    elseif self.currentSpec == SPEC_FIRE then
+        barrierSpell = self.spells.BLAZING_BARRIER
+    elseif self.currentSpec == SPEC_FROST then
+        barrierSpell = self.spells.ICE_BARRIER
     end
     
-    -- Brain Freeze Flurry for AOE
-    if frostState.brainFreeze and WR.API:IsSpellCastable(SPELLS.FLURRY) then
-        WR:Debug("Casting Flurry (Brain Freeze AOE)")
-        return WR.Queue:CastSpell(SPELLS.FLURRY, "target")
+    -- Apply barrier if we don't have it
+    if barrierSpell and not self:InCombat() and
+       not self:HasBuff(barrierSpell) and 
+       not self:SpellOnCooldown(barrierSpell) then
+        WR.Queue:Add(barrierSpell)
+        return false
     end
     
-    -- Ice Lance with Fingers of Frost in AOE
-    if frostState.fingersOfFrost and WR.API:IsSpellCastable(SPELLS.ICE_LANCE) then
-        WR:Debug("Casting Ice Lance (Fingers of Frost AOE)")
-        return WR.Queue:CastSpell(SPELLS.ICE_LANCE, "target")
+    return true
+end
+
+-- Get default action when nothing else is available
+function Mage:GetDefaultAction()
+    if self.currentSpec == SPEC_ARCANE then
+        return self.spells.ARCANE_BLAST
+    elseif self.currentSpec == SPEC_FIRE then
+        return self.spells.FIREBALL
+    elseif self.currentSpec == SPEC_FROST then
+        return self.spells.FROSTBOLT
     end
     
-    -- Default to Frostbolt in AOE
-    if WR.API:IsSpellCastable(SPELLS.FROSTBOLT) then
-        WR:Debug("Casting Frostbolt (AOE filler)")
-        return WR.Queue:CastSpell(SPELLS.FROSTBOLT, "target")
-    end
-    
-    return false
+    return nil
 end
 
 -- Initialize the module
 Mage:Initialize()
+
+return Mage

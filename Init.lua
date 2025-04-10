@@ -264,6 +264,39 @@ function WR:LoadClassModule()
     
     self.currentSpec = specID
     
+    -- Ensure the Classes table exists
+    self.Classes = self.Classes or {}
+    
+    -- Initialize class modules if we haven't already
+    if not self.classModulesInitialized then
+        -- Create a placeholder for all potential class modules
+        self.classModulesInitialized = true
+        
+        -- Check which class files are available and initialize them
+        local classFiles = {
+            "Mage",
+            "Warrior",
+            "Hunter",
+            "Priest",
+            "Warlock",
+            "Paladin",
+            "Druid",
+            "Rogue",
+            "Shaman",
+            "Monk",
+            "DemonHunter",
+            "DeathKnight"
+        }
+        
+        for _, className in ipairs(classFiles) do
+            -- Try to load the class module
+            local success, module = pcall(function() return self.Classes[className] end)
+            if success and module then
+                WR:Debug("Found class module:", className)
+            end
+        end
+    end
+    
     -- Load class-specific rotation if available
     if self.Classes[class] and self.Classes[class].LoadSpec then
         self.Classes[class]:LoadSpec(specID)

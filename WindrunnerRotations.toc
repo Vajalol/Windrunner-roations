@@ -15,6 +15,7 @@ Libs\AceGUI-3.0\AceGUI-3.0.xml
 # Core
 Init.lua
 Config.lua
+Core\Enum.lua
 Core\API.lua
 Core\GCD.lua
 Core\Condition.lua
@@ -39,6 +40,7 @@ UI\Main.lua
 UI\ClassIcons.lua
 
 # Classes
+Classes\Base.lua
 Classes\Mage.lua
 Classes\Hunter.lua
 Classes\Warrior.lua
