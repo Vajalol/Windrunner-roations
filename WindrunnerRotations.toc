@@ -36,6 +36,8 @@ Core\Documentation.lua
 Core\VersionCheck.lua
 Core\Community.lua
 Core\LearningSystem.lua
+Core\PerformanceOptimizer.lua
+Core\StabilityManager.lua
 
 # Data
 Data\Classes.lua
