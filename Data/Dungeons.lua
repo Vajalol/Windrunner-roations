@@ -1,433 +1,745 @@
 local addonName, WR = ...
 
--- Dungeons data module - stores dungeon and encounter information
-WR.Data.Dungeons = {}
+-- DungeonsData module for holding data about dungeons, bosses, and mechanics
+local DungeonsData = {}
+WR.Data = WR.Data or {}
+WR.Data.Dungeons = DungeonsData
 
--- Dungeon affixes
-local AFFIXES = {
-    [3] = { id = 3, name = "Volcanic", description = "While in combat, enemies periodically cause gouts of flame to erupt beneath the feet of distant players." },
-    [4] = { id = 4, name = "Necrotic", description = "All enemies' melee attacks apply a stacking blight that inflicts damage over time and reduces healing received." },
-    [6] = { id = 6, name = "Raging", description = "Enemies enrage at 30% health remaining, dealing 75% increased damage until defeated." },
-    [7] = { id = 7, name = "Bolstering", description = "When any enemy dies, its death cry empowers nearby allies, increasing their maximum health and damage by 20%." },
-    [8] = { id = 8, name = "Sanguine", description = "When enemies die, they leave behind a pool of blood that grows. Enemies in the pool are healed for 5% max health and players standing in it are damaged for 10% max health." },
-    [9] = { id = 9, name = "Tyrannical", description = "Bosses have 30% more health and inflict up to 15% increased damage." },
-    [10] = { id = 10, name = "Fortified", description = "Non-boss enemies have 20% more health and inflict up to 30% increased damage." },
-    [11] = { id = 11, name = "Bursting", description = "When slain, non-boss enemies explode, causing all players to suffer 12% of their maximum health in damage over 5 sec. This effect stacks." },
-    [12] = { id = 12, name = "Grievous", description = "Injured players suffer increasing damage over time until healed above 90% health." },
-    [13] = { id = 13, name = "Explosive", description = "While in combat, enemies periodically summon Explosive Orbs that will detonate if not destroyed." },
-    [14] = { id = 14, name = "Quaking", description = "Players periodically emit a shockwave, afflicting nearby allies with Quake." },
-    [123] = { id = 123, name = "Spiteful", description = "Fiends rise from the corpses of non-boss enemies and pursue random players." },
-    [124] = { id = 124, name = "Storming", description = "While in combat, enemies periodically summon damaging whirlwinds." },
-    [130] = { id = 130, name = "Encrypted", description = "Encrypted enemies throughout the dungeon possess Relics that empower Enemies." },
-    [134] = { id = 134, name = "Entangling", description = "While in combat, webs periodically appear beneath the feet of distant players, rooting and applying Entangled Web. Entangled Web inflicts Nature damage every 1 second." },
-    [135] = { id = 135, name = "Afflicted", description = "While in combat, afflicted souls periodically seek the aid of players. Some souls explode in negative energy when they reach their target, while others continue to follow, bestowing a boon that increases damage and healing." },
+-- Priority levels for reference
+local PRIORITY_LOW = 1
+local PRIORITY_MEDIUM = 2
+local PRIORITY_HIGH = 3
+local PRIORITY_CRITICAL = 4
+
+-- Enemy types for reference
+local ENEMY_TYPE_NORMAL = 1
+local ENEMY_TYPE_ELITE = 2
+local ENEMY_TYPE_MINIBOSS = 3
+local ENEMY_TYPE_BOSS = 4
+
+-- ========================
+-- The War Within - Season 2
+-- ========================
+
+-- Valaran Garden
+DungeonsData[2579] = {
+    name = "Valaran Garden",
+    bosses = {
+        -- Iridikron's Sentinel
+        [210234] = {
+            name = "Iridikron's Sentinel",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid Frozen Wind, CC adds",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                },
+                interruptPriorities = {
+                    [422776] = PRIORITY_HIGH,   -- Glacial Fusion
+                    [420907] = PRIORITY_MEDIUM, -- Paralyzing Blizzard
+                },
+                avoidance = {
+                    [420947] = true, -- Frozen Wind
+                }
+            }
+        },
+        -- Cycle Warden
+        [204773] = {
+            name = "Cycle Warden",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge whirlwinds, focus adds when they spawn",
+                        prioritySpells = {},
+                        aoe = true
+                    }
+                },
+                interruptPriorities = {
+                    [420284] = PRIORITY_HIGH, -- Temporal Detonation
+                }
+            }
+        },
+        -- Tindral Sageswift
+        [205865] = {
+            name = "Tindral Sageswift",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Kite Living Flames, dodge fire patches",
+                        prioritySpells = {}
+                    },
+                    phase2 = {
+                        description = "High damage phase, use defensives",
+                        defensives = true
+                    }
+                },
+                interruptPriorities = {
+                    [419485] = PRIORITY_HIGH,   -- Sunfire Eruption
+                    [419596] = PRIORITY_MEDIUM, -- Nature's Bulwark
+                }
+            }
+        },
+        -- Larodar, Keeper of the Flame
+        [204431] = {
+            name = "Larodar, Keeper of the Flame",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Spread for Scorching Roar, avoid Seeds of Flame",
+                        prioritySpells = {},
+                        defensives = true
+                    },
+                    phase2 = {
+                        description = "Stay spread, dodge flame pools",
+                        prioritySpells = {},
+                        aoe = true
+                    }
+                },
+                interruptPriorities = {
+                    [418539] = PRIORITY_CRITICAL, -- Raging Flame
+                }
+            }
+        }
+    },
+    enemies = {
+        -- Important Trash Mobs
+        [204918] = { 
+            name = "Blooming Gardener", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Heals other mobs, interrupt Growth Surge" 
+        },
+        [204773] = { 
+            name = "Garden Sentinel", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Has frontal cleave, avoid" 
+        },
+        [205002] = { 
+            name = "Blazing Embercaster", 
+            priority = PRIORITY_HIGH,
+            notes = "Interrupt Flame Volley" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [420776] = PRIORITY_HIGH,   -- Growth Surge
+        [420519] = PRIORITY_HIGH,   -- Flame Volley
+        [420399] = PRIORITY_MEDIUM, -- Entangling Roots
+    },
+    avoidable = {
+        [420947] = {
+            spell = "Frozen Wind",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "frontal"
+        },
+        [419539] = {
+            spell = "Seeds of Flame",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "ground"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [204918] = 4, -- Blooming Gardener
+        [204773] = 5, -- Garden Sentinel
+        [205002] = 3, -- Blazing Embercaster
+        -- More mobs would be added here with proper values
+    }
 }
 
--- Dungeon Info for The War Within Season 2
-local DUNGEONS = {
-    -- Dawnbreaker
-    [2579] = {
-        id = 2579,
-        name = "Dawn of the Infinite: Dawnbreak",
-        shortName = "Dawnbreak",
-        instanceType = "party",
-        mapID = 2195,
-        timeLimit = 35 * 60, -- 35 minutes
-        bosses = 4,
-        expansion = 10, -- The War Within
-        season = 2,
-        encounters = {
-            [2526] = { 
-                id = 2526, 
-                name = "Tyr, the Infinite Keeper",
-                interruptPriorities = {
-                    [411164] = 90, -- Infinite Bolt
+-- Cinderbrew Meadery
+DungeonsData[2580] = {
+    name = "Cinderbrew Meadery",
+    bosses = {
+        -- Burnished Brewmeister
+        [205210] = {
+            name = "Burnished Brewmeister",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid fermenting pools, focus keg adds",
+                        prioritySpells = {},
+                        aoe = true
+                    }
                 },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Single target focus fight
-                }
-            },
-            [2515] = { 
-                id = 2515, 
-                name = "Morchie", 
                 interruptPriorities = {
-                    [412505] = 100, -- Greater Healing Touch
-                    [412027] = 90, -- Tempoblast
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true, -- AOE adds phases
-                }
-            },
-            [2523] = { 
-                id = 2523, 
-                name = "Time-Lost Battlefield",
-                interruptPriorities = {
-                    [408228] = 100, -- Temporal Sickness (from the Temporal Fusion)
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2536] = { 
-                id = 2536, 
-                name = "Chrono-Lord Deios",
-                interruptPriorities = {
-                    [416139] = 100, -- Temporal Breath
-                    [418046] = 90, -- Infinity Bolt
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
+                    [421024] = PRIORITY_HIGH, -- Fermentation
                 }
             }
         },
-        interruptPriorities = {
-            [408228] = 100, -- Temporal Sickness
-            [412505] = 100, -- Greater Healing Touch
-            [411164] = 80, -- Infinite Bolt
-            [412027] = 90, -- Tempoblast
-        },
-        rotationSettings = {
-            enableInterrupts = true,
-            enableDefensives = true,
-            enableCooldowns = false, -- Save for bosses by default
-            enableAOE = true,
-        }
-    },
-    
-    -- Galakrond's Fall
-    [2570] = {
-        id = 2570,
-        name = "Galakrond's Fall",
-        shortName = "Galakrond",
-        instanceType = "party",
-        mapID = 2251,
-        timeLimit = 30 * 60, -- 30 minutes
-        bosses = 4,
-        expansion = 10, -- The War Within
-        season = 2,
-        encounters = {
-            [2535] = { 
-                id = 2535, 
-                name = "Warlord Kagra",
-                interruptPriorities = {
-                    [404583] = 100, -- Ice Storm
-                    [404045] = 90, -- Frozen Solid
+        -- Head Brewer Voll
+        [209524] = {
+            name = "Head Brewer Voll",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Spread for Brew Explosion, use defensives for Intoxicating Brew",
+                        prioritySpells = {},
+                        defensives = true
+                    }
                 },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2537] = { 
-                id = 2537, 
-                name = "Entropy",
-                interruptPriorities = {},
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2538] = { 
-                id = 2538, 
-                name = "Loszkeleth",
                 interruptPriorities = {
-                    [404654] = 100, -- Frost Overload
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Mostly single target
-                }
-            },
-            [2528] = { 
-                id = 2528, 
-                name = "Vydhar",
-                interruptPriorities = {
-                    [405279] = 100, -- Arcane Barrage
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Single target priority
+                    [421630] = PRIORITY_CRITICAL, -- Intoxicating Brew
                 }
             }
         },
-        interruptPriorities = {
-            [404583] = 100, -- Ice Storm
-            [404045] = 90, -- Frozen Solid
-            [404654] = 100, -- Frost Overload
-            [405279] = 100, -- Arcane Barrage
-            [404789] = 95, -- Frost Bolt
-        },
-        rotationSettings = {
-            enableInterrupts = true,
-            enableDefensives = true,
-            enableCooldowns = false, -- Save for bosses by default
-            enableAOE = true,
-        }
-    },
-    
-    -- Cinderbrew
-    [2579] = {
-        id = 2579,
-        name = "The Cinderbrew Meadery",
-        shortName = "Cinderbrew",
-        instanceType = "party",
-        mapID = 2352,
-        timeLimit = 31 * 60, -- 31 minutes
-        bosses = 4,
-        expansion = 10, -- The War Within
-        season = 2,
-        encounters = {
-            [2537] = { 
-                id = 2537, 
-                name = "Kegcrusher Bimbsy",
-                interruptPriorities = {
-                    [420421] = 100, -- Keg Breakin'
+        -- Dracthyr Flamebender
+        [209602] = {
+            name = "Dracthyr Flamebender",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge flame patches, CC small adds",
+                        prioritySpells = {},
+                        aoe = true
+                    }
                 },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2540] = { 
-                id = 2540, 
-                name = "Gorgosh the Pygmy Behemoth", 
-                interruptPriorities = {},
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Single target priority
-                }
-            },
-            [2538] = { 
-                id = 2538, 
-                name = "Burnished Kragennan",
                 interruptPriorities = {
-                    [423230] = 100, -- Frenzied Thirst
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Single target with add phases
-                }
-            },
-            [2539] = { 
-                id = 2539, 
-                name = "Cinderbrew Champion",
-                interruptPriorities = {
-                    [427412] = 100, -- Rising Heat
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true, -- Multiple targets
+                    [422065] = PRIORITY_HIGH, -- Dragonflame Channel
                 }
             }
         },
-        interruptPriorities = {
-            [420421] = 100, -- Keg Breakin'
-            [423230] = 100, -- Frenzied Thirst
-            [427412] = 100, -- Rising Heat
-            [421348] = 95, -- Ale Blast
-        },
-        rotationSettings = {
-            enableInterrupts = true,
-            enableDefensives = true,
-            enableCooldowns = false, -- Save for bosses by default
-            enableAOE = true,
-        }
-    },
-    
-    -- Sunken City
-    [2515] = {
-        id = 2515,
-        name = "Sunken City of Neltharion",
-        shortName = "Sunken City",
-        instanceType = "party",
-        mapID = 2196,
-        timeLimit = 33 * 60, -- 33 minutes
-        bosses = 4,
-        expansion = 10, -- The War Within
-        season = 2,
-        encounters = {
-            [2519] = { 
-                id = 2519, 
-                name = "Molgoth",
-                interruptPriorities = {},
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2517] = { 
-                id = 2517, 
-                name = "Thal'kiel the Lifebinder",
-                interruptPriorities = {
-                    [401010] = 100, -- Binding Flames
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
-                }
-            },
-            [2510] = { 
-                id = 2510, 
-                name = "Belzish, Maiden of Ruin",
-                interruptPriorities = {
-                    [408227] = 100, -- Blazing Breath
-                },
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = false, -- Mostly single target
-                }
-            },
-            [2512] = { 
-                id = 2512, 
-                name = "The Undisputed Champion",
-                interruptPriorities = {},
-                rotationSettings = {
-                    enableInterrupts = true,
-                    enableDefensives = true,
-                    enableCooldowns = true,
-                    enableAOE = true,
+        -- Gakaraz
+        [209669] = {
+            name = "Gakaraz",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Spread out, use defensives during Flaming Onslaught",
+                        prioritySpells = {},
+                        defensives = true
+                    },
+                    phase2 = {
+                        description = "Focus down adds quickly, avoid standing in fire",
+                        prioritySpells = {},
+                        aoe = true,
+                        burst = true
+                    }
                 }
             }
-        },
-        interruptPriorities = {
-            [401010] = 100, -- Binding Flames
-            [408227] = 100, -- Blazing Breath
-            [404741] = 95, -- Abolishing Flame
-            [404548] = 90, -- Earthfury
-        },
-        rotationSettings = {
-            enableInterrupts = true,
-            enableDefensives = true,
-            enableCooldowns = false, -- Save for bosses by default
-            enableAOE = true,
         }
     },
+    enemies = {
+        -- Important Trash Mobs
+        [205212] = { 
+            name = "Cinderbrew Guardian", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Has frontal cleave, tank away from group" 
+        },
+        [205276] = { 
+            name = "Volatile Emberspark", 
+            priority = PRIORITY_HIGH,
+            notes = "Explodes on death, keep away from group" 
+        },
+        [205298] = { 
+            name = "Cinderbrew Brewmaster", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Throws brew that causes damage over time" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [421234] = PRIORITY_HIGH,   -- Molten Shield
+        [421389] = PRIORITY_HIGH,   -- Brew Toss
+        [421402] = PRIORITY_MEDIUM, -- Ember Detonation
+    },
+    avoidable = {
+        [421053] = {
+            spell = "Fermenting Pool",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "ground"
+        },
+        [421636] = {
+            spell = "Brew Explosion",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "targeted"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [205212] = 5, -- Cinderbrew Guardian
+        [205276] = 3, -- Volatile Emberspark
+        [205298] = 4, -- Cinderbrew Brewmaster
+        -- More mobs would be added here with proper values
+    }
 }
 
--- Initialize the dungeons database
-function WR.Data.Dungeons:Initialize()
-    -- Process the dungeon data for easier access
-    self.Affixes = AFFIXES
-    self.DungeonList = {}
-    self.EncounterList = {}
-    self.InterruptPriorities = {}
-    
-    -- Process each dungeon
-    for dungeonID, dungeonData in pairs(DUNGEONS) do
-        -- Add to dungeon list
-        self.DungeonList[dungeonID] = dungeonData
-        
-        -- Extract interrupt priorities
-        if dungeonData.interruptPriorities then
-            for spellID, priority in pairs(dungeonData.interruptPriorities) do
-                self.InterruptPriorities[spellID] = priority
-            end
-        end
-        
-        -- Process each encounter
-        if dungeonData.encounters then
-            for encounterID, encounterData in pairs(dungeonData.encounters) do
-                -- Add to encounter list
-                self.EncounterList[encounterID] = encounterData
-                encounterData.dungeonID = dungeonID
-                
-                -- Extract interrupt priorities
-                if encounterData.interruptPriorities then
-                    for spellID, priority in pairs(encounterData.interruptPriorities) do
-                        self.InterruptPriorities[spellID] = priority
-                    end
-                end
-            end
-        end
-    end
-    
-    WR:Debug("Dungeons data initialized")
-end
+-- The Dawnbreaker
+DungeonsData[2570] = {
+    name = "The Dawnbreaker",
+    bosses = {
+        -- Anduin Lothar
+        [208459] = {
+            name = "Anduin Lothar",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid frontal attacks, spread for Valorous Charge",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                },
+                interruptPriorities = {
+                    [418585] = PRIORITY_MEDIUM, -- Rallying Cry
+                }
+            }
+        },
+        -- Khadgar
+        [208447] = {
+            name = "Khadgar",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge arcane orbs, interrupt Arcane Blast",
+                        prioritySpells = {}
+                    },
+                    phase2 = {
+                        description = "Focus down clone images quickly",
+                        prioritySpells = {},
+                        aoe = true,
+                        burst = true
+                    }
+                },
+                interruptPriorities = {
+                    [419123] = PRIORITY_HIGH, -- Arcane Blast
+                }
+            }
+        },
+        -- Alleria Windrunner
+        [208442] = {
+            name = "Alleria Windrunner",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Stay spread, dodge Void zones",
+                        prioritySpells = {}
+                    }
+                },
+                interruptPriorities = {
+                    [419515] = PRIORITY_HIGH, -- Void Bolt Volley
+                }
+            }
+        },
+        -- Turalyon
+        [208445] = {
+            name = "Turalyon",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Move away during Judgment of Light, use defensives for Inquisition",
+                        prioritySpells = {},
+                        defensives = true
+                    },
+                    phase2 = {
+                        description = "Maximize DPS during vulnerability phases",
+                        prioritySpells = {},
+                        burst = true
+                    }
+                }
+            }
+        }
+    },
+    enemies = {
+        -- Important Trash Mobs
+        [208462] = { 
+            name = "Alliance Knight", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Has shield reflect, avoid attacking during Shield Wall" 
+        },
+        [208464] = { 
+            name = "Alliance Mage", 
+            priority = PRIORITY_HIGH,
+            notes = "Interrupt Fireball" 
+        },
+        [208463] = { 
+            name = "Alliance Priest", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Interrupt Heal" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [419050] = PRIORITY_HIGH,   -- Heal
+        [419052] = PRIORITY_MEDIUM, -- Fireball
+        [419057] = PRIORITY_HIGH,   -- Mind Control
+    },
+    avoidable = {
+        [418580] = {
+            spell = "Valorous Charge",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "targeted"
+        },
+        [419127] = {
+            spell = "Arcane Orb",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "ground"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [208462] = 4, -- Alliance Knight
+        [208464] = 3, -- Alliance Mage
+        [208463] = 4, -- Alliance Priest
+        -- More mobs would be added here with proper values
+    }
+}
 
--- Get a dungeon by ID
-function WR.Data.Dungeons:GetDungeonByID(dungeonID)
-    return self.DungeonList[dungeonID]
-end
+-- Chamber of the Aspects
+DungeonsData[2582] = {
+    name = "Chamber of the Aspects",
+    bosses = {
+        -- Blight of Galakrond
+        [206172] = {
+            name = "Blight of Galakrond",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge Void Zones, spread for Necrotic Breath",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                }
+            }
+        },
+        -- Chronormu
+        [205290] = {
+            name = "Chronormu",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Handle Time Anomalies, use defensives during Time Acceleration",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                }
+            }
+        },
+        -- Alexstrasza the Life-Binder
+        [204853] = {
+            name = "Alexstrasza the Life-Binder",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Move as a group during Gift of Life, focus fire drakes",
+                        prioritySpells = {}
+                    },
+                    phase2 = {
+                        description = "Spread out for Flame Buffet, use defensive cooldowns",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                }
+            }
+        },
+        -- Vyranoth
+        [204481] = {
+            name = "Vyranoth",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Move out of Twilight Flames, use defensives for Twilight Decimation",
+                        prioritySpells = {},
+                        defensives = true
+                    },
+                    phase2 = {
+                        description = "Prioritize adds, avoid standing in darkness",
+                        prioritySpells = {},
+                        aoe = true
+                    }
+                }
+            }
+        }
+    },
+    enemies = {
+        -- Important Trash Mobs
+        [206099] = { 
+            name = "Twilight Drake", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Interrupt Twilight Flames" 
+        },
+        [206079] = { 
+            name = "Bronze Timekeeper", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Can rewind time, priority target" 
+        },
+        [206128] = { 
+            name = "Void Aberration", 
+            priority = PRIORITY_HIGH,
+            notes = "Explodes on death, keep away from group" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [417989] = PRIORITY_HIGH,   -- Twilight Flames
+        [417992] = PRIORITY_MEDIUM, -- Temporal Shift
+        [418025] = PRIORITY_HIGH,   -- Void Eruption
+    },
+    avoidable = {
+        [416986] = {
+            spell = "Necrotic Breath",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "frontal"
+        },
+        [418538] = {
+            spell = "Twilight Flames",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "ground"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [206099] = 4, -- Twilight Drake
+        [206079] = 5, -- Bronze Timekeeper
+        [206128] = 3, -- Void Aberration
+        -- More mobs would be added here with proper values
+    }
+}
 
--- Get an encounter by ID
-function WR.Data.Dungeons:GetEncounterByID(encounterID)
-    return self.EncounterList[encounterID]
-end
+-- Darkflame Cleft
+DungeonsData[2584] = {
+    name = "Darkflame Cleft",
+    bosses = {
+        -- Molten Primalist
+        [208311] = {
+            name = "Molten Primalist",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge lava waves, spread for Molten Eruption",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                },
+                interruptPriorities = {
+                    [422917] = PRIORITY_HIGH, -- Lava Surge
+                }
+            }
+        },
+        -- Goregrind
+        [208438] = {
+            name = "Goregrind",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Kite during Crushing Charge, stack for Cleave",
+                        prioritySpells = {}
+                    }
+                }
+            }
+        },
+        -- Ancient Pyrelord
+        [209390] = {
+            name = "Ancient Pyrelord",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Use defensives during Inferno Nova, focus fire adds",
+                        prioritySpells = {},
+                        defensives = true,
+                        aoe = true
+                    }
+                },
+                interruptPriorities = {
+                    [423079] = PRIORITY_CRITICAL, -- Pyroblast
+                }
+            }
+        },
+        -- Emberblaze
+        [209033] = {
+            name = "Emberblaze",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid Standing in Lava, use defensives during Darkflame Cleave",
+                        prioritySpells = {},
+                        defensives = true
+                    },
+                    phase2 = {
+                        description = "Spread out, focus down elemental adds",
+                        prioritySpells = {},
+                        aoe = true,
+                        burst = true
+                    }
+                }
+            }
+        }
+    },
+    enemies = {
+        -- Important Trash Mobs
+        [208302] = { 
+            name = "Lava Elemental", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Creates lava pools on death" 
+        },
+        [208307] = { 
+            name = "Dark Flamecaller", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Interrupt Shadow Bolt Volley" 
+        },
+        [208305] = { 
+            name = "Magma Tentacle", 
+            priority = PRIORITY_HIGH,
+            notes = "Knocks players back, focus target" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [423125] = PRIORITY_HIGH,   -- Shadow Bolt Volley
+        [423136] = PRIORITY_MEDIUM, -- Magma Burst
+        [423150] = PRIORITY_HIGH,   -- Ember Shield
+    },
+    avoidable = {
+        [422924] = {
+            spell = "Molten Eruption",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "targeted"
+        },
+        [423084] = {
+            spell = "Inferno Nova",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "aoe"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [208302] = 3, -- Lava Elemental
+        [208307] = 4, -- Dark Flamecaller
+        [208305] = 3, -- Magma Tentacle
+        -- More mobs would be added here with proper values
+    }
+}
 
--- Get an affix by ID
-function WR.Data.Dungeons:GetAffixByID(affixID)
-    return self.Affixes[affixID]
-end
+-- Sunken Hollow
+DungeonsData[2581] = {
+    name = "Sunken Hollow",
+    bosses = {
+        -- Decatriarch Wraatom
+        [208458] = {
+            name = "Decatriarch Wraatom",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid Shadow Crash, focus adds",
+                        prioritySpells = {},
+                        aoe = true
+                    }
+                },
+                interruptPriorities = {
+                    [421633] = PRIORITY_HIGH, -- Shadow Bolt
+                }
+            }
+        },
+        -- Teramir
+        [208967] = {
+            name = "Teramir",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Dodge falling rocks, use defensives during Earthen Barrage",
+                        prioritySpells = {},
+                        defensives = true
+                    }
+                }
+            }
+        },
+        -- Drowned Depths
+        [209253] = {
+            name = "Drowned Depths",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Avoid whirlpools, kill adds quickly",
+                        prioritySpells = {},
+                        aoe = true
+                    }
+                },
+                interruptPriorities = {
+                    [421812] = PRIORITY_HIGH, -- Aquatic Surge
+                }
+            }
+        },
+        -- Iron Dagger
+        [208363] = {
+            name = "Iron Dagger",
+            tactics = {
+                phases = {
+                    phase1 = {
+                        description = "Drop poison pools away from group, high movement",
+                        prioritySpells = {}
+                    },
+                    phase2 = {
+                        description = "Use defensives during Venomous Onslaught",
+                        prioritySpells = {},
+                        defensives = true,
+                        burst = true
+                    }
+                }
+            }
+        }
+    },
+    enemies = {
+        -- Important Trash Mobs
+        [208404] = { 
+            name = "Nerubian Seer", 
+            priority = PRIORITY_HIGH,
+            dangerous = true,
+            notes = "Interrupt Shadow Bolt" 
+        },
+        [208401] = { 
+            name = "Earth Elemental", 
+            priority = PRIORITY_MEDIUM,
+            notes = "Has knockback ability" 
+        },
+        [208409] = { 
+            name = "Deep One", 
+            priority = PRIORITY_HIGH,
+            notes = "Creates damaging pools" 
+        }
+    },
+    interrupts = {
+        -- Priority Interrupts for Trash
+        [421675] = PRIORITY_HIGH,   -- Shadow Bolt
+        [421702] = PRIORITY_MEDIUM, -- Earth Shock
+        [421724] = PRIORITY_HIGH,   -- Aquatic Healing
+    },
+    avoidable = {
+        [421639] = {
+            spell = "Shadow Crash",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "targeted"
+        },
+        [421758] = {
+            spell = "Whirlpool",
+            priority = PRIORITY_HIGH,
+            isBossMechanic = true,
+            avoidType = "ground"
+        }
+    },
+    enemyForces = {
+        -- Enemy forces values for M+
+        [208404] = 4, -- Nerubian Seer
+        [208401] = 3, -- Earth Elemental
+        [208409] = 3, -- Deep One
+        -- More mobs would be added here with proper values
+    }
+}
 
--- Get the interrupt priority for a spell
-function WR.Data.Dungeons:GetInterruptPriority(spellID)
-    return self.InterruptPriorities[spellID] or 0
-end
-
--- Get all dungeons for the current season
-function WR.Data.Dungeons:GetCurrentSeasonDungeons()
-    local currentDungeons = {}
-    
-    for dungeonID, dungeonData in pairs(self.DungeonList) do
-        if dungeonData.season == 2 then -- Current season is 2
-            table.insert(currentDungeons, dungeonData)
-        end
-    end
-    
-    return currentDungeons
-end
-
--- Get rotation settings for a dungeon
-function WR.Data.Dungeons:GetDungeonRotationSettings(dungeonID)
-    local dungeon = self:GetDungeonByID(dungeonID)
-    if dungeon and dungeon.rotationSettings then
-        return dungeon.rotationSettings
-    end
-    return nil
-end
-
--- Get rotation settings for an encounter
-function WR.Data.Dungeons:GetEncounterRotationSettings(encounterID)
-    local encounter = self:GetEncounterByID(encounterID)
-    if encounter and encounter.rotationSettings then
-        return encounter.rotationSettings
-    end
-    return nil
-end
-
--- Initialize the dungeons data
-WR.Data.Dungeons:Initialize()
+-- Return the module
+return DungeonsData

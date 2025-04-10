@@ -38,6 +38,7 @@ Data\Dungeons.lua
 UI\Main.xml
 UI\Main.lua
 UI\ClassIcons.lua
+UI\ProfileUI.lua
 
 # Classes
 Classes\Base.lua
