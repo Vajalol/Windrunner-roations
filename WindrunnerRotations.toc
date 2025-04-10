@@ -47,6 +47,8 @@ Core\EncounterManager.lua
 Core\RotationEnhancer.lua
 Core\MachineLearning.lua
 Core\PvPSystem.lua
+Core\PartySynergy.lua
+Core\ExternalDataIntegration.lua
 
 # Data
 Data\Classes.lua

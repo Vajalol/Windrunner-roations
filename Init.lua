@@ -157,6 +157,8 @@ function WR:OnInitialize()
     -- Advanced Rotation Optimization (Phase 9)
     if self.MachineLearning and self.MachineLearning.Initialize then self.MachineLearning:Initialize() end
     if self.PvPSystem and self.PvPSystem.Initialize then self.PvPSystem:Initialize() end
+    if self.PartySynergy and self.PartySynergy.Initialize then self.PartySynergy:Initialize() end
+    if self.ExternalDataIntegration and self.ExternalDataIntegration.Initialize then self.ExternalDataIntegration:Initialize() end
     
     -- Advanced UI Customization (Phase 9)
     if self.UI and self.UI.AdvancedSettingsUI and self.UI.AdvancedSettingsUI.Initialize then self.UI.AdvancedSettingsUI:Initialize() end
@@ -465,6 +467,28 @@ function WR:HandleSlashCommand(msg)
             self.UI.GuidedLearning:ShowTutorialMenu()
         else
             print("|cFFFFFF00[Windrunner Rotations]|r GuidedLearning module not available")
+        end
+    elseif msg == "synergy" or msg:match("^synergy") then
+        -- Party Synergy
+        if self.PartySynergy then
+            if msg == "synergy" then
+                self.PartySynergy:Toggle()
+            else
+                self.PartySynergy:HandleSlashCommand(msg:sub(8))
+            end
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r PartySynergy module not available")
+        end
+    elseif msg == "external" or msg:match("^external") then
+        -- External Data Integration
+        if self.ExternalDataIntegration then
+            if msg == "external" then
+                self.ExternalDataIntegration:Toggle()
+            else
+                self.ExternalDataIntegration:HandleSlashCommand(msg:sub(9))
+            end
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r ExternalDataIntegration module not available")
         end
     end
 end

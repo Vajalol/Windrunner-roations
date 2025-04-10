@@ -149,8 +149,11 @@ Phase 9 currently includes:
 - ✅ PvP Support System (PvPSystem.lua)
 - ✅ Class-Specific UI (ClassSpecificUI.lua)
 - ✅ Resource Forecasting (ResourceForecast.lua)
+- ✅ Party Synergy System (PartySynergy.lua)
+- ✅ External Combat Data Integration (ExternalDataIntegration.lua)
+- ✅ Advanced UI Customization (AdvancedSettingsUI.lua, VisualEditMode.lua, GuidedLearning.lua)
 
-The remaining systems are planned for future updates.
+All main Phase 9 features have been implemented successfully.
 
 ## Usage
 
@@ -160,8 +163,13 @@ Phase 9 features are accessible through the following slash commands:
 - `/wr pvp` - PvP System commands
 - `/wr classui` - Toggle Class-Specific UI
 - `/wr forecast` - Toggle Resource Forecast
+- `/wr synergy` - Party Synergy System
+- `/wr external` - External Combat Data Integration
+- `/wr settings` or `/wr options` - Advanced Settings Panel
+- `/wr editmode` or `/wr edit` - Visual Edit Mode
+- `/wr tutorial` or `/wr help` - Guided Learning System
 
-Each system has extensive configuration options accessible through its respective command set.
+Each system has extensive configuration options accessible through the Advanced Settings Panel and its respective command set.
 
 ## Benefits Over Competing Addons
 
@@ -173,5 +181,9 @@ These Phase 9 enhancements provide several advantages over competing rotation ad
 4. **PvP Excellence**: Superior performance in PvP scenarios where other addons typically struggle
 5. **Rich Visual Feedback**: Class-specific UI provides intuitive understanding of complex mechanics
 6. **Resource Optimization**: Advanced forecasting prevents resource waste and optimizes usage timing
+7. **Group Synergy**: Coordinates cooldowns and tactical decisions with party/raid members
+8. **Data-Driven Optimization**: Integrates with external sources like WarcraftLogs for optimal setups
+9. **Comprehensive Customization**: Allows users to tailor every aspect of the UI to their preferences
+10. **Guided Learning**: Helps users master all features through interactive tutorials
 
-These features collectively create a rotation assistant that not only performs optimally but actively helps players improve their own understanding and skill.
+These features collectively create a rotation assistant that not only performs optimally but actively helps players improve their own understanding and skill while providing extensive customization options and data integration.
