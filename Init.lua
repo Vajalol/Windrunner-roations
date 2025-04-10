@@ -46,7 +46,11 @@ WR = {
     LegendaryAndSetManager = {},
     PlaystyleManager = {},
     EncounterManager = {},
-    RotationEnhancer = {}
+    RotationEnhancer = {},
+    
+    -- Advanced Rotation Optimization (Phase 9)
+    MachineLearning = {},
+    PvPSystem = {}
 }
 
 -- Verify Tinkr API exists - for demonstration we'll mock Tinkr
@@ -149,6 +153,10 @@ function WR:OnInitialize()
     
     -- Initialize the RotationEnhancer last since it depends on the other modules
     if self.RotationEnhancer and self.RotationEnhancer.Initialize then self.RotationEnhancer:Initialize() end
+    
+    -- Advanced Rotation Optimization (Phase 9)
+    if self.MachineLearning and self.MachineLearning.Initialize then self.MachineLearning:Initialize() end
+    if self.PvPSystem and self.PvPSystem.Initialize then self.PvPSystem:Initialize() end
     
     -- Register for events
     self:RegisterEvents()
@@ -403,6 +411,34 @@ function WR:HandleSlashCommand(msg)
             enhancedUI:Show()
         else
             print("|cFFFFFF00[Windrunner Rotations]|r Enhanced UI not available")
+        end
+    elseif msg:match("^ml") or msg:match("^learning") then
+        -- Pass to MachineLearning
+        if self.MachineLearning and self.MachineLearning.HandleCommand then
+            self.MachineLearning:HandleCommand(msg:match("^ml%s*(.*)") or msg:match("^learning%s*(.*)") or "")
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r MachineLearning module not available")
+        end
+    elseif msg:match("^pvp") then
+        -- Pass to PvPSystem
+        if self.PvPSystem and self.PvPSystem.HandleCommand then
+            self.PvPSystem:HandleCommand(msg:sub(4))
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r PvPSystem module not available")
+        end
+    elseif msg == "classui" then
+        -- Toggle ClassSpecificUI
+        if self.UI and self.UI.ClassSpecificUI then
+            self.UI.ClassSpecificUI:Toggle()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r ClassSpecificUI module not available")
+        end
+    elseif msg == "forecast" then
+        -- Toggle ResourceForecast
+        if self.UI and self.UI.ResourceForecast then
+            self.UI.ResourceForecast:Toggle()
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r ResourceForecast module not available")
         end
     end
 end

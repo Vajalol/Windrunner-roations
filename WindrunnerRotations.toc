@@ -45,6 +45,8 @@ Core\LegendaryAndSetManager.lua
 Core\PlaystyleManager.lua
 Core\EncounterManager.lua
 Core\RotationEnhancer.lua
+Core\MachineLearning.lua
+Core\PvPSystem.lua
 
 # Data
 Data\Classes.lua
@@ -63,6 +65,8 @@ UI\AnimationSystem.lua
 UI\ResponsiveLayout.lua
 UI\ClassTheme.lua
 UI\ProfileIntegration.lua
+UI\ClassSpecificUI.lua
+UI\ResourceForecast.lua
 
 # Classes
 Classes\Base.lua
