@@ -27,8 +27,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "lua Init.lua"
-waitForPort = 5000
+args = "lua test2.lua"
 
 [deployment]
-run = ["sh", "-c", "lua Init.lua"]
+run = ["sh", "-c", "lua test2.lua"]

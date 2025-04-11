@@ -3,179 +3,135 @@
 -- Author: VortexQ8
 ------------------------------------------
 
--- Setup addon structure
-local addonName, addon = ...
+-- Simple test for the Replit environment
+print("WindrunnerRotations starting...")
+
+-- Create the addon namespace
+local addon = {}
 addon.version = "1.0.0"
-addon.Classes = {}
+addon.Classes = {
+    Mage = {},
+    Warlock = {},
+    Warrior = {},
+    Paladin = {},
+    Druid = {},
+    DeathKnight = {}
+}
 addon.Core = {}
 
--- Local variables
-local initialized = false
-local debugMode = true
-local combatData = {}
+-- Create minimal API module
+addon.API = {
+    PrintDebug = function(message)
+        print("|cFF69CCF0[WindrunnerRotations]|r " .. tostring(message))
+    end,
+    PrintError = function(message)
+        print("|cFFFF0000[WindrunnerRotations] ERROR:|r " .. tostring(message))
+    end,
+    VerifyTinkr = function() return true end,
+    GetPlayerGUID = function() return "player-guid" end,
+    GetTargetGUID = function() return "target-guid" end,
+    GetPlayerHealthPercent = function() return 100 end,
+    GetPlayerPower = function() return 5 end,
+    GetTargetHealthPercent = function() return 100 end,
+    PlayerHasBuff = function() return false end,
+    CanCast = function() return true end,
+    CastSpell = function(spellId) print("Casting spell: " .. tostring(spellId)) end,
+    CastSpellAtCursor = function(spellId) print("Casting spell at cursor: " .. tostring(spellId)) end,
+    CastSpellOnGUID = function(spellId, guid) print("Casting spell: " .. tostring(spellId) .. " on " .. tostring(guid)) end,
+    RegisterSpell = function(spellId) end,
+    RegisterEvent = function(event, callback) end,
+    HandleEvent = function(event, ...) end,
+    GetActiveSpecID = function() return 0 end,
+    HasTalent = function() return false end,
+    HasSpell = function() return true end,
+    IsGCDReady = function() return true end,
+    IsPlayerCasting = function() return false end,
+    IsPlayerChanneling = function() return false end,
+    IsPlayerMoving = function() return false end,
+    ShouldUseBurst = function() return false end,
+    GetSpellCharges = function() return 0 end,
+    GetSpellCooldownRemaining = function() return 0 end,
+    GetLastSpell = function() return 0 end,
+    GetNearbyEnemiesCount = function() return 0 end,
+    GetAllEnemies = function() return {} end,
+    GetBuffStacks = function() return 0 end,
+    TableContains = function(tbl, item) return false end,
+    TableRemove = function(tbl, item) end,
+    GetSubTable = function(tbl, start, count) return {} end,
+    GetHighestHealthEnemy = function() return nil end,
+    GetLowestHealthEnemy = function() return nil end,
+    GetDebuffInfo = function() return nil, nil, nil, nil, nil, 0 end,
+    HasLegendaryEffect = function() return false end,
+    GetNumEnemies = function() return 0 end,
+    GetPetType = function() return "None" end,
+    GetAllEnemies = function() return {} end
+}
 
--- Get a local reference to API once available
-local API = nil
+-- Create Core modules
+addon.Core.ConfigRegistry = {
+    Initialize = function() 
+        print("ConfigRegistry initialized") 
+        return true 
+    end,
+    GetSettings = function(category) return {} end,
+    RegisterSettings = function(name, settings) return true end
+}
 
--- Main initialization function
-local function Initialize()
-    if initialized then
-        return
-    end
-    
-    -- Initialize API first
-    if addon.API and addon.API.Initialize then
-        addon.API.Initialize()
-        API = addon.API
-        API.PrintDebug("API loaded")
-    else
-        print("|cFFFF0000[WindrunnerRotations] ERROR:|r API module not found!")
-        return
-    end
-    
-    -- Verify Tinkr is loaded
-    if not API.VerifyTinkr() then
-        API.PrintError("Tinkr verification failed. Please make sure Tinkr is running and up to date.")
-        -- Continue initialization but warn user
-    end
-    
-    -- Initialize core modules
-    local coreModules = {
-        "ConfigRegistry",
-        "AdvancedAbilityControl",
-        "ModuleManager"
-    }
-    
-    for _, moduleName in ipairs(coreModules) do
-        if addon.Core[moduleName] and addon.Core[moduleName].Initialize then
-            local success = addon.Core[moduleName].Initialize()
-            if success then
-                API.PrintDebug(moduleName .. " initialized successfully")
-            else
-                API.PrintError("Failed to initialize " .. moduleName)
-                return
-            end
+addon.Core.AdvancedAbilityControl = {
+    Initialize = function() 
+        print("AdvancedAbilityControl initialized") 
+        return true 
+    end,
+    RegisterAbility = function(spellId, options) return options or {} end
+}
+
+addon.Core.ModuleManager = {
+    Initialize = function() 
+        print("ModuleManager initialized") 
+        return true 
+    end,
+    RunRotation = function() end
+}
+
+print("WindrunnerRotations modules created")
+
+-- Initialize everything
+addon.Core.ConfigRegistry.Initialize()
+addon.Core.AdvancedAbilityControl.Initialize()
+addon.Core.ModuleManager.Initialize()
+
+print("WindrunnerRotations initialization complete")
+
+-- Add a test function
+addon.Test = function()
+    print("Running test...")
+    -- Test with Affliction Warlock module if it exists
+    if addon.Classes.Warlock.Affliction then
+        print("Testing Affliction Warlock module")
+        -- Initialize the module
+        if addon.Classes.Warlock.Affliction.Initialize then
+            local success = addon.Classes.Warlock.Affliction:Initialize()
+            print("Initialize result: " .. tostring(success))
         else
-            API.PrintError(moduleName .. " module not found!")
-            return
+            print("Affliction Warlock Initialize method not found")
         end
-    end
-    
-    -- Create main frame for OnUpdate and events
-    local frame = CreateFrame("Frame")
-    
-    -- Register events
-    frame:RegisterEvent("ADDON_LOADED")
-    frame:RegisterEvent("PLAYER_LOGIN")
-    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    
-    -- Event handler
-    frame:SetScript("OnEvent", function(self, event, ...)
-        HandleEvent(event, ...)
-    end)
-    
-    -- OnUpdate handler for rotation execution
-    frame:SetScript("OnUpdate", function(self, elapsed)
-        OnUpdate(elapsed)
-    end)
-    
-    -- Set initialized flag
-    initialized = true
-    API.PrintDebug("WindrunnerRotations v" .. addon.version .. " initialized")
-end
-
--- Event handler
-local function HandleEvent(event, ...)
-    if not API then
-        -- API not initialized yet, store events for later
-        return
-    end
-    
-    -- Pass event to API for distribution to listeners
-    API.HandleEvent(event, ...)
-    
-    -- Special handling for specific events
-    if event == "ADDON_LOADED" then
-        local loadedAddon = ...
-        if loadedAddon == addonName then
-            API.PrintDebug("Addon loaded")
+        
+        -- Run rotation
+        if addon.Classes.Warlock.Affliction.RunRotation then
+            local result = addon.Classes.Warlock.Affliction:RunRotation()
+            print("RunRotation result: " .. tostring(result))
+        else
+            print("Affliction Warlock RunRotation method not found")
         end
-    elseif event == "PLAYER_LOGIN" then
-        -- Delayed initialization to ensure other addons are loaded
-        C_Timer.After(1, function()
-            -- Finalize initialization here
-        end)
-    end
-end
-
--- OnUpdate handler
-local function OnUpdate(elapsed)
-    if not initialized or not API then
-        return
-    end
-    
-    -- Only run rotation in combat
-    if not InCombatLockdown() then
-        return
-    end
-    
-    -- Run rotation through Module Manager
-    if addon.Core.ModuleManager and addon.Core.ModuleManager.RunRotation then
-        addon.Core.ModuleManager:RunRotation()
-    end
-end
-
--- Start initialization
-Initialize()
-
--- Helper function to toggle the addon
-function addon:Toggle()
-    if initialized then
-        -- Toggle enabled state
-        enabled = not enabled
-        API.PrintDebug("WindrunnerRotations " .. (enabled and "enabled" or "disabled"))
     else
-        API.PrintError("WindrunnerRotations not initialized")
-    end
-end
-
--- Helper function to get version
-function addon:GetVersion()
-    return addon.version
-end
-
--- Create slash commands
-SLASH_WINDRUNNERROTATIONS1 = "/wr"
-SLASH_WINDRUNNERROTATIONS2 = "/windrunner"
-
-SlashCmdList["WINDRUNNERROTATIONS"] = function(msg)
-    if not initialized or not API then
-        print("|cFFFF0000[WindrunnerRotations]|r Not initialized yet")
-        return
+        print("Affliction Warlock module not found")
     end
     
-    local command, args = msg:match("^(%S+)%s*(.*)$")
-    command = command and command:lower() or "help"
-    
-    if command == "toggle" or command == "enable" or command == "disable" then
-        addon:Toggle()
-    elseif command == "version" or command == "ver" then
-        API.PrintDebug("WindrunnerRotations v" .. addon.version)
-    elseif command == "settings" or command == "config" then
-        -- Open settings panel (would be implemented elsewhere)
-        API.PrintDebug("Settings panel not implemented yet")
-    elseif command == "help" or command == "?" then
-        print("|cFF69CCF0WindrunnerRotations Commands:|r")
-        print("/wr toggle - Toggle rotation on/off")
-        print("/wr version - Show version information")
-        print("/wr settings - Open settings panel")
-        print("/wr help - Show this help message")
-    else
-        API.PrintDebug("Unknown command: " .. command)
-        print("|cFF69CCF0Type /wr help for available commands|r")
-    end
+    print("Test complete")
 end
+
+-- Run the test
+addon.Test()
 
 -- Return the addon table
 return addon

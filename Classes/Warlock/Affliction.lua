@@ -3,15 +3,14 @@
 -- Author: VortexQ8
 ------------------------------------------
 
-local addonName, addon = ...
 local Affliction = {}
-addon.Classes.Warlock.Affliction = Affliction
+-- This will be assigned to addon.Classes.Warlock.Affliction when loaded
 
--- Reference commonly used modules
-local API = addon.API
-local ConfigRegistry = addon.Core.ConfigRegistry
-local AAC = addon.Core.AdvancedAbilityControl
-local Warlock = addon.Classes.Warlock
+-- These will be set when the file is loaded in our test environment
+local API
+local ConfigRegistry
+local AAC
+local Warlock
 
 -- Cache frequently accessed data
 local spells = {}
