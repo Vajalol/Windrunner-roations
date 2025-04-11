@@ -1,6 +1,7 @@
 ------------------------------------------
 -- WindrunnerRotations - Protection Paladin Module
 -- Author: VortexQ8
+-- The War Within Season 2
 ------------------------------------------
 
 local Protection = {}
@@ -21,36 +22,119 @@ local debuffs = {}
 -- State tracking variables
 local nextCastOverride = nil
 local burstModeActive = false
-local currentAoETargets = 0
 local currentHolyPower = 0
 local maxHolyPower = 5
-local shieldOfRighteousBuff = false
-local shieldOfRighteousCharges = 0
-local avengingWrathActive = false
-local hammerOfWrathAvailable = false
-local lastWordTargets = {}
+local shieldOfTheRighteousCharges = 0
+local shieldOfTheRighteousMaxCharges = 0
+local shieldOfTheRighteousActive = false
+local shieldOfTheRighteousEndTime = 0
 local consecrationActive = false
-local consecrationTimeRemaining = 0
-local divineTollAvailable = true
-local lastShieldOfRighteous = 0
-local shiningLightStacks = 0
-local bulwarkOfRighteousGlory = false -- Sentinel legendary
+local consecrationEndTime = 0
+local divineTollActive = false
+local avengingWrathActive = false
+local avengingWrathEndTime = 0
 local ardentDefenderActive = false
+local ardentDefenderEndTime = 0
 local guardianOfAncientKingsActive = false
-local divineProtectionActive = false
-local eyeOfTyrActive = false
-local divinePurposeBuff = false
-local momentOfGloryBuff = false
-local sentenceActive = false -- Final Sentence debuff from Execution Sentence
-local battleAvengersHand = 0 -- Charges for Hand of Reckoning from talented
-local bastion = false -- Bastion of Light
+local guardianOfAncientKingsEndTime = 0
+local hammerOfJusticeOnCooldown = false
+local blessingOfProtectionOnCooldown = false
+local blessingOfSacrificeOnCooldown = false
+local divineShieldActive = false
+local divineShieldEndTime = 0
+local sentinelActive = false
+local sentinelEndTime = 0
+local divinePurposeActive = false
+local divinePurposeEndTime = 0
+local lastAvengersShield = 0
+local lastJudgment = 0
+local lastShieldOfTheRighteous = 0
+local lastWordOfGlory = 0
+local lastHammerOfWrath = 0
+local lastAvengingWrath = 0
+local lastArdentDefender = 0
+local lastGuardianOfAncientKings = 0
+local lastConsecrateTime = 0
+local lastDivineProtection = 0
+local lastLayOnHands = 0
+local lastSentinel = 0
+local lastFinalStand = 0
+local lastDivineToll = 0
+local lastMomentOfGlory = 0
+local lastDivineResonance = 0
+local lastForbearance = 0
+local targetInRange = false
+local playerHealth = 100
+local targetHealth = 100
+local threatSituation = "LOW"
+local activeEnemies = 0
+local activeImportantEnemies = 0
+local activeBossEnemies = 0
+local isInMelee = false
+local meleeRange = 5 -- yards
+local judgmentApplied = false
+local toweringShieldActive = false -- Season 2 trait
+local toweringShieldEndTime = 0
+local toweringShieldStacks = 0
+local mightyDisplacer = false -- Season 2 trait
+local mightyDisplacerActive = false
+local mightyDisplacerEndTime = 0
+local mightyDisplacerStacks = 0
+local flaringResistanceTalent = false
+local flaringResistanceActive = false
+local flaringResistanceStacks = 0
+local avengersShield = false
+local judgment = false
+local hammer = false
+local consecrate = false
+local shieldOfRighteous = false
+local wordOfGlory = false
+local blessedHammer = false
+local holyShield = false
+local firstShield = false
+local divineProtection = false
+local ardentDefender = false
+local guardianOfAncientKings = false
+local layOnHands = false
+local momentOfGlory = false
+local divineResonance = false
+local rightBlindingLight = false
+local finalStand = false
+local divineToll = false
+local hammerOfWrath = false
+local crusaderStrike = false
+local blessingOfProtection = false
+local blessingOfSacrifice = false
+local eyeOfTyr = false
+local divinePurpose = false
+local focusedBlessings = false
+local bulwarkOfOrder = false
+local bulwarkOfRighteous = false
+local sentinel = false
+local crusaderAura = false
+local righteousProtector = false
+local redoubt = false
+local revitalizingShadow = false
+local faithsArmor = false
+local holySeal = false
+local soloShield = false
+local kingOfTheJungle = false
+local resolute = false
+local improvedDefense = false
 
 -- Constants
 local PROTECTION_SPEC_ID = 66
-local DEFAULT_AOE_THRESHOLD = 3
-local EXECUTE_THRESHOLD = 20 -- Health percent to enable Hammer of Wrath
-local CONSECRATION_DURATION = 12
-local SOR_DURATION = 4.5
+local SHIELD_OF_THE_RIGHTEOUS_DURATION = 4.5 -- seconds
+local CONSECRATION_DURATION = 12.0 -- seconds
+local AVENGING_WRATH_DURATION = 20.0 -- seconds
+local ARDENT_DEFENDER_DURATION = 8.0 -- seconds
+local GUARDIAN_OF_ANCIENT_KINGS_DURATION = 8.0 -- seconds
+local DIVINE_SHIELD_DURATION = 8.0 -- seconds
+local SENTINEL_DURATION = 8.0 -- seconds
+local TOWERING_SHIELD_DURATION = 10.0 -- seconds
+local MIGHTY_DISPLACER_DURATION = 8.0 -- seconds
+local FLARING_RESISTANCE_DURATION = 15.0 -- seconds
+local DIVINE_PURPOSE_DURATION = 10.0 -- seconds
 
 -- Initialize the Protection module
 function Protection:Initialize()
@@ -66,70 +150,88 @@ end
 
 -- Register spell IDs
 function Protection:RegisterSpells()
-    -- Core abilities
-    spells.SHIELD_OF_THE_RIGHTEOUS = 53600
+    -- Core rotational abilities
     spells.AVENGERS_SHIELD = 31935
     spells.JUDGMENT = 275779
     spells.HAMMER_OF_THE_RIGHTEOUS = 53595
     spells.BLESSED_HAMMER = 204019
     spells.CONSECRATION = 26573
-    spells.HAMMER_OF_WRATH = 24275
+    spells.SHIELD_OF_THE_RIGHTEOUS = 53600
     spells.WORD_OF_GLORY = 85673
-    spells.DIVINE_TOLL = 375576
-    spells.HOLY_SHIELD = 152261
-    spells.HAND_OF_RECKONING = 62124
+    spells.HAMMER_OF_WRATH = 24275
+    spells.CRUSADER_STRIKE = 35395
     
-    -- Defensive cooldowns
-    spells.GUARDIAN_OF_ANCIENT_KINGS = 86659
+    -- Core defensive abilities
+    spells.DIVINE_PROTECTION = 498
     spells.ARDENT_DEFENDER = 31850
-    spells.DIVINE_SHIELD = 642
+    spells.GUARDIAN_OF_ANCIENT_KINGS = 86659
     spells.LAY_ON_HANDS = 633
+    spells.DIVINE_SHIELD = 642
     spells.BLESSING_OF_PROTECTION = 1022
     spells.BLESSING_OF_SACRIFICE = 6940
-    spells.BLESSING_OF_FREEDOM = 1044
-    spells.DIVINE_STEED = 190784
-    spells.DIVINE_PROTECTION = 498
+    spells.AVENGING_WRATH = 31884
+    spells.SENTINEL = 389539
+    
+    -- Core utility abilities
+    spells.HAMMER_OF_JUSTICE = 853
+    spells.REBUKE = 96231
+    spells.DEVOTION_AURA = 465
+    spells.CRUSADER_AURA = 32223
+    spells.HAND_OF_RECKONING = 62124
+    spells.CLEANSE_TOXINS = 213644
+    spells.TURN_EVIL = 10326
+    spells.FLASH_OF_LIGHT = 19750
+    spells.BLINDING_LIGHT = 115750
+    spells.FINAL_STAND = 204077
     spells.EYE_OF_TYR = 387174
     
-    -- Offensive cooldowns
-    spells.AVENGING_WRATH = 31884
-    spells.MOMENT_OF_GLORY = 327193
-    spells.SERAPHIM = 152262
-    spells.SENTINEL = 389539 -- Sentinel talent
-    spells.EXECUTION_SENTENCE = 343527
-    spells.FINAL_SENTENCE = 383328 -- Debuff from Execution Sentence
-    
-    -- Utility
-    spells.REBUKE = 96231
-    spells.CLEANSE_TOXINS = 213644
-    spells.FLASH_OF_LIGHT = 19750
-    spells.BASTION_OF_LIGHT = 378974
-    
-    -- Talent and legendary effects
+    -- Talents and passives
+    spells.DIVINE_PURPOSE = 223817
+    spells.FOCUSED_BLESSINGS = 394302
+    spells.BULWARK_OF_ORDER = 209389
+    spells.BULWARK_OF_RIGHTEOUS_FURY = 386653
     spells.RIGHTEOUS_PROTECTOR = 204074
     spells.REDOUBT = 280373
-    spells.CRUSADERS_JUDGMENT = 204023
-    spells.FIRST_AVENGER = 203776
-    spells.BULWARK_OF_RIGHTEOUS_FURY = 337681 -- Legendary effect
-    spells.THE_MAGISTRATES_JUDGMENT = 337682 -- Legendary effect
-    spells.SHINING_LIGHT = 327510
-    spells.DIVINE_PURPOSE = 223817
-    spells.HOLY_AVENGER = 105809
-    spells.FINAL_STAND = 204077
-    spells.BLESSING_OF_SPELLWARDING = 204018
-    spells.LAST_DEFENDER = 203791
+    spells.REVITALIZING_SHADOW = 394025
+    spells.FAITHS_ARMOR = 378424
+    spells.HOLY_SHIELD = 152261
+    spells.MOMENT_OF_GLORY = 327193
+    spells.DIVINE_RESONANCE = 386738
+    spells.RIGHTEOUS_BLINDING_LIGHT = 393843
+    spells.RESOLUTE_DEFENDER = 385422
+    spells.IMPROVED_CONSECRATION = 379434
+    spells.FIRST_AVENGERS = 203776
+    spells.KING_OF_THE_JUNGLE = 394729
+    spells.RESOLUTE = 392931
+    spells.IMPROVED_RIGHTEOUS_DEFENSE = 152262
+    spells.HOLY_SEAL = 385795
+    spells.SOLO_SHIELD = 387286
     
-    -- Buffs and procs
+    -- War Within Season 2 specific
+    spells.TOWERING_SHIELD = 452522
+    spells.MIGHTY_DISPLACER = 414222
+    spells.FLARING_RESISTANCE = 393840
+    
+    -- Covenant abilities (for reference, converted in WoW 10.0)
+    spells.DIVINE_TOLL = 375576
+    
+    -- Buff IDs
     spells.SHIELD_OF_THE_RIGHTEOUS_BUFF = 132403
+    spells.CONSECRATION_BUFF = 188370
     spells.AVENGING_WRATH_BUFF = 31884
     spells.ARDENT_DEFENDER_BUFF = 31850
     spells.GUARDIAN_OF_ANCIENT_KINGS_BUFF = 86659
+    spells.DIVINE_SHIELD_BUFF = 642
+    spells.SENTINEL_BUFF = 389539
+    spells.TOWERING_SHIELD_BUFF = 414227
+    spells.MIGHTY_DISPLACER_BUFF = 414222
+    spells.FLARING_RESISTANCE_BUFF = 393840
     spells.DIVINE_PURPOSE_BUFF = 223819
-    spells.MOMENT_OF_GLORY_BUFF = 327193
-    spells.SHINING_LIGHT_BUFF = 327510
-    spells.BULWARK_OF_RIGHTEOUS_GLORY = 337848 -- Sentinel legendary buff
-    spells.DIVINE_PROTECTION_BUFF = 498
-    spells.EYE_OF_TYR_DEBUFF = 209202
+    
+    -- Debuff IDs
+    spells.HAMMER_OF_JUSTICE_DEBUFF = 853
+    spells.JUDGMENT_DEBUFF = 197277
+    spells.FORBEARANCE_DEBUFF = 25771
     
     -- Register all spells with the API tracking system
     for spellName, spellID in pairs(spells) do
@@ -138,17 +240,20 @@ function Protection:RegisterSpells()
     
     -- Define aura tracking
     buffs.SHIELD_OF_THE_RIGHTEOUS = spells.SHIELD_OF_THE_RIGHTEOUS_BUFF
+    buffs.CONSECRATION = spells.CONSECRATION_BUFF
     buffs.AVENGING_WRATH = spells.AVENGING_WRATH_BUFF
     buffs.ARDENT_DEFENDER = spells.ARDENT_DEFENDER_BUFF
     buffs.GUARDIAN_OF_ANCIENT_KINGS = spells.GUARDIAN_OF_ANCIENT_KINGS_BUFF
+    buffs.DIVINE_SHIELD = spells.DIVINE_SHIELD_BUFF
+    buffs.SENTINEL = spells.SENTINEL_BUFF
+    buffs.TOWERING_SHIELD = spells.TOWERING_SHIELD_BUFF
+    buffs.MIGHTY_DISPLACER = spells.MIGHTY_DISPLACER_BUFF
+    buffs.FLARING_RESISTANCE = spells.FLARING_RESISTANCE_BUFF
     buffs.DIVINE_PURPOSE = spells.DIVINE_PURPOSE_BUFF
-    buffs.MOMENT_OF_GLORY = spells.MOMENT_OF_GLORY_BUFF
-    buffs.SHINING_LIGHT = spells.SHINING_LIGHT_BUFF
-    buffs.BULWARK_OF_RIGHTEOUS_GLORY = spells.BULWARK_OF_RIGHTEOUS_GLORY
-    buffs.DIVINE_PROTECTION = spells.DIVINE_PROTECTION_BUFF
     
-    debuffs.EYE_OF_TYR = spells.EYE_OF_TYR_DEBUFF
-    debuffs.FINAL_SENTENCE = spells.FINAL_SENTENCE
+    debuffs.HAMMER_OF_JUSTICE = spells.HAMMER_OF_JUSTICE_DEBUFF
+    debuffs.JUDGMENT = spells.JUDGMENT_DEBUFF
+    debuffs.FORBEARANCE = spells.FORBEARANCE_DEBUFF
     
     return true
 end
@@ -156,27 +261,43 @@ end
 -- Register variables to track
 function Protection:RegisterVariables()
     -- Talent tracking
-    talents.hasBlessedHammer = false
-    talents.hasHolyShield = false
+    talents.hasDivinePurpose = false
+    talents.hasFocusedBlessings = false
+    talents.hasBulwarkOfOrder = false
+    talents.hasBulwarkOfRighteousFury = false
     talents.hasRighteousProtector = false
     talents.hasRedoubt = false
-    talents.hasCrusadersJudgment = false
-    talents.hasFirstAvenger = false
-    talents.hasDivinePurpose = false
-    talents.hasSeraphim = false
-    talents.hasHolyAvenger = false
-    talents.hasFinalStand = false
-    talents.hasBlessingOfSpellwarding = false
-    talents.hasLastDefender = false
+    talents.hasRevitalizingShadow = false
+    talents.hasFaithsArmor = false
+    talents.hasHolyShield = false
     talents.hasMomentOfGlory = false
-    talents.hasEyeOfTyr = false
+    talents.hasDivineResonance = false
+    talents.hasRighteousBlindingLight = false
+    talents.hasResolute = false
+    talents.hasImprovedConsecration = false
+    talents.hasFirstAvengers = false
+    talents.hasKingOfTheJungle = false
+    talents.hasResoluteDefender = false
+    talents.hasImprovedRighteousDefense = false
+    talents.hasHolySeal = false
+    talents.hasSoloShield = false
+    talents.hasBlessedHammer = false
+    talents.hasFinalStand = false
     talents.hasDivineToll = false
-    talents.hasExecutionSentence = false
-    talents.hasRighteousFury = false -- Talent for extra SotR efficacy
-    talents.hasBastion = false
+    talents.hasSentinel = false
+    talents.hasToweringShield = false
+    talents.hasMightyDisplacer = false
+    talents.hasFlaringResistance = false
     
-    -- Target state tracking
-    self.targetData = {}
+    -- Initialize holy power
+    currentHolyPower = API.GetPlayerPower() or 0
+    maxHolyPower = 5 -- Default, could be higher if talented
+    
+    -- Initialize Shield of the Righteous charges
+    shieldOfTheRighteousCharges, shieldOfTheRighteousMaxCharges = API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS) or 0, 3
+    
+    -- Track if in melee range
+    isInMelee = false
     
     return true
 end
@@ -187,7 +308,7 @@ function Protection:RegisterSettings()
         rotationSettings = {
             burstEnabled = {
                 displayName = "Enable Burst Mode",
-                description = "Use cooldowns and focus on burst damage",
+                description = "Use cooldowns and focus on burst threat generation",
                 type = "toggle",
                 default = true
             },
@@ -203,38 +324,110 @@ function Protection:RegisterSettings()
                 type = "slider",
                 min = 2,
                 max = 8,
-                default = DEFAULT_AOE_THRESHOLD
+                default = 3
             },
-            useTaunt = {
-                displayName = "Use Taunt",
-                description = "Automatically taunt when losing threat",
+            holyPowerPooling = {
+                displayName = "Holy Power Pooling",
+                description = "Pool Holy Power for Shield of the Righteous",
                 type = "toggle",
                 default = true
             },
-            sotrMode = {
-                displayName = "Shield of the Righteous Mode",
-                description = "How to use Shield of the Righteous",
+            holyPowerPoolingThreshold = {
+                displayName = "Holy Power Pooling Threshold",
+                description = "Minimum Holy Power to maintain",
+                type = "slider",
+                min = 1,
+                max = 4,
+                default = 2
+            },
+            sotrOverlap = {
+                displayName = "Allow SotR Overlap",
+                description = "Allow Shield of the Righteous to overlap if needed",
+                type = "toggle",
+                default = true
+            },
+            maintainConsecration = {
+                displayName = "Maintain Consecration",
+                description = "Always keep Consecration active",
+                type = "toggle",
+                default = true
+            },
+            kiting = {
+                displayName = "Enable Kiting Mode",
+                description = "Prioritize kiting in dangerous situations",
+                type = "toggle",
+                default = false
+            },
+            defensiveCooldownMode = {
+                displayName = "Defensive Cooldown Usage",
+                description = "How to use defensive cooldowns",
                 type = "dropdown",
-                options = {"Defensive Priority", "Maximum Uptime", "Holy Power Dump"},
-                default = "Defensive Priority"
+                options = {"Conservative", "Balanced", "Aggressive", "Manual Only"},
+                default = "Balanced"
             },
             wordOfGloryThreshold = {
                 displayName = "Word of Glory Health Threshold",
-                description = "Health percentage to use Word of Glory (0 to disable)",
+                description = "Health percentage to use Word of Glory on self",
+                type = "slider",
+                min = 10,
+                max = 80,
+                default = 40
+            },
+            wordOfGloryAllyThreshold = {
+                displayName = "Word of Glory Ally Health Threshold",
+                description = "Health percentage to use Word of Glory on ally",
+                type = "slider",
+                min = 10,
+                max = 80,
+                default = 30
+            }
+        },
+        
+        shieldOfRighteousSettings = {
+            useSotROnCooldown = {
+                displayName = "Use SotR On Cooldown",
+                description = "Use Shield of the Righteous whenever charges are available",
+                type = "toggle",
+                default = false
+            },
+            minSotRCharges = {
+                displayName = "Minimum SotR Charges",
+                description = "Minimum charges to keep reserved",
                 type = "slider",
                 min = 0,
-                max = 100,
-                default = 65
+                max = 2,
+                default = 1
             },
-            shiningLightPriority = {
-                displayName = "Prioritize Shining Light",
-                description = "Prioritize using Word of Glory with Shining Light stacks",
+            emergencySotRThreshold = {
+                displayName = "Emergency SotR Health Threshold",
+                description = "Health percentage to use Shield of the Righteous regardless of charges",
+                type = "slider",
+                min = 10,
+                max = 50,
+                default = 30
+            },
+            prioritizeSotROverWoG = {
+                displayName = "Prioritize SotR Over WoG",
+                description = "Use Shield of the Righteous over Word of Glory in most cases",
                 type = "toggle",
                 default = true
             }
         },
         
-        defensiveSettings = {
+        cooldownSettings = {
+            useAvengingWrath = {
+                displayName = "Use Avenging Wrath",
+                description = "Automatically use Avenging Wrath",
+                type = "toggle",
+                default = true
+            },
+            avengingWrathMode = {
+                displayName = "Avenging Wrath Usage",
+                description = "When to use Avenging Wrath",
+                type = "dropdown",
+                options = {"On Cooldown", "Multiple Enemies", "Boss Only", "Burst Only"},
+                default = "Multiple Enemies"
+            },
             useArdentDefender = {
                 displayName = "Use Ardent Defender",
                 description = "Automatically use Ardent Defender",
@@ -242,12 +435,12 @@ function Protection:RegisterSettings()
                 default = true
             },
             ardentDefenderThreshold = {
-                displayName = "Ardent Defender Threshold",
+                displayName = "Ardent Defender Health Threshold",
                 description = "Health percentage to use Ardent Defender",
                 type = "slider",
                 min = 10,
                 max = 60,
-                default = 30
+                default = 35
             },
             useGuardianOfAncientKings = {
                 displayName = "Use Guardian of Ancient Kings",
@@ -256,12 +449,12 @@ function Protection:RegisterSettings()
                 default = true
             },
             guardianOfAncientKingsThreshold = {
-                displayName = "Guardian of Ancient Kings Threshold",
+                displayName = "Guardian Health Threshold",
                 description = "Health percentage to use Guardian of Ancient Kings",
                 type = "slider",
                 min = 10,
-                max = 50,
-                default = 25
+                max = 60,
+                default = 30
             },
             useDivineProtection = {
                 displayName = "Use Divine Protection",
@@ -270,105 +463,197 @@ function Protection:RegisterSettings()
                 default = true
             },
             divineProtectionThreshold = {
-                displayName = "Divine Protection Threshold",
+                displayName = "Divine Protection Health Threshold",
                 description = "Health percentage to use Divine Protection",
                 type = "slider",
-                min = 20,
+                min = 10,
                 max = 80,
                 default = 60
             },
-            useEyeOfTyr = {
-                displayName = "Use Eye of Tyr",
-                description = "Automatically use Eye of Tyr",
+            useSentinel = {
+                displayName = "Use Sentinel",
+                description = "Automatically use Sentinel when talented",
                 type = "toggle",
                 default = true
             },
-            eyeOfTyrThreshold = {
-                displayName = "Eye of Tyr Threshold",
-                description = "Health percentage to use Eye of Tyr",
+            sentinelThreshold = {
+                displayName = "Sentinel Health Threshold",
+                description = "Health percentage to use Sentinel",
                 type = "slider",
-                min = 20,
-                max = 80,
-                default = 50
+                min = 10,
+                max = 60,
+                default = 40
             },
-            useLayOnHandsEmergency = {
-                displayName = "Use Lay on Hands Emergency",
-                description = "Use Lay on Hands at critical health",
+            useDivineToll = {
+                displayName = "Use Divine Toll",
+                description = "Automatically use Divine Toll when talented",
+                type = "toggle",
+                default = true
+            },
+            divineTollMode = {
+                displayName = "Divine Toll Usage",
+                description = "When to use Divine Toll",
+                type = "dropdown",
+                options = {"On Cooldown", "Multiple Enemies", "For Holy Power", "Burst Only"},
+                default = "Multiple Enemies"
+            },
+            divineTollThreshold = {
+                displayName = "Divine Toll Holy Power Threshold",
+                description = "Holy Power threshold to use Divine Toll",
+                type = "slider",
+                min = 0,
+                max = 4,
+                default = 1
+            }
+        },
+        
+        interruptSettings = {
+            useInterrupts = {
+                displayName = "Use Interrupts",
+                description = "Automatically interrupt spellcasting",
+                type = "toggle",
+                default = true
+            },
+            useMindControl = {
+                displayName = "Use Mind Control Breaks",
+                description = "Use Blessing of Protection to break Mind Control",
+                type = "toggle",
+                default = true
+            },
+            useRebuke = {
+                displayName = "Use Rebuke",
+                description = "Use Rebuke to interrupt",
+                type = "toggle",
+                default = true
+            },
+            useHammerOfJustice = {
+                displayName = "Use Hammer of Justice",
+                description = "Use Hammer of Justice to interrupt",
+                type = "toggle",
+                default = true
+            },
+            hammerOfJusticeMode = {
+                displayName = "Hammer of Justice Usage",
+                description = "When to use Hammer of Justice",
+                type = "dropdown",
+                options = {"Interrupt Only", "On Cooldown", "Manual Only"},
+                default = "Interrupt Only"
+            }
+        },
+        
+        utilitySettings = {
+            useCleanseToxins = {
+                displayName = "Use Cleanse Toxins",
+                description = "Automatically cleanse poisons and diseases",
+                type = "toggle",
+                default = true
+            },
+            useTurnEvil = {
+                displayName = "Use Turn Evil",
+                description = "Automatically use Turn Evil on Undead and Demons",
+                type = "toggle",
+                default = true
+            },
+            useFinalStand = {
+                displayName = "Use Final Stand",
+                description = "Automatically use Final Stand when talented",
+                type = "toggle",
+                default = true
+            },
+            finalStandMode = {
+                displayName = "Final Stand Usage",
+                description = "When to use Final Stand",
+                type = "dropdown",
+                options = {"Emergency Only", "Multiple Adds", "On Cooldown", "Manual Only"},
+                default = "Multiple Adds"
+            },
+            finalStandThreshold = {
+                displayName = "Final Stand Enemy Count",
+                description = "Minimum number of enemies to use Final Stand",
+                type = "slider",
+                min = 2,
+                max = 8,
+                default = 3
+            },
+            useHandOfReckoning = {
+                displayName = "Use Hand of Reckoning",
+                description = "Automatically taunt enemies",
+                type = "toggle",
+                default = true
+            },
+            handOfReckoningMode = {
+                displayName = "Hand of Reckoning Usage",
+                description = "When to use Hand of Reckoning",
+                type = "dropdown",
+                options = {"Lost Aggro Only", "On Cooldown", "Manual Only"},
+                default = "Lost Aggro Only"
+            }
+        },
+        
+        defensiveSettings = {
+            useLayOnHands = {
+                displayName = "Use Lay on Hands",
+                description = "Automatically use Lay on Hands",
                 type = "toggle",
                 default = true
             },
             layOnHandsThreshold = {
-                displayName = "Lay on Hands Threshold",
-                description = "Health percentage to use Lay on Hands",
+                displayName = "Lay on Hands Health Threshold",
+                description = "Health percentage to use Lay on Hands on self",
+                type = "slider",
+                min = 5,
+                max = 25,
+                default = 15
+            },
+            layOnHandsAllyThreshold = {
+                displayName = "Lay on Hands Ally Health Threshold",
+                description = "Health percentage to use Lay on Hands on ally",
+                type = "slider",
+                min = 5,
+                max = 25,
+                default = 10
+            },
+            useBlessingOfProtection = {
+                displayName = "Use Blessing of Protection",
+                description = "Automatically use Blessing of Protection",
+                type = "toggle",
+                default = true
+            },
+            blessingOfProtectionThreshold = {
+                displayName = "Blessing of Protection Health Threshold",
+                description = "Health percentage to use Blessing of Protection on ally",
                 type = "slider",
                 min = 5,
                 max = 30,
                 default = 15
-            }
-        },
-        
-        offensiveSettings = {
-            useAvengingWrath = {
-                displayName = "Use Avenging Wrath",
-                description = "Automatically use Avenging Wrath",
+            },
+            useBlessingOfSacrifice = {
+                displayName = "Use Blessing of Sacrifice",
+                description = "Automatically use Blessing of Sacrifice",
                 type = "toggle",
                 default = true
             },
-            useMomentOfGlory = {
-                displayName = "Use Moment of Glory",
-                description = "Automatically use Moment of Glory",
-                type = "toggle",
-                default = true
-            },
-            useSeraphim = {
-                displayName = "Use Seraphim",
-                description = "Automatically use Seraphim when talented",
-                type = "toggle",
-                default = true
-            },
-            useDivineToll = {
-                displayName = "Use Divine Toll",
-                description = "Automatically use Divine Toll",
-                type = "toggle",
-                default = true
-            },
-            useExecutionSentence = {
-                displayName = "Use Execution Sentence",
-                description = "Automatically use Execution Sentence",
-                type = "toggle",
-                default = true
-            }
-        },
-        
-        advancedSettings = {
-            minHolyPowerSpenders = {
-                displayName = "Minimum Holy Power for Spenders",
-                description = "Minimum Holy Power to use spenders (except procs)",
-                type = "slider",
-                min = 2,
-                max = 5,
-                default = 3
-            },
-            consecrationPriority = {
-                displayName = "Consecration Priority",
-                description = "Priority for maintaining Consecration",
-                type = "dropdown",
-                options = {"Always", "During Combat", "Low Priority"},
-                default = "Always"
-            },
-            saveCooldownsForBurst = {
-                displayName = "Save Cooldowns for Burst",
-                description = "Hold offensive cooldowns for burst phases",
-                type = "toggle",
-                default = false
-            },
-            bastionThreshold = {
-                displayName = "Bastion of Light Threshold",
-                description = "Health percentage to use Bastion of Light",
+            blessingOfSacrificeThreshold = {
+                displayName = "Blessing of Sacrifice Health Threshold",
+                description = "Health percentage to use Blessing of Sacrifice on ally",
                 type = "slider",
                 min = 10,
-                max = 70,
+                max = 60,
                 default = 40
+            },
+            useDivineShield = {
+                displayName = "Use Divine Shield",
+                description = "Automatically use Divine Shield in emergencies",
+                type = "toggle",
+                default = true
+            },
+            divineShieldThreshold = {
+                displayName = "Divine Shield Health Threshold",
+                description = "Health percentage to use Divine Shield",
+                type = "slider",
+                min = 5,
+                max = 20,
+                default = 10
             }
         },
         
@@ -377,22 +662,24 @@ function Protection:RegisterSettings()
             -- Shield of the Righteous controls
             shieldOfTheRighteous = AAC.RegisterAbility(spells.SHIELD_OF_THE_RIGHTEOUS, {
                 enabled = true,
-                useWithBastion = false,
-                minActiveTime = 2 -- Minimum seconds of SotR remaining before refreshing
+                useDuringBurstOnly = false,
+                minCharges = 1,
+                useForPhysicalDamage = true
+            }),
+            
+            -- Word of Glory controls
+            wordOfGlory = AAC.RegisterAbility(spells.WORD_OF_GLORY, {
+                enabled = true,
+                useDuringBurstOnly = false,
+                preferSelfHealing = true,
+                emergencyOnly = false
             }),
             
             -- Avenger's Shield controls
             avengersShield = AAC.RegisterAbility(spells.AVENGERS_SHIELD, {
                 enabled = true,
-                priorityInterrupt = true,
-                useWithMomentOfGlory = true
-            }),
-            
-            -- Seraphim controls
-            seraphim = AAC.RegisterAbility(spells.SERAPHIM, {
-                enabled = true,
-                minHolyPower = 3,
-                useWithAvengingWrath = true
+                useDuringBurstOnly = false,
+                interruptPriority = "High"
             })
         }
     })
@@ -414,9 +701,27 @@ function Protection:RegisterEvents()
         end
     end)
     
-    -- Register for target change events
-    API.RegisterEvent("PLAYER_TARGET_CHANGED", function() 
-        self:UpdateTargetData() 
+    -- Register for Shield of the Righteous charge updates
+    API.RegisterEvent("SPELL_UPDATE_CHARGES", function(spellID) 
+        if spellID == spells.SHIELD_OF_THE_RIGHTEOUS then
+            self:UpdateSotRCharges()
+        end
+    end)
+    
+    -- Register for health updates
+    API.RegisterEvent("UNIT_HEALTH", function(unit) 
+        if unit == "player" then
+            self:UpdateHealth()
+        elseif unit == "target" then
+            self:UpdateTargetHealth()
+        end
+    end)
+    
+    -- Register for threat updates
+    API.RegisterEvent("UNIT_THREAT_SITUATION_UPDATE", function(unit) 
+        if unit == "player" then
+            self:UpdateThreatSituation()
+        end
     end)
     
     -- Register for talent update events
@@ -427,295 +732,539 @@ function Protection:RegisterEvents()
     -- Initial talent info update
     self:UpdateTalentInfo()
     
+    -- Initial Shield of the Righteous charges
+    self:UpdateSotRCharges()
+    
     return true
 end
 
 -- Update talent information
 function Protection:UpdateTalentInfo()
     -- Check for important talents
-    talents.hasBlessedHammer = API.HasTalent(spells.BLESSED_HAMMER)
-    talents.hasHolyShield = API.HasTalent(spells.HOLY_SHIELD)
+    talents.hasDivinePurpose = API.HasTalent(spells.DIVINE_PURPOSE)
+    talents.hasFocusedBlessings = API.HasTalent(spells.FOCUSED_BLESSINGS)
+    talents.hasBulwarkOfOrder = API.HasTalent(spells.BULWARK_OF_ORDER)
+    talents.hasBulwarkOfRighteousFury = API.HasTalent(spells.BULWARK_OF_RIGHTEOUS_FURY)
     talents.hasRighteousProtector = API.HasTalent(spells.RIGHTEOUS_PROTECTOR)
     talents.hasRedoubt = API.HasTalent(spells.REDOUBT)
-    talents.hasCrusadersJudgment = API.HasTalent(spells.CRUSADERS_JUDGMENT)
-    talents.hasFirstAvenger = API.HasTalent(spells.FIRST_AVENGER)
-    talents.hasDivinePurpose = API.HasTalent(spells.DIVINE_PURPOSE)
-    talents.hasSeraphim = API.HasTalent(spells.SERAPHIM)
-    talents.hasHolyAvenger = API.HasTalent(spells.HOLY_AVENGER)
-    talents.hasFinalStand = API.HasTalent(spells.FINAL_STAND)
-    talents.hasBlessingOfSpellwarding = API.HasTalent(spells.BLESSING_OF_SPELLWARDING)
-    talents.hasLastDefender = API.HasTalent(spells.LAST_DEFENDER)
+    talents.hasRevitalizingShadow = API.HasTalent(spells.REVITALIZING_SHADOW)
+    talents.hasFaithsArmor = API.HasTalent(spells.FAITHS_ARMOR)
+    talents.hasHolyShield = API.HasTalent(spells.HOLY_SHIELD)
     talents.hasMomentOfGlory = API.HasTalent(spells.MOMENT_OF_GLORY)
-    talents.hasEyeOfTyr = API.HasTalent(spells.EYE_OF_TYR)
+    talents.hasDivineResonance = API.HasTalent(spells.DIVINE_RESONANCE)
+    talents.hasRighteousBlindingLight = API.HasTalent(spells.RIGHTEOUS_BLINDING_LIGHT)
+    talents.hasResolute = API.HasTalent(spells.RESOLUTE)
+    talents.hasImprovedConsecration = API.HasTalent(spells.IMPROVED_CONSECRATION)
+    talents.hasFirstAvengers = API.HasTalent(spells.FIRST_AVENGERS)
+    talents.hasKingOfTheJungle = API.HasTalent(spells.KING_OF_THE_JUNGLE)
+    talents.hasResoluteDefender = API.HasTalent(spells.RESOLUTE_DEFENDER)
+    talents.hasImprovedRighteousDefense = API.HasTalent(spells.IMPROVED_RIGHTEOUS_DEFENSE)
+    talents.hasHolySeal = API.HasTalent(spells.HOLY_SEAL)
+    talents.hasSoloShield = API.HasTalent(spells.SOLO_SHIELD)
+    talents.hasBlessedHammer = API.HasTalent(spells.BLESSED_HAMMER)
+    talents.hasFinalStand = API.HasTalent(spells.FINAL_STAND)
     talents.hasDivineToll = API.HasTalent(spells.DIVINE_TOLL)
-    talents.hasExecutionSentence = API.HasTalent(spells.EXECUTION_SENTENCE)
-    talents.hasBastion = API.HasTalent(spells.BASTION_OF_LIGHT)
+    talents.hasSentinel = API.HasTalent(spells.SENTINEL)
+    talents.hasToweringShield = API.HasTalent(spells.TOWERING_SHIELD)
+    talents.hasMightyDisplacer = API.HasTalent(spells.MIGHTY_DISPLACER)
+    talents.hasFlaringResistance = API.HasTalent(spells.FLARING_RESISTANCE)
+    
+    -- Set specialized variables based on talents
+    if talents.hasDivinePurpose then
+        divinePurpose = true
+        divinePurposeActive = API.UnitHasBuff("player", buffs.DIVINE_PURPOSE)
+    end
+    
+    if talents.hasFocusedBlessings then
+        focusedBlessings = true
+    end
+    
+    if talents.hasBulwarkOfOrder then
+        bulwarkOfOrder = true
+    end
+    
+    if talents.hasBulwarkOfRighteousFury then
+        bulwarkOfRighteous = true
+    end
+    
+    if talents.hasRighteousProtector then
+        righteousProtector = true
+    end
+    
+    if talents.hasRedoubt then
+        redoubt = true
+    end
+    
+    if talents.hasRevitalizingShadow then
+        revitalizingShadow = true
+    end
+    
+    if talents.hasFaithsArmor then
+        faithsArmor = true
+    end
+    
+    if talents.hasHolyShield then
+        holyShield = true
+    end
+    
+    if talents.hasMomentOfGlory then
+        momentOfGlory = true
+    end
+    
+    if talents.hasDivineResonance then
+        divineResonance = true
+    end
+    
+    if talents.hasRighteousBlindingLight then
+        rightBlindingLight = true
+    end
+    
+    if talents.hasHolySeal then
+        holySeal = true
+    end
+    
+    if talents.hasSoloShield then
+        soloShield = true
+    end
+    
+    if talents.hasBlessedHammer then
+        blessedHammer = true
+    end
+    
+    if talents.hasFirstAvengers then
+        firstShield = true
+    end
+    
+    if talents.hasFinalStand then
+        finalStand = true
+    end
+    
+    if talents.hasDivineToll then
+        divineToll = true
+    end
+    
+    if talents.hasSentinel then
+        sentinel = true
+    end
+    
+    if talents.hasResolute then
+        resolute = true
+    end
+    
+    if talents.hasImprovedRighteousDefense then
+        improvedDefense = true
+    end
+    
+    if API.IsSpellKnown(spells.CRUSADER_AURA) then
+        crusaderAura = true
+    end
+    
+    if API.IsSpellKnown(spells.AVENGERS_SHIELD) then
+        avengersShield = true
+    end
+    
+    if API.IsSpellKnown(spells.JUDGMENT) then
+        judgment = true
+    end
+    
+    if API.IsSpellKnown(spells.HAMMER_OF_THE_RIGHTEOUS) then
+        hammer = true
+    end
+    
+    if API.IsSpellKnown(spells.CONSECRATION) then
+        consecrate = true
+    end
+    
+    if API.IsSpellKnown(spells.SHIELD_OF_THE_RIGHTEOUS) then
+        shieldOfRighteous = true
+    end
+    
+    if API.IsSpellKnown(spells.WORD_OF_GLORY) then
+        wordOfGlory = true
+    end
+    
+    if API.IsSpellKnown(spells.DIVINE_PROTECTION) then
+        divineProtection = true
+    end
+    
+    if API.IsSpellKnown(spells.ARDENT_DEFENDER) then
+        ardentDefender = true
+    end
+    
+    if API.IsSpellKnown(spells.GUARDIAN_OF_ANCIENT_KINGS) then
+        guardianOfAncientKings = true
+    end
+    
+    if API.IsSpellKnown(spells.LAY_ON_HANDS) then
+        layOnHands = true
+    end
+    
+    if API.IsSpellKnown(spells.HAMMER_OF_WRATH) then
+        hammerOfWrath = true
+    end
+    
+    if API.IsSpellKnown(spells.CRUSADER_STRIKE) then
+        crusaderStrike = true
+    end
+    
+    if API.IsSpellKnown(spells.BLESSING_OF_PROTECTION) then
+        blessingOfProtection = true
+    end
+    
+    if API.IsSpellKnown(spells.BLESSING_OF_SACRIFICE) then
+        blessingOfSacrifice = true
+    end
+    
+    if API.IsSpellKnown(spells.EYE_OF_TYR) then
+        eyeOfTyr = true
+    end
+    
+    if talents.hasToweringShield then
+        toweringShieldActive = API.UnitHasBuff("player", buffs.TOWERING_SHIELD)
+        toweringShieldStacks = select(4, API.GetBuffInfo("player", buffs.TOWERING_SHIELD)) or 0
+    end
+    
+    if talents.hasMightyDisplacer then
+        mightyDisplacer = true
+        mightyDisplacerActive = API.UnitHasBuff("player", buffs.MIGHTY_DISPLACER)
+        mightyDisplacerStacks = select(4, API.GetBuffInfo("player", buffs.MIGHTY_DISPLACER)) or 0
+    end
+    
+    if talents.hasFlaringResistance then
+        flaringResistanceTalent = true
+        flaringResistanceActive = API.UnitHasBuff("player", buffs.FLARING_RESISTANCE)
+        flaringResistanceStacks = select(4, API.GetBuffInfo("player", buffs.FLARING_RESISTANCE)) or 0
+    end
+    
+    if talents.hasKingOfTheJungle then
+        kingOfTheJungle = true
+    end
     
     API.PrintDebug("Protection Paladin talents updated")
     
     return true
 end
 
--- Update holy power tracking
+-- Update Holy Power tracking
 function Protection:UpdateHolyPower()
     currentHolyPower = API.GetPlayerPower()
     return true
 end
 
--- Update target data
-function Protection:UpdateTargetData()
-    -- Get target GUID
-    local targetGUID = API.GetTargetGUID()
+-- Update Shield of the Righteous charges
+function Protection:UpdateSotRCharges()
+    shieldOfTheRighteousCharges, shieldOfTheRighteousMaxCharges = API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS)
     
-    if targetGUID and targetGUID ~= "" then
-        -- Initialize target data if needed
-        if not self.targetData[targetGUID] then
-            self.targetData[targetGUID] = {
-                eyeOfTyr = false,
-                eyeOfTyrExpiration = 0,
-                finalSentence = false,
-                finalSentenceExpiration = 0
-            }
-        end
+    -- Update Shield of the Righteous active status
+    shieldOfTheRighteousActive = API.UnitHasBuff("player", buffs.SHIELD_OF_THE_RIGHTEOUS)
+    if shieldOfTheRighteousActive then
+        shieldOfTheRighteousEndTime = select(6, API.GetBuffInfo("player", buffs.SHIELD_OF_THE_RIGHTEOUS))
     end
-    
-    -- Update execute phase tracking (Hammer of Wrath)
-    if API.GetTargetHealthPercent() <= EXECUTE_THRESHOLD then
-        hammerOfWrathAvailable = true
-    else
-        hammerOfWrathAvailable = false
-    end
-    
-    -- Update AoE targets count
-    currentAoETargets = API.GetNearbyEnemiesCount(8) -- Protection AoE radius
     
     return true
+end
+
+-- Update health tracking
+function Protection:UpdateHealth()
+    playerHealth = API.GetPlayerHealthPercent()
+    return true
+end
+
+-- Update target health tracking
+function Protection:UpdateTargetHealth()
+    targetHealth = API.GetTargetHealthPercent()
+    return true
+end
+
+-- Update threat situation
+function Protection:UpdateThreatSituation()
+    -- Get current threat level for player
+    local threatLevel = API.UnitThreatSituation("player")
+    
+    -- Convert threat level to string status
+    if threatLevel == 0 then
+        threatSituation = "LOW"
+    elseif threatLevel == 1 then
+        threatSituation = "MEDIUM"
+    elseif threatLevel == 2 then
+        threatSituation = "HIGH"
+    elseif threatLevel == 3 then
+        threatSituation = "TANK"
+    else
+        threatSituation = "UNKNOWN"
+    end
+    
+    return true
+end
+
+-- Update active enemy counts
+function Protection:UpdateEnemyCounts()
+    activeEnemies = API.GetEnemyCount() or 0
+    activeImportantEnemies = API.GetImportantEnemyCount() or 0
+    activeBossEnemies = API.GetBossEnemyCount() or 0
+    return true
+end
+
+-- Check if unit is in melee range
+function Protection:IsInMeleeRange(unit)
+    if not unit or not API.UnitExists(unit) then
+        return false
+    end
+    
+    return API.GetUnitDistance("player", unit) <= meleeRange
 end
 
 -- Handle combat log events
 function Protection:HandleCombatLogEvent(...)
     local timestamp, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID, spellName = CombatLogGetCurrentEventInfo()
     
-    -- Track buff applications
-    if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
-        -- Track player buffs
-        if destGUID == API.GetPlayerGUID() then
-            -- Track Shield of the Righteous
+    -- Track player events (casts, buffs, etc.)
+    if sourceGUID == API.GetPlayerGUID() then
+        -- Track buff applications
+        if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
+            -- Shield of the Righteous application
             if spellID == buffs.SHIELD_OF_THE_RIGHTEOUS then
-                shieldOfRighteousBuff = true
-                -- Extend the duration for legendary effect
-                lastShieldOfRighteous = GetTime()
+                shieldOfTheRighteousActive = true
+                shieldOfTheRighteousEndTime = select(6, API.GetBuffInfo("player", buffs.SHIELD_OF_THE_RIGHTEOUS))
                 API.PrintDebug("Shield of the Righteous activated")
             end
             
-            -- Track Avenging Wrath
+            -- Consecration application
+            if spellID == buffs.CONSECRATION then
+                consecrationActive = true
+                consecrationEndTime = select(6, API.GetBuffInfo("player", buffs.CONSECRATION))
+                API.PrintDebug("Consecration activated")
+            end
+            
+            -- Avenging Wrath application
             if spellID == buffs.AVENGING_WRATH then
                 avengingWrathActive = true
+                avengingWrathEndTime = select(6, API.GetBuffInfo("player", buffs.AVENGING_WRATH))
                 API.PrintDebug("Avenging Wrath activated")
             end
             
-            -- Track Ardent Defender
+            -- Ardent Defender application
             if spellID == buffs.ARDENT_DEFENDER then
                 ardentDefenderActive = true
+                ardentDefenderEndTime = select(6, API.GetBuffInfo("player", buffs.ARDENT_DEFENDER))
                 API.PrintDebug("Ardent Defender activated")
             end
             
-            -- Track Guardian of Ancient Kings
+            -- Guardian of Ancient Kings application
             if spellID == buffs.GUARDIAN_OF_ANCIENT_KINGS then
                 guardianOfAncientKingsActive = true
+                guardianOfAncientKingsEndTime = select(6, API.GetBuffInfo("player", buffs.GUARDIAN_OF_ANCIENT_KINGS))
                 API.PrintDebug("Guardian of Ancient Kings activated")
             end
             
-            -- Track Divine Purpose
+            -- Divine Shield application
+            if spellID == buffs.DIVINE_SHIELD then
+                divineShieldActive = true
+                divineShieldEndTime = select(6, API.GetBuffInfo("player", buffs.DIVINE_SHIELD))
+                API.PrintDebug("Divine Shield activated")
+            end
+            
+            -- Sentinel application
+            if spellID == buffs.SENTINEL then
+                sentinelActive = true
+                sentinelEndTime = select(6, API.GetBuffInfo("player", buffs.SENTINEL))
+                API.PrintDebug("Sentinel activated")
+            end
+            
+            -- Towering Shield application (Season 2 trait)
+            if spellID == buffs.TOWERING_SHIELD then
+                toweringShieldActive = true
+                toweringShieldEndTime = select(6, API.GetBuffInfo("player", buffs.TOWERING_SHIELD))
+                toweringShieldStacks = select(4, API.GetBuffInfo("player", buffs.TOWERING_SHIELD)) or 1
+                API.PrintDebug("Towering Shield activated: " .. tostring(toweringShieldStacks) .. " stack(s)")
+            end
+            
+            -- Mighty Displacer application (Season 2 trait)
+            if spellID == buffs.MIGHTY_DISPLACER then
+                mightyDisplacerActive = true
+                mightyDisplacerEndTime = select(6, API.GetBuffInfo("player", buffs.MIGHTY_DISPLACER))
+                mightyDisplacerStacks = select(4, API.GetBuffInfo("player", buffs.MIGHTY_DISPLACER)) or 1
+                API.PrintDebug("Mighty Displacer activated: " .. tostring(mightyDisplacerStacks) .. " stack(s)")
+            end
+            
+            -- Flaring Resistance application
+            if spellID == buffs.FLARING_RESISTANCE then
+                flaringResistanceActive = true
+                flaringResistanceEndTime = select(6, API.GetBuffInfo("player", buffs.FLARING_RESISTANCE))
+                flaringResistanceStacks = select(4, API.GetBuffInfo("player", buffs.FLARING_RESISTANCE)) or 1
+                API.PrintDebug("Flaring Resistance activated: " .. tostring(flaringResistanceStacks) .. " stack(s)")
+            end
+            
+            -- Divine Purpose application
             if spellID == buffs.DIVINE_PURPOSE then
-                divinePurposeBuff = true
-                API.PrintDebug("Divine Purpose proc")
+                divinePurposeActive = true
+                divinePurposeEndTime = select(6, API.GetBuffInfo("player", buffs.DIVINE_PURPOSE))
+                API.PrintDebug("Divine Purpose activated")
             end
             
-            -- Track Moment of Glory
-            if spellID == buffs.MOMENT_OF_GLORY then
-                momentOfGloryBuff = true
-                API.PrintDebug("Moment of Glory activated")
-            end
-            
-            -- Track Shining Light
-            if spellID == buffs.SHINING_LIGHT then
-                shiningLightStacks = 5 -- Full stacks
-                API.PrintDebug("Shining Light full stacks")
-            end
-            
-            -- Track Bulwark of Righteous Glory (Sentinel legendary)
-            if spellID == buffs.BULWARK_OF_RIGHTEOUS_GLORY then
-                bulwarkOfRighteousGlory = true
-                API.PrintDebug("Bulwark of Righteous Glory activated")
-            end
-            
-            -- Track Divine Protection
-            if spellID == buffs.DIVINE_PROTECTION then
-                divineProtectionActive = true
-                API.PrintDebug("Divine Protection activated")
+            -- Forbearance application
+            if spellID == debuffs.FORBEARANCE then
+                lastForbearance = GetTime()
+                API.PrintDebug("Forbearance applied to player")
             end
         end
         
-        -- Track debuffs on targets
-        if self.targetData[destGUID] then
-            -- Track Eye of Tyr 
-            if spellID == debuffs.EYE_OF_TYR then
-                self.targetData[destGUID].eyeOfTyr = true
-                self.targetData[destGUID].eyeOfTyrExpiration = select(6, API.GetDebuffInfo(destGUID, debuffs.EYE_OF_TYR))
-                
-                if destGUID == API.GetTargetGUID() then
-                    eyeOfTyrActive = true
-                    API.PrintDebug("Eye of Tyr applied to target")
-                end
-            end
-            
-            -- Track Final Sentence (Execution Sentence)
-            if spellID == debuffs.FINAL_SENTENCE then
-                self.targetData[destGUID].finalSentence = true
-                self.targetData[destGUID].finalSentenceExpiration = select(6, API.GetDebuffInfo(destGUID, debuffs.FINAL_SENTENCE))
-                
-                if destGUID == API.GetTargetGUID() then
-                    sentenceActive = true
-                    API.PrintDebug("Final Sentence applied to target")
-                end
-            end
-        end
-    end
-    
-    -- Track buff removals
-    if eventType == "SPELL_AURA_REMOVED" then
-        -- Track player buffs
-        if destGUID == API.GetPlayerGUID() then
-            -- Track Shield of the Righteous
+        -- Track buff removals
+        if eventType == "SPELL_AURA_REMOVED" then
+            -- Shield of the Righteous removal
             if spellID == buffs.SHIELD_OF_THE_RIGHTEOUS then
-                shieldOfRighteousBuff = false
+                shieldOfTheRighteousActive = false
                 API.PrintDebug("Shield of the Righteous faded")
             end
             
-            -- Track Avenging Wrath
+            -- Consecration removal
+            if spellID == buffs.CONSECRATION then
+                consecrationActive = false
+                API.PrintDebug("Consecration faded")
+            end
+            
+            -- Avenging Wrath removal
             if spellID == buffs.AVENGING_WRATH then
                 avengingWrathActive = false
                 API.PrintDebug("Avenging Wrath faded")
             end
             
-            -- Track Ardent Defender
+            -- Ardent Defender removal
             if spellID == buffs.ARDENT_DEFENDER then
                 ardentDefenderActive = false
                 API.PrintDebug("Ardent Defender faded")
             end
             
-            -- Track Guardian of Ancient Kings
+            -- Guardian of Ancient Kings removal
             if spellID == buffs.GUARDIAN_OF_ANCIENT_KINGS then
                 guardianOfAncientKingsActive = false
                 API.PrintDebug("Guardian of Ancient Kings faded")
             end
             
-            -- Track Divine Purpose
+            -- Divine Shield removal
+            if spellID == buffs.DIVINE_SHIELD then
+                divineShieldActive = false
+                API.PrintDebug("Divine Shield faded")
+            end
+            
+            -- Sentinel removal
+            if spellID == buffs.SENTINEL then
+                sentinelActive = false
+                API.PrintDebug("Sentinel faded")
+            end
+            
+            -- Towering Shield removal
+            if spellID == buffs.TOWERING_SHIELD then
+                toweringShieldActive = false
+                toweringShieldStacks = 0
+                API.PrintDebug("Towering Shield faded")
+            end
+            
+            -- Mighty Displacer removal
+            if spellID == buffs.MIGHTY_DISPLACER then
+                mightyDisplacerActive = false
+                mightyDisplacerStacks = 0
+                API.PrintDebug("Mighty Displacer faded")
+            end
+            
+            -- Flaring Resistance removal
+            if spellID == buffs.FLARING_RESISTANCE then
+                flaringResistanceActive = false
+                flaringResistanceStacks = 0
+                API.PrintDebug("Flaring Resistance faded")
+            end
+            
+            -- Divine Purpose removal
             if spellID == buffs.DIVINE_PURPOSE then
-                divinePurposeBuff = false
-                API.PrintDebug("Divine Purpose consumed")
-            end
-            
-            -- Track Moment of Glory
-            if spellID == buffs.MOMENT_OF_GLORY then
-                momentOfGloryBuff = false
-                API.PrintDebug("Moment of Glory faded")
-            end
-            
-            -- Track Shining Light
-            if spellID == buffs.SHINING_LIGHT then
-                shiningLightStacks = 0
-                API.PrintDebug("Shining Light consumed")
-            end
-            
-            -- Track Bulwark of Righteous Glory
-            if spellID == buffs.BULWARK_OF_RIGHTEOUS_GLORY then
-                bulwarkOfRighteousGlory = false
-                API.PrintDebug("Bulwark of Righteous Glory faded")
-            end
-            
-            -- Track Divine Protection
-            if spellID == buffs.DIVINE_PROTECTION then
-                divineProtectionActive = false
-                API.PrintDebug("Divine Protection faded")
+                divinePurposeActive = false
+                API.PrintDebug("Divine Purpose faded")
             end
         end
         
-        -- Track debuffs on targets
-        if self.targetData[destGUID] then
-            -- Track Eye of Tyr
-            if spellID == debuffs.EYE_OF_TYR then
-                self.targetData[destGUID].eyeOfTyr = false
-                
-                if destGUID == API.GetTargetGUID() then
-                    eyeOfTyrActive = false
-                    API.PrintDebug("Eye of Tyr faded from target")
-                end
-            end
-            
-            -- Track Final Sentence
-            if spellID == debuffs.FINAL_SENTENCE then
-                self.targetData[destGUID].finalSentence = false
-                
-                if destGUID == API.GetTargetGUID() then
-                    sentenceActive = false
-                    API.PrintDebug("Final Sentence faded from target")
-                end
+        -- Track spell casts
+        if eventType == "SPELL_CAST_SUCCESS" then
+            if spellID == spells.AVENGERS_SHIELD then
+                lastAvengersShield = GetTime()
+                API.PrintDebug("Avenger's Shield cast")
+            elseif spellID == spells.JUDGMENT then
+                lastJudgment = GetTime()
+                API.PrintDebug("Judgment cast")
+            elseif spellID == spells.SHIELD_OF_THE_RIGHTEOUS then
+                lastShieldOfTheRighteous = GetTime()
+                API.PrintDebug("Shield of the Righteous cast")
+            elseif spellID == spells.WORD_OF_GLORY then
+                lastWordOfGlory = GetTime()
+                API.PrintDebug("Word of Glory cast")
+            elseif spellID == spells.HAMMER_OF_WRATH then
+                lastHammerOfWrath = GetTime()
+                API.PrintDebug("Hammer of Wrath cast")
+            elseif spellID == spells.AVENGING_WRATH then
+                lastAvengingWrath = GetTime()
+                avengingWrathActive = true
+                avengingWrathEndTime = GetTime() + AVENGING_WRATH_DURATION
+                API.PrintDebug("Avenging Wrath cast")
+            elseif spellID == spells.ARDENT_DEFENDER then
+                lastArdentDefender = GetTime()
+                ardentDefenderActive = true
+                ardentDefenderEndTime = GetTime() + ARDENT_DEFENDER_DURATION
+                API.PrintDebug("Ardent Defender cast")
+            elseif spellID == spells.GUARDIAN_OF_ANCIENT_KINGS then
+                lastGuardianOfAncientKings = GetTime()
+                guardianOfAncientKingsActive = true
+                guardianOfAncientKingsEndTime = GetTime() + GUARDIAN_OF_ANCIENT_KINGS_DURATION
+                API.PrintDebug("Guardian of Ancient Kings cast")
+            elseif spellID == spells.CONSECRATION then
+                lastConsecrateTime = GetTime()
+                consecrationActive = true
+                consecrationEndTime = GetTime() + CONSECRATION_DURATION
+                API.PrintDebug("Consecration cast")
+            elseif spellID == spells.DIVINE_PROTECTION then
+                lastDivineProtection = GetTime()
+                API.PrintDebug("Divine Protection cast")
+            elseif spellID == spells.LAY_ON_HANDS then
+                lastLayOnHands = GetTime()
+                API.PrintDebug("Lay on Hands cast")
+            elseif spellID == spells.SENTINEL then
+                lastSentinel = GetTime()
+                sentinelActive = true
+                sentinelEndTime = GetTime() + SENTINEL_DURATION
+                API.PrintDebug("Sentinel cast")
+            elseif spellID == spells.FINAL_STAND then
+                lastFinalStand = GetTime()
+                API.PrintDebug("Final Stand cast")
+            elseif spellID == spells.DIVINE_TOLL then
+                lastDivineToll = GetTime()
+                divineTollActive = true
+                API.PrintDebug("Divine Toll cast")
+            elseif spellID == spells.MOMENT_OF_GLORY then
+                lastMomentOfGlory = GetTime()
+                API.PrintDebug("Moment of Glory cast")
+            elseif spellID == spells.DIVINE_RESONANCE then
+                lastDivineResonance = GetTime()
+                API.PrintDebug("Divine Resonance cast")
+            elseif spellID == spells.HAMMER_OF_JUSTICE then
+                hammerOfJusticeOnCooldown = true
+                API.PrintDebug("Hammer of Justice cast")
+            elseif spellID == spells.BLESSING_OF_PROTECTION then
+                blessingOfProtectionOnCooldown = true
+                API.PrintDebug("Blessing of Protection cast")
+            elseif spellID == spells.BLESSING_OF_SACRIFICE then
+                blessingOfSacrificeOnCooldown = true
+                API.PrintDebug("Blessing of Sacrifice cast")
             end
         end
-    end
-    
-    -- Track spell casts
-    if eventType == "SPELL_CAST_SUCCESS" and sourceGUID == API.GetPlayerGUID() then
-        -- Track Shield of the Righteous casts
-        if spellID == spells.SHIELD_OF_THE_RIGHTEOUS then
-            shieldOfRighteousBuff = true
-            lastShieldOfRighteous = GetTime()
-            API.PrintDebug("Shield of the Righteous cast")
-        elseif spellID == spells.CONSECRATION then
-            consecrationActive = true
-            consecrationTimeRemaining = CONSECRATION_DURATION
-            
-            -- Set a timer to track consecration expiration
-            C_Timer.After(CONSECRATION_DURATION, function()
-                consecrationActive = false
-                API.PrintDebug("Consecration expired")
-            end)
-            
-            API.PrintDebug("Consecration cast")
-        elseif spellID == spells.DIVINE_TOLL then
-            divineTollAvailable = false
-            
-            -- Set a timer to track Divine Toll cooldown
-            C_Timer.After(60, function() -- 60 second cooldown
-                divineTollAvailable = true
-                API.PrintDebug("Divine Toll available")
-            end)
-        elseif spellID == spells.BASTION_OF_LIGHT then
-            bastion = true
-            
-            -- Set a timer to track Bastion of Light fading (duration of effect)
-            C_Timer.After(10, function() -- Approximate effect duration
-                bastion = false
-            end)
-        elseif spellID == spells.SHIELD_OF_THE_RIGHTEOUS and shiningLightStacks < 5 then
-            -- Increment Shining Light stacks (up to 5)
-            shiningLightStacks = math.min(5, shiningLightStacks + 1)
-            API.PrintDebug("Shining Light stacks: " .. tostring(shiningLightStacks))
+        
+        -- Track judgment debuff application
+        if (eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH") and spellID == debuffs.JUDGMENT and destGUID then
+            judgmentApplied = true
+            API.PrintDebug("Judgment debuff applied to " .. destName)
         end
-    end
-    
-    -- Track Shield of the Righteous charges
-    if eventType == "SPELL_CHARGE_GAINED" and spellID == spells.SHIELD_OF_THE_RIGHTEOUS then
-        shieldOfRighteousCharges = select(1, API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS)) or 0
-        API.PrintDebug("Shield of the Righteous charge gained: " .. tostring(shieldOfRighteousCharges))
-    end
-    
-    -- Track Shield of the Righteous charge usage
-    if eventType == "SPELL_CHARGE_SPENT" and spellID == spells.SHIELD_OF_THE_RIGHTEOUS then
-        shieldOfRighteousCharges = select(1, API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS)) or 0
-        API.PrintDebug("Shield of the Righteous charge spent: " .. tostring(shieldOfRighteousCharges))
+        
+        -- Track judgment debuff removal
+        if eventType == "SPELL_AURA_REMOVED" and spellID == debuffs.JUDGMENT and destGUID then
+            judgmentApplied = false
+            API.PrintDebug("Judgment debuff removed from " .. destName)
+        end
     end
     
     return true
@@ -738,8 +1287,14 @@ function Protection:RunRotation()
     
     -- Update variables
     self:UpdateHolyPower()
-    self:UpdateShieldOfRighteousStatus()
+    self:UpdateSotRCharges()
+    self:UpdateHealth()
+    self:UpdateEnemyCounts()
     burstModeActive = settings.rotationSettings.burstEnabled and API.ShouldUseBurst()
+    
+    -- Check if in melee range
+    targetInRange = API.IsUnitInRange("target", meleeRange)
+    isInMelee = targetInRange
     
     -- Handle next cast override
     if nextCastOverride and API.CanCast(nextCastOverride) then
@@ -749,28 +1304,32 @@ function Protection:RunRotation()
         return true
     end
     
-    -- Handle emergency defensives first
-    if self:HandleEmergencyDefensives(settings) then
+    -- Handle out of combat setup
+    if not API.IsInCombat() then
+        -- If we have no aura up
+        if not API.UnitHasBuff("player", spells.DEVOTION_AURA) and 
+           not API.UnitHasBuff("player", spells.CRUSADER_AURA) and 
+           API.CanCast(spells.DEVOTION_AURA) then
+            API.CastSpell(spells.DEVOTION_AURA)
+            return true
+        end
+        
+        -- No other actions needed out of combat
+        return false
+    end
+    
+    -- Handle emergency situations
+    if self:HandleEmergencies(settings) then
         return true
     end
     
     -- Handle interrupts
-    if self:HandleInterrupts() then
-        return true
-    end
-    
-    -- Handle Shield of the Righteous
-    if self:HandleShieldOfRighteous(settings) then
-        return true
-    end
-    
-    -- Handle Word of Glory
-    if self:HandleWordOfGlory(settings) then
+    if self:HandleInterrupts(settings) then
         return true
     end
     
     -- Handle defensive cooldowns
-    if self:HandleDefensiveCooldowns(settings) then
+    if self:HandleDefensives(settings) then
         return true
     end
     
@@ -779,63 +1338,94 @@ function Protection:RunRotation()
         return true
     end
     
-    -- Handle rotational abilities
-    if settings.rotationSettings.aoeEnabled and currentAoETargets >= settings.rotationSettings.aoeThreshold then
-        return self:HandleAoERotation(settings)
+    -- Handle Shield of the Righteous usage
+    if self:HandleShieldOfRighteous(settings) then
+        return true
+    end
+    
+    -- Handle Word of Glory usage
+    if self:HandleWordOfGlory(settings) then
+        return true
+    end
+    
+    -- Handle main rotation
+    if activeEnemies >= settings.rotationSettings.aoeThreshold and settings.rotationSettings.aoeEnabled then
+        return self:HandleAoE(settings)
     else
-        return self:HandleSingleTargetRotation(settings)
+        return self:HandleSingleTarget(settings)
     end
 end
 
--- Update Shield of the Righteous status
-function Protection:UpdateShieldOfRighteousStatus()
-    shieldOfRighteousCharges = select(1, API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS)) or 0
+-- Handle emergency situations
+function Protection:HandleEmergencies(settings)
+    -- Lay on Hands for self
+    if layOnHands and 
+       settings.defensiveSettings.useLayOnHands and
+       playerHealth <= settings.defensiveSettings.layOnHandsThreshold and
+       API.CanCast(spells.LAY_ON_HANDS) and
+       not API.UnitHasDebuff("player", debuffs.FORBEARANCE) then
+        API.CastSpellOnUnit(spells.LAY_ON_HANDS, "player")
+        return true
+    end
     
-    if shieldOfRighteousBuff then
-        local timeElapsed = GetTime() - lastShieldOfRighteous
+    -- Lay on Hands for ally
+    if layOnHands and 
+       settings.defensiveSettings.useLayOnHands then
         
-        if timeElapsed > SOR_DURATION then
-            shieldOfRighteousBuff = false
+        -- Find ally in critical condition
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) and not API.UnitHasDebuff(unit, debuffs.FORBEARANCE) then
+                local unitHealth = API.GetUnitHealthPercent(unit)
+                
+                if unitHealth <= settings.defensiveSettings.layOnHandsAllyThreshold and API.CanCast(spells.LAY_ON_HANDS) then
+                    API.CastSpellOnUnit(spells.LAY_ON_HANDS, unit)
+                    return true
+                end
+            end
         end
     end
     
-    return true
-end
-
--- Handle emergency defensive cooldowns
-function Protection:HandleEmergencyDefensives(settings)
-    -- Use Ardent Defender for emergency
-    if settings.defensiveSettings.useArdentDefender and
-       API.GetPlayerHealthPercent() <= settings.defensiveSettings.ardentDefenderThreshold and
-       not ardentDefenderActive and
-       API.CanCast(spells.ARDENT_DEFENDER) then
-        API.CastSpell(spells.ARDENT_DEFENDER)
+    -- Divine Shield for emergency if we're about to die
+    if settings.defensiveSettings.useDivineShield and
+       playerHealth <= settings.defensiveSettings.divineShieldThreshold and
+       API.CanCast(spells.DIVINE_SHIELD) and
+       not API.UnitHasDebuff("player", debuffs.FORBEARANCE) then
+       
+        -- Use with Final Stand if we have it to maintain aggro
+        if finalStand and API.CanCast(spells.FINAL_STAND) then
+            -- Cast Divine Shield first
+            API.CastSpell(spells.DIVINE_SHIELD)
+            nextCastOverride = spells.FINAL_STAND -- Queue up Final Stand
+            return true
+        else
+            API.CastSpell(spells.DIVINE_SHIELD)
+            return true
+        end
+    end
+    
+    -- Emergency Word of Glory with Divine Purpose proc
+    if wordOfGlory and
+       divinePurposeActive and
+       playerHealth <= 35 and
+       API.CanCast(spells.WORD_OF_GLORY) then
+        API.CastSpellOnUnit(spells.WORD_OF_GLORY, "player")
         return true
     end
     
-    -- Use Guardian of Ancient Kings for emergency
-    if settings.defensiveSettings.useGuardianOfAncientKings and
-       API.GetPlayerHealthPercent() <= settings.defensiveSettings.guardianOfAncientKingsThreshold and
-       not guardianOfAncientKingsActive and
-       API.CanCast(spells.GUARDIAN_OF_ANCIENT_KINGS) then
-        API.CastSpell(spells.GUARDIAN_OF_ANCIENT_KINGS)
-        return true
-    end
-    
-    -- Use Bastion of Light for emergency (if talented)
-    if talents.hasBastion and
-       API.GetPlayerHealthPercent() <= settings.advancedSettings.bastionThreshold and
-       not bastion and
-       API.CanCast(spells.BASTION_OF_LIGHT) then
-        API.CastSpell(spells.BASTION_OF_LIGHT)
-        return true
-    end
-    
-    -- Use Lay on Hands for critical health
-    if settings.defensiveSettings.useLayOnHandsEmergency and
-       API.GetPlayerHealthPercent() <= settings.defensiveSettings.layOnHandsThreshold and
-       API.CanCast(spells.LAY_ON_HANDS) then
-        API.CastSpellOnUnit(spells.LAY_ON_HANDS, "player")
+    -- Emergency Shield of the Righteous
+    if shieldOfRighteous and
+       not shieldOfTheRighteousActive and
+       playerHealth <= settings.shieldOfRighteousSettings.emergencySotRThreshold and
+       (currentHolyPower >= 3 or divinePurposeActive) and
+       API.CanCast(spells.SHIELD_OF_THE_RIGHTEOUS) then
+        API.CastSpell(spells.SHIELD_OF_THE_RIGHTEOUS)
         return true
     end
     
@@ -843,18 +1433,241 @@ function Protection:HandleEmergencyDefensives(settings)
 end
 
 -- Handle interrupts
-function Protection:HandleInterrupts()
-    -- Use Avenger's Shield for interrupt if prioritized
-    if settings.abilityControls.avengersShield.priorityInterrupt and
-       API.CanCast(spells.AVENGERS_SHIELD) and
-       API.TargetIsSpellCastable() then
-        API.CastSpell(spells.AVENGERS_SHIELD)
+function Protection:HandleInterrupts(settings)
+    -- Skip if interrupt settings disabled
+    if not settings.interruptSettings.useInterrupts then
+        return false
+    end
+    
+    -- Can't interrupt if nothing is in range
+    if not isInMelee and not API.IsUnitInRange("target", 30) then
+        return false
+    end
+    
+    -- Use Rebuke for interrupting
+    if settings.interruptSettings.useRebuke and
+       API.CanCast(spells.REBUKE) and
+       API.IsUnitCasting("target") and
+       API.CanBeInterrupted("target") then
+        API.CastSpellOnUnit(spells.REBUKE, "target")
         return true
     end
     
-    -- Use Rebuke for interrupt
-    if API.CanCast(spells.REBUKE) and API.TargetIsSpellCastable() then
-        API.CastSpell(spells.REBUKE)
+    -- Use Hammer of Justice as a backup interrupt
+    if settings.interruptSettings.useHammerOfJustice and
+       settings.interruptSettings.hammerOfJusticeMode == "Interrupt Only" and
+       not hammerOfJusticeOnCooldown and
+       API.CanCast(spells.HAMMER_OF_JUSTICE) and
+       API.IsUnitCasting("target") and
+       not API.IsUnitStunned("target") and
+       API.CanBeInterrupted("target") then
+        API.CastSpellOnUnit(spells.HAMMER_OF_JUSTICE, "target")
+        return true
+    end
+    
+    -- Use Hammer of Justice generally if set to on cooldown
+    if settings.interruptSettings.useHammerOfJustice and
+       settings.interruptSettings.hammerOfJusticeMode == "On Cooldown" and
+       not hammerOfJusticeOnCooldown and
+       API.CanCast(spells.HAMMER_OF_JUSTICE) and
+       not API.IsUnitStunned("target") then
+        API.CastSpellOnUnit(spells.HAMMER_OF_JUSTICE, "target")
+        return true
+    end
+    
+    -- Use Blinding Light for AOE interrupt if we have it
+    if rightBlindingLight and
+       API.CanCast(spells.BLINDING_LIGHT) and
+       API.AreEnemiesCasting(8) and
+       activeEnemies >= 3 then
+        API.CastSpell(spells.BLINDING_LIGHT)
+        return true
+    end
+    
+    -- Break mind control on ally with Blessing of Protection
+    if settings.interruptSettings.useMindControl and
+       blessingOfProtection and
+       not blessingOfProtectionOnCooldown and
+       API.CanCast(spells.BLESSING_OF_PROTECTION) then
+        
+        local mindControlledAlly = API.GetMindControlledUnit()
+        if mindControlledAlly then
+            API.CastSpellOnUnit(spells.BLESSING_OF_PROTECTION, mindControlledAlly)
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Handle defensive cooldowns
+function Protection:HandleDefensives(settings)
+    -- Use Guardian of Ancient Kings
+    if guardianOfAncientKings and
+       settings.cooldownSettings.useGuardianOfAncientKings and
+       not guardianOfAncientKingsActive and
+       playerHealth <= settings.cooldownSettings.guardianOfAncientKingsThreshold and
+       API.CanCast(spells.GUARDIAN_OF_ANCIENT_KINGS) then
+        API.CastSpell(spells.GUARDIAN_OF_ANCIENT_KINGS)
+        return true
+    end
+    
+    -- Use Ardent Defender
+    if ardentDefender and
+       settings.cooldownSettings.useArdentDefender and
+       not ardentDefenderActive and
+       playerHealth <= settings.cooldownSettings.ardentDefenderThreshold and
+       API.CanCast(spells.ARDENT_DEFENDER) then
+        API.CastSpell(spells.ARDENT_DEFENDER)
+        return true
+    end
+    
+    -- Use Divine Protection
+    if divineProtection and
+       settings.cooldownSettings.useDivineProtection and
+       playerHealth <= settings.cooldownSettings.divineProtectionThreshold and
+       API.CanCast(spells.DIVINE_PROTECTION) then
+        API.CastSpell(spells.DIVINE_PROTECTION)
+        return true
+    end
+    
+    -- Use Sentinel
+    if sentinel and
+       settings.cooldownSettings.useSentinel and
+       not sentinelActive and
+       playerHealth <= settings.cooldownSettings.sentinelThreshold and
+       API.CanCast(spells.SENTINEL) then
+        API.CastSpell(spells.SENTINEL)
+        return true
+    end
+    
+    -- Use Blessing of Protection on ally
+    if blessingOfProtection and
+       settings.defensiveSettings.useBlessingOfProtection and
+       not blessingOfProtectionOnCooldown then
+        
+        -- Find non-tank ally in critical condition
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) and not API.UnitIsTank(unit) and not API.UnitHasDebuff(unit, debuffs.FORBEARANCE) then
+                local unitHealth = API.GetUnitHealthPercent(unit)
+                
+                if unitHealth <= settings.defensiveSettings.blessingOfProtectionThreshold and API.CanCast(spells.BLESSING_OF_PROTECTION) then
+                    API.CastSpellOnUnit(spells.BLESSING_OF_PROTECTION, unit)
+                    return true
+                end
+            end
+        end
+    end
+    
+    -- Use Blessing of Sacrifice on ally
+    if blessingOfSacrifice and
+       settings.defensiveSettings.useBlessingOfSacrifice and
+       not blessingOfSacrificeOnCooldown and
+       playerHealth > 60 then -- Only if we're reasonably healthy
+        
+        -- Find ally in trouble
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) and unit ~= "player" then
+                local unitHealth = API.GetUnitHealthPercent(unit)
+                
+                if unitHealth <= settings.defensiveSettings.blessingOfSacrificeThreshold and API.CanCast(spells.BLESSING_OF_SACRIFICE) then
+                    API.CastSpellOnUnit(spells.BLESSING_OF_SACRIFICE, unit)
+                    return true
+                end
+            end
+        end
+    end
+    
+    -- Use Final Stand in emergency or with multiple adds
+    if finalStand and
+       settings.utilitySettings.useFinalStand and
+       API.CanCast(spells.FINAL_STAND) then
+        
+        local shouldUseFinalStand = false
+        
+        if settings.utilitySettings.finalStandMode == "Emergency Only" then
+            shouldUseFinalStand = playerHealth < 25
+        elseif settings.utilitySettings.finalStandMode == "Multiple Adds" then
+            shouldUseFinalStand = activeEnemies >= settings.utilitySettings.finalStandThreshold
+        elseif settings.utilitySettings.finalStandMode == "On Cooldown" then
+            shouldUseFinalStand = true
+        end
+        
+        if shouldUseFinalStand then
+            API.CastSpell(spells.FINAL_STAND)
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Handle offensive cooldowns
+function Protection:HandleOffensiveCooldowns(settings)
+    -- Use Avenging Wrath
+    if avengingWrath and
+       settings.cooldownSettings.useAvengingWrath and
+       not avengingWrathActive and
+       API.CanCast(spells.AVENGING_WRATH) then
+        
+        local shouldUseAW = false
+        
+        if settings.cooldownSettings.avengingWrathMode == "On Cooldown" then
+            shouldUseAW = true
+        elseif settings.cooldownSettings.avengingWrathMode == "Multiple Enemies" then
+            shouldUseAW = activeEnemies >= 3
+        elseif settings.cooldownSettings.avengingWrathMode == "Boss Only" then
+            shouldUseAW = activeBossEnemies > 0
+        elseif settings.cooldownSettings.avengingWrathMode == "Burst Only" then
+            shouldUseAW = burstModeActive
+        end
+        
+        if shouldUseAW then
+            API.CastSpell(spells.AVENGING_WRATH)
+            return true
+        end
+    end
+    
+    -- Use Divine Toll
+    if divineToll and
+       settings.cooldownSettings.useDivineToll and
+       API.CanCast(spells.DIVINE_TOLL) then
+        
+        local shouldUseDT = false
+        
+        if settings.cooldownSettings.divineTollMode == "On Cooldown" then
+            shouldUseDT = true
+        elseif settings.cooldownSettings.divineTollMode == "Multiple Enemies" then
+            shouldUseDT = activeEnemies >= 3
+        elseif settings.cooldownSettings.divineTollMode == "For Holy Power" then
+            shouldUseDT = currentHolyPower <= settings.cooldownSettings.divineTollThreshold
+        elseif settings.cooldownSettings.divineTollMode == "Burst Only" then
+            shouldUseDT = burstModeActive
+        end
+        
+        if shouldUseDT then
+            API.CastSpell(spells.DIVINE_TOLL)
+            return true
+        end
+    end
+    
+    -- Use Moment of Glory
+    if momentOfGlory and API.CanCast(spells.MOMENT_OF_GLORY) then
+        API.CastSpell(spells.MOMENT_OF_GLORY)
         return true
     end
     
@@ -863,44 +1676,59 @@ end
 
 -- Handle Shield of the Righteous usage
 function Protection:HandleShieldOfRighteous(settings)
-    -- Check if we should use SotR
-    local shouldUseSotR = false
-    
-    -- With Divine Purpose proc, always use it
-    if divinePurposeBuff and API.CanCast(spells.SHIELD_OF_THE_RIGHTEOUS) then
-        API.CastSpell(spells.SHIELD_OF_THE_RIGHTEOUS)
-        return true
-    end
-    
-    -- Need Holy Power to use SotR
-    if currentHolyPower < 3 and not bastion then
+    -- Skip if no charges or already active
+    if shieldOfTheRighteousCharges <= 0 and not divinePurposeActive then
         return false
     end
     
-    if settings.rotationSettings.sotrMode == "Defensive Priority" then
-        -- Use SotR defensively - when buff is down or about to expire
-        if not shieldOfRighteousBuff or 
-           (GetTime() - lastShieldOfRighteous) > (SOR_DURATION - settings.abilityControls.shieldOfTheRighteous.minActiveTime) then
-            shouldUseSotR = true
+    -- Requirements to use Shield of the Righteous
+    local canUse = (currentHolyPower >= 3 or divinePurposeActive) and API.CanCast(spells.SHIELD_OF_THE_RIGHTEOUS)
+    if not canUse then
+        return false
+    end
+    
+    -- Check if we should use Shield of the Righteous
+    local shouldUse = false
+    
+    -- Always use if specified
+    if settings.shieldOfRighteousSettings.useSotROnCooldown then
+        shouldUse = true
+    end
+    
+    -- Use if not active or about to expire
+    if not shieldOfTheRighteousActive or (shieldOfTheRighteousEndTime - GetTime() < 1.5) then
+        shouldUse = true
+    end
+    
+    -- If we allow overlap
+    if settings.rotationSettings.sotrOverlap then
+        shouldUse = true
+    end
+    
+    -- Check if we have enough charges to spare
+    if shieldOfTheRighteousCharges <= settings.shieldOfRighteousSettings.minSotRCharges and not divinePurposeActive then
+        shouldUse = false
+    end
+    
+    -- If the settings for AAC should override
+    if settings.abilityControls.shieldOfTheRighteous.enabled then
+        -- Check AAC conditions
+        if settings.abilityControls.shieldOfTheRighteous.useDuringBurstOnly and not burstModeActive then
+            shouldUse = false
         end
-    elseif settings.rotationSettings.sotrMode == "Maximum Uptime" then
-        -- Always keep SotR up
-        if not shieldOfRighteousBuff then
-            shouldUseSotR = true
+        
+        if settings.abilityControls.shieldOfTheRighteous.minCharges > shieldOfTheRighteousCharges and not divinePurposeActive then
+            shouldUse = false
         end
-    elseif settings.rotationSettings.sotrMode == "Holy Power Dump" then
-        -- Use when at high Holy Power
-        if currentHolyPower >= 4 or bastion then
-            shouldUseSotR = true
+        
+        -- If we're specifically trying to mitigate physical damage
+        if settings.abilityControls.shieldOfTheRighteous.useForPhysicalDamage and API.IsFacingPhysicalDamage() then
+            shouldUse = true
         end
     end
     
-    -- Don't use if using Bastion of Light but setting disallows
-    if bastion and not settings.abilityControls.shieldOfTheRighteous.useWithBastion then
-        shouldUseSotR = false
-    end
-    
-    if shouldUseSotR and API.CanCast(spells.SHIELD_OF_THE_RIGHTEOUS) then
+    -- Cast if we should use
+    if shouldUse then
         API.CastSpell(spells.SHIELD_OF_THE_RIGHTEOUS)
         return true
     end
@@ -910,174 +1738,137 @@ end
 
 -- Handle Word of Glory usage
 function Protection:HandleWordOfGlory(settings)
-    -- Skip if threshold is 0 (disabled)
-    if settings.rotationSettings.wordOfGloryThreshold <= 0 then
+    -- Skip if not enough holy power
+    if currentHolyPower < 3 and not divinePurposeActive then
         return false
     end
     
-    -- Check if we should use Word of Glory
-    local shouldUseWoG = false
-    local playerHealthPercent = API.GetPlayerHealthPercent()
+    -- Skip if we can't cast
+    if not API.CanCast(spells.WORD_OF_GLORY) then
+        return false
+    end
     
-    -- With Divine Purpose proc, use it at higher threshold
-    if divinePurposeBuff and 
-       playerHealthPercent <= settings.rotationSettings.wordOfGloryThreshold + 10 and
-       API.CanCast(spells.WORD_OF_GLORY) then
+    -- Check if we should prioritize SotR over WoG
+    if settings.shieldOfRighteousSettings.prioritizeSotROverWoG and 
+       API.CanCast(spells.SHIELD_OF_THE_RIGHTEOUS) and
+       (not shieldOfTheRighteousActive or shieldOfTheRighteousEndTime - GetTime() < 2) and
+       playerHealth > settings.rotationSettings.wordOfGloryThreshold + 15 then
+        return false -- Skip WoG to use SotR instead
+    end
+    
+    -- Emergency healing on self
+    if playerHealth <= settings.rotationSettings.wordOfGloryThreshold then
         API.CastSpellOnUnit(spells.WORD_OF_GLORY, "player")
         return true
     end
     
-    -- With Shining Light stacks, use at higher threshold if prioritized
-    if shiningLightStacks >= 5 and settings.rotationSettings.shiningLightPriority then
-        if playerHealthPercent <= settings.rotationSettings.wordOfGloryThreshold + 15 and
-           API.CanCast(spells.WORD_OF_GLORY) then
+    -- If configured to prefer self-healing
+    if settings.abilityControls.wordOfGlory.preferSelfHealing and
+       playerHealth <= settings.rotationSettings.wordOfGloryThreshold + 20 then
+        API.CastSpellOnUnit(spells.WORD_OF_GLORY, "player")
+        return true
+    end
+    
+    -- Check for critically injured allies
+    if not settings.abilityControls.wordOfGlory.emergencyOnly then
+        -- Find ally in need
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) then
+                local unitHealth = API.GetUnitHealthPercent(unit)
+                
+                if unitHealth <= settings.rotationSettings.wordOfGloryAllyThreshold then
+                    API.CastSpellOnUnit(spells.WORD_OF_GLORY, unit)
+                    return true
+                end
+            end
+        end
+    end
+    
+    -- If we have Divine Purpose, use Word of Glory even for less critical healing
+    if divinePurposeActive then
+        -- Find ally that could use healing
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) then
+                local unitHealth = API.GetUnitHealthPercent(unit)
+                
+                if unitHealth <= settings.rotationSettings.wordOfGloryAllyThreshold + 20 then
+                    API.CastSpellOnUnit(spells.WORD_OF_GLORY, unit)
+                    return true
+                end
+            end
+        end
+        
+        -- Use on self if everyone else is healthy, don't waste Divine Purpose
+        if playerHealth < 95 then
             API.CastSpellOnUnit(spells.WORD_OF_GLORY, "player")
             return true
         end
-    end
-    
-    -- Need Holy Power to use WoG and below threshold
-    if currentHolyPower >= 3 and playerHealthPercent <= settings.rotationSettings.wordOfGloryThreshold then
-        shouldUseWoG = true
-    end
-    
-    if shouldUseWoG and API.CanCast(spells.WORD_OF_GLORY) then
-        API.CastSpellOnUnit(spells.WORD_OF_GLORY, "player")
-        return true
-    end
-    
-    return false
-end
-
--- Handle defensive cooldowns
-function Protection:HandleDefensiveCooldowns(settings)
-    -- Use Divine Protection
-    if settings.defensiveSettings.useDivineProtection and
-       API.GetPlayerHealthPercent() <= settings.defensiveSettings.divineProtectionThreshold and
-       not divineProtectionActive and
-       API.CanCast(spells.DIVINE_PROTECTION) then
-        API.CastSpell(spells.DIVINE_PROTECTION)
-        return true
-    end
-    
-    -- Use Eye of Tyr
-    if talents.hasEyeOfTyr and
-       settings.defensiveSettings.useEyeOfTyr and
-       API.GetPlayerHealthPercent() <= settings.defensiveSettings.eyeOfTyrThreshold and
-       not eyeOfTyrActive and
-       API.CanCast(spells.EYE_OF_TYR) then
-        API.CastSpell(spells.EYE_OF_TYR)
-        return true
-    end
-    
-    return false
-end
-
--- Handle offensive cooldowns
-function Protection:HandleOffensiveCooldowns(settings)
-    -- Skip offensive cooldowns if not in burst mode and save cooldowns is enabled
-    if not burstModeActive and settings.advancedSettings.saveCooldownsForBurst then
-        return false
-    end
-    
-    -- Use Avenging Wrath
-    if settings.offensiveSettings.useAvengingWrath and
-       API.CanCast(spells.AVENGING_WRATH) and
-       not avengingWrathActive then
-        API.CastSpell(spells.AVENGING_WRATH)
-        return true
-    end
-    
-    -- Use Moment of Glory
-    if talents.hasMomentOfGlory and
-       settings.offensiveSettings.useMomentOfGlory and
-       API.CanCast(spells.MOMENT_OF_GLORY) and
-       not momentOfGloryBuff then
-        API.CastSpell(spells.MOMENT_OF_GLORY)
-        return true
-    end
-    
-    -- Use Seraphim
-    if talents.hasSeraphim and
-       settings.offensiveSettings.useSeraphim and
-       settings.abilityControls.seraphim.enabled and
-       currentHolyPower >= settings.abilityControls.seraphim.minHolyPower and
-       API.CanCast(spells.SERAPHIM) then
-        
-        -- Check if we should align with Avenging Wrath
-        if not settings.abilityControls.seraphim.useWithAvengingWrath or
-           avengingWrathActive then
-            API.CastSpell(spells.SERAPHIM)
-            return true
-        end
-    end
-    
-    -- Use Divine Toll
-    if talents.hasDivineToll and
-       settings.offensiveSettings.useDivineToll and
-       divineTollAvailable and
-       API.CanCast(spells.DIVINE_TOLL) then
-        API.CastSpell(spells.DIVINE_TOLL)
-        return true
-    end
-    
-    -- Use Execution Sentence
-    if talents.hasExecutionSentence and
-       settings.offensiveSettings.useExecutionSentence and
-       not sentenceActive and
-       API.CanCast(spells.EXECUTION_SENTENCE) then
-        API.CastSpell(spells.EXECUTION_SENTENCE)
-        return true
     end
     
     return false
 end
 
 -- Handle AoE rotation
-function Protection:HandleAoERotation(settings)
-    -- Cast Avenger's Shield - high priority for AoE
-    if API.CanCast(spells.AVENGERS_SHIELD) then
-        -- Prioritize with Moment of Glory if setting enabled
-        if momentOfGloryBuff and settings.abilityControls.avengersShield.useWithMomentOfGlory then
-            API.PrintDebug("Using Avenger's Shield with Moment of Glory")
-        end
-        
+function Protection:HandleAoE(settings)
+    -- Maintain Consecration
+    if consecrate and
+       settings.rotationSettings.maintainConsecration and
+       (not consecrationActive or consecrationEndTime - GetTime() < 2) and
+       API.CanCast(spells.CONSECRATION) then
+        API.CastSpell(spells.CONSECRATION)
+        return true
+    end
+    
+    -- Use Avenger's Shield with high priority
+    if avengersShield and
+       API.CanCast(spells.AVENGERS_SHIELD) and
+       settings.abilityControls.avengersShield.enabled then
         API.CastSpell(spells.AVENGERS_SHIELD)
         return true
     end
     
-    -- Cast Judgment
-    if API.CanCast(spells.JUDGMENT) then
-        API.CastSpell(spells.JUDGMENT)
-        return true
-    end
-    
-    -- Cast Consecration if not active or about to expire
-    if not consecrationActive and API.CanCast(spells.CONSECRATION) then
-        if settings.advancedSettings.consecrationPriority == "Always" or
-           settings.advancedSettings.consecrationPriority == "During Combat" then
-            API.CastSpell(spells.CONSECRATION)
-            return true
-        end
-    end
-    
-    -- Cast Hammer of Wrath if available (execute phase)
-    if hammerOfWrathAvailable and API.CanCast(spells.HAMMER_OF_WRATH) then
-        API.CastSpell(spells.HAMMER_OF_WRATH)
-        return true
-    end
-    
-    -- Cast Blessed Hammer if talented, otherwise Hammer of the Righteous
-    if talents.hasBlessedHammer and API.CanCast(spells.BLESSED_HAMMER) then
+    -- Use Blessed Hammer for AoE
+    if blessedHammer and API.CanCast(spells.BLESSED_HAMMER) then
         API.CastSpell(spells.BLESSED_HAMMER)
         return true
-    elseif API.CanCast(spells.HAMMER_OF_THE_RIGHTEOUS) then
+    end
+    
+    -- Use Hammer of the Righteous for AoE if no Blessed Hammer
+    if hammer and API.CanCast(spells.HAMMER_OF_THE_RIGHTEOUS) then
         API.CastSpell(spells.HAMMER_OF_THE_RIGHTEOUS)
         return true
     end
     
-    -- Use Consecration as filler
-    if API.CanCast(spells.CONSECRATION) then
+    -- Use Judgment to generate Holy Power
+    if judgment and API.CanCast(spells.JUDGMENT) then
+        API.CastSpell(spells.JUDGMENT)
+        return true
+    end
+    
+    -- Use Hammer of Wrath if available (target below 20% or Avenging Wrath active)
+    if hammerOfWrath and
+       (targetHealth < 20 or avengingWrathActive) and
+       API.CanCast(spells.HAMMER_OF_WRATH) then
+        API.CastSpell(spells.HAMMER_OF_WRATH)
+        return true
+    end
+    
+    -- Use Consecration as a filler
+    if consecrate and API.CanCast(spells.CONSECRATION) then
         API.CastSpell(spells.CONSECRATION)
         return true
     end
@@ -1085,38 +1876,60 @@ function Protection:HandleAoERotation(settings)
     return false
 end
 
--- Handle Single Target rotation
-function Protection:HandleSingleTargetRotation(settings)
-    -- Cast Avenger's Shield
-    if API.CanCast(spells.AVENGERS_SHIELD) then
+-- Handle single target rotation
+function Protection:HandleSingleTarget(settings)
+    -- Maintain Consecration
+    if consecrate and
+       settings.rotationSettings.maintainConsecration and
+       (not consecrationActive or consecrationEndTime - GetTime() < 2) and
+       API.CanCast(spells.CONSECRATION) then
+        API.CastSpell(spells.CONSECRATION)
+        return true
+    end
+    
+    -- Use Avenger's Shield with high priority
+    if avengersShield and
+       API.CanCast(spells.AVENGERS_SHIELD) and
+       settings.abilityControls.avengersShield.enabled then
         API.CastSpell(spells.AVENGERS_SHIELD)
         return true
     end
     
-    -- Cast Judgment
-    if API.CanCast(spells.JUDGMENT) then
+    -- Use Judgment to generate Holy Power
+    if judgment and API.CanCast(spells.JUDGMENT) then
         API.CastSpell(spells.JUDGMENT)
         return true
     end
     
-    -- Cast Hammer of Wrath if available (execute phase)
-    if hammerOfWrathAvailable and API.CanCast(spells.HAMMER_OF_WRATH) then
+    -- Use Hammer of Wrath if available (target below 20% or Avenging Wrath active)
+    if hammerOfWrath and
+       (targetHealth < 20 or avengingWrathActive) and
+       API.CanCast(spells.HAMMER_OF_WRATH) then
         API.CastSpell(spells.HAMMER_OF_WRATH)
         return true
     end
     
-    -- Cast Blessed Hammer if talented, otherwise Hammer of the Righteous
-    if talents.hasBlessedHammer and API.CanCast(spells.BLESSED_HAMMER) then
+    -- Use Blessed Hammer if talented
+    if blessedHammer and API.CanCast(spells.BLESSED_HAMMER) then
         API.CastSpell(spells.BLESSED_HAMMER)
         return true
-    elseif API.CanCast(spells.HAMMER_OF_THE_RIGHTEOUS) then
+    end
+    
+    -- Use Hammer of the Righteous if not using Blessed Hammer
+    if hammer and not blessedHammer and API.CanCast(spells.HAMMER_OF_THE_RIGHTEOUS) then
         API.CastSpell(spells.HAMMER_OF_THE_RIGHTEOUS)
         return true
     end
     
-    -- Cast Consecration if not active
-    if not consecrationActive and API.CanCast(spells.CONSECRATION) then
+    -- Use Consecration as a filler
+    if consecrate and API.CanCast(spells.CONSECRATION) then
         API.CastSpell(spells.CONSECRATION)
+        return true
+    end
+    
+    -- Use Crusader Strike as a last resort
+    if crusaderStrike and API.CanCast(spells.CRUSADER_STRIKE) then
+        API.CastSpell(spells.CRUSADER_STRIKE)
         return true
     end
     
@@ -1131,27 +1944,67 @@ function Protection:OnSpecializationChanged()
     -- Reset state variables
     nextCastOverride = nil
     burstModeActive = false
-    currentHolyPower = API.GetPlayerPower()
-    shieldOfRighteousBuff = false
-    shieldOfRighteousCharges = API.GetSpellCharges(spells.SHIELD_OF_THE_RIGHTEOUS) or 0
-    avengingWrathActive = false
-    hammerOfWrathAvailable = false
-    lastWordTargets = {}
+    currentHolyPower = 0
+    maxHolyPower = 5
+    shieldOfTheRighteousCharges = 0
+    shieldOfTheRighteousMaxCharges = 0
+    shieldOfTheRighteousActive = false
+    shieldOfTheRighteousEndTime = 0
     consecrationActive = false
-    consecrationTimeRemaining = 0
-    divineTollAvailable = true
-    lastShieldOfRighteous = 0
-    shiningLightStacks = 0
-    bulwarkOfRighteousGlory = false
+    consecrationEndTime = 0
+    divineTollActive = false
+    avengingWrathActive = false
+    avengingWrathEndTime = 0
     ardentDefenderActive = false
+    ardentDefenderEndTime = 0
     guardianOfAncientKingsActive = false
-    divineProtectionActive = false
-    eyeOfTyrActive = false
-    divinePurposeBuff = false
-    momentOfGloryBuff = false
-    sentenceActive = false
-    battleAvengersHand = 0
-    bastion = false
+    guardianOfAncientKingsEndTime = 0
+    hammerOfJusticeOnCooldown = false
+    blessingOfProtectionOnCooldown = false
+    blessingOfSacrificeOnCooldown = false
+    divineShieldActive = false
+    divineShieldEndTime = 0
+    sentinelActive = false
+    sentinelEndTime = 0
+    divinePurposeActive = false
+    divinePurposeEndTime = 0
+    lastAvengersShield = 0
+    lastJudgment = 0
+    lastShieldOfTheRighteous = 0
+    lastWordOfGlory = 0
+    lastHammerOfWrath = 0
+    lastAvengingWrath = 0
+    lastArdentDefender = 0
+    lastGuardianOfAncientKings = 0
+    lastConsecrateTime = 0
+    lastDivineProtection = 0
+    lastLayOnHands = 0
+    lastSentinel = 0
+    lastFinalStand = 0
+    lastDivineToll = 0
+    lastMomentOfGlory = 0
+    lastDivineResonance = 0
+    lastForbearance = 0
+    targetInRange = false
+    playerHealth = 100
+    targetHealth = 100
+    threatSituation = "LOW"
+    activeEnemies = 0
+    activeImportantEnemies = 0
+    activeBossEnemies = 0
+    isInMelee = false
+    judgmentApplied = false
+    toweringShieldActive = false
+    toweringShieldEndTime = 0
+    toweringShieldStacks = 0
+    mightyDisplacerActive = false
+    mightyDisplacerEndTime = 0
+    mightyDisplacerStacks = 0
+    flaringResistanceActive = false
+    flaringResistanceStacks = 0
+    
+    -- Update Shield of the Righteous charges
+    self:UpdateSotRCharges()
     
     API.PrintDebug("Protection Paladin state reset on spec change")
     

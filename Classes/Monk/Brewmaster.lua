@@ -22,99 +22,163 @@ local debuffs = {}
 -- State tracking variables
 local nextCastOverride = nil
 local burstModeActive = false
-local currentAoETargets = 0
-local currentEnergy = 0
-local maxEnergy = 100
 local currentChi = 0
 local maxChi = 5
-local staggerLevel = "none" -- none, light, moderate, heavy
+local currentEnergy = 100
+local maxEnergy = 100
 local staggerPercentage = 0
-local tigerPalmCount = 0
-local blackoutKickActive = false
-local blackoutKickEndTime = 0
-local blackoutComboActive = false
-local celestialBrewCharges = 0
-local celestialBrewMaxCharges = 0
+local heavyStaggerThreshold = 60
+local moderateStaggerThreshold = 30
+local ironskinBrewActive = false
+local ironskinBrewEndTime = 0
+local ironskinBrewCharges = 0
+local ironskinBrewMaxCharges = 0
+local purifyingBrewActive = false
 local purifyingBrewCharges = 0
 local purifyingBrewMaxCharges = 0
-local explodingKegOnCooldown = false
-local explodingKegCooldownRemaining = 0
-local spinningCraneKickActive = false
-local weaponsOfOrderActive = false
-local weaponsOfOrderEndTime = 0
-local fallenOrderActive = false
-local fallenOrderEndTime = 0
-local boneDustBrewActive = false
-local boneDustBrewEndTime = 0
-local callToArmsActive = false
-local charredPassionsActive = false
-local charredPassionsStacks = 0
-local invokeNiuzaoActivated = false
+local zensphereBrewActive = false
+local zensphereBrewEndTime = 0
+local celestialBrewActive = false
+local celestialBrewEndTime = 0
+local blackoutKickActive = false
+local blackoutKickEndTime = 0
+local kensingTea = false
+local kensingTeaActive = false
+local kensingTeaEndTime = 0
+local invokeNiuzaoActive = false
 local invokeNiuzaoEndTime = 0
-local faelineStompOnCooldown = false
-local faelineResonance = false
-local lastBrewUsed = 0
-local lastBrewTime = 0
-local lastPurifyTime = 0
-local celestialFlamesStacks = 0
-local kegSmashCharges = 0
-local breathOfFireOnCooldown = false
+local breathOfFireActive = false
 local breathOfFireEndTime = 0
-local charredPassionsCooldownRemaining = 0
-local rushingJadeWindActive = false
-local rushingJadeWindEndTime = 0
+local blackoutComboActive = false
+local blackoutComboEndTime = 0
 local shuffleActive = false
 local shuffleEndTime = 0
-local fortifyingIngredientsActive = false
-local fortifyingIngredientsStacks = 0
-local staggeredHits = 0
-local zensphereActive = false
-local detoxEnergy = false
-local sleepingShadow = false
-local scaleSadness = false
-local touchOfDeath = false
-local touchOfKarma = false
-local callOfTheOx = false
-local dampenHarmActive = false
-local dampenHarmEndTime = 0
-local dampenHarmStacks = 0
-local dampenHarmMaxStacks = 0
 local fortifyingBrewActive = false
 local fortifyingBrewEndTime = 0
-local lightBrewingActive = false
-local giftsOfTheOxActive = false
-local giftsOfTheOxCount = 0
-local hitComboActive = false
-local hitComboStacks = 0
-local hitComboEndTime = 0
+local zenMeditation = false
 local zenMeditationActive = false
-local inMeleeRange = false
-local inMeleeDamageRange = false
+local zenMeditationEndTime = 0
+local boneDustBrew = false
+local boneDustBrewActive = false
+local boneDustBrewEndTime = 0
+local weaponsOfOrder = false
+local weaponsOfOrderActive = false
+local weaponsOfOrderEndTime = 0
+local charredPassions = false
+local charredPassionsActive = false
+local charredPassionsEndTime = 0
+local charredPassionsStacks = 0
+local blackoutCombo = false
+local highTolerance = false
+local highToleranceStacks = 0
+local highToleranceActive = false
+local celestialFlamesActive = false
+local celestialFlamesEndTime = 0
+local explodingKeg = false
+local explodingKegActive = false
+local explodingKegEndTime = 0
+local rushingJadeWind = false
+local rushingJadeWindActive = false
+local rushingJadeWindEndTime = 0
+local summonWhiteTigerStatue = false
+local summonWhiteTigerStatueActive = false
+local summonWhiteTigerStatueEndTime = 0
+local dampenHarm = false
+local dampenHarmActive = false
+local dampenHarmEndTime = 0
+local diffuseMagic = false
+local diffuseMagicActive = false
+local diffuseMagicEndTime = 0
+local invokeNiuzao = false
+local chiBurst = false
+local chiWave = false
+local smite = false
+local smiteActive = false
+local smiteEndTime = 0
+local spinningCraneKick = false
+local spinningCraneKickActive = false
+local spinningCraneKickEndTime = 0
+local tigerPalm = false
+local blackoutKick = false
+local risingSunKick = false
+local keeperOfTheFlame = false
+local keeperOfTheFlameActive = false
+local keeperOfTheFlameStacks = 0
+local breathOfFire = false
+local kevEye = false
+local kevEyeActive = false
+local kevEyeEndTime = 0
+local celestialBrew = false
+local purifyingBrew = false
+local expelHarm = false
+local legSweep = false
+local paralysis = false
+local provoke = false
+local spearHandStrike = false
+local detox = false
+local vivify = false
+local transcendence = false
+local transcendenceTransfer = false
+local rollOut = false
+local pressurePoint = false
+local drinkingHornCover = false
+local touchOfDeath = false
+local specialDelivery = false
+local specialDeliveryActive = false
+local specialDeliveryEndTime = 0
+local niuzaosMysteryActive = false
+local niuzaosMysteryEndTime = 0
+local lastKegSmash = 0
+local lastTigerPalm = 0
+local lastBreathOfFire = 0
+local lastRushingJadeWind = 0
+local lastSpinningCraneKick = 0
+local lastRisingSunKick = 0
+local lastBlackoutKick = 0
+local lastCelestialBrew = 0
+local lastPurifyingBrew = 0
+local lastExpelHarm = 0
+local lastZenMeditation = 0
+local lastTouchOfDeath = 0
+local lastBoneDustBrew = 0
+local lastWeaponsOfOrder = 0
+local lastExplodingKeg = 0
+local lastChiBurst = 0
+local lastChiWave = 0
+local lastInvokeNiuzao = 0
+local lastDampenHarm = 0
+local lastDiffuseMagic = 0
+local lastLegSweep = 0
+local lastParalysis = 0
+local lastDetox = 0
+local lastVivify = 0
+local lastTranscendence = 0
+local lastTranscendenceTransfer = 0
+local playerHealth = 100
+local activeEnemies = 0
+local isInMelee = false
+local meleeRange = 5 -- yards
 
 -- Constants
 local BREWMASTER_SPEC_ID = 268
-local DEFAULT_AOE_THRESHOLD = 3
-local MELEE_RANGE = 5 -- Typical melee range in yards
-local LIGHT_STAGGER_THRESHOLD = 30 -- Percentage threshold for light stagger
-local MODERATE_STAGGER_THRESHOLD = 60 -- Percentage threshold for moderate stagger
-local HEAVY_STAGGER_THRESHOLD = 80 -- Percentage threshold for heavy stagger
-local FORTIFYING_BREW_DURATION = 15 -- seconds
-local ZEN_MEDITATION_DURATION = 8 -- seconds
-local DAMPEN_HARM_DURATION = 10 -- seconds
-local SHUFFLE_DURATION = 15 -- seconds
-local BLACKOUT_COMBO_DURATION = 15 -- seconds
-local RUSHING_JADE_WIND_DURATION = 9 -- seconds
-local WEAPONS_OF_ORDER_DURATION = 30 -- seconds
-local FALLEN_ORDER_DURATION = 24 -- seconds
-local BONE_DUST_BREW_DURATION = 10 -- seconds
-local INVOKE_NIUZAO_DURATION = 25 -- seconds
-local KEG_SMASH_COOLDOWN = 8 -- seconds
-local BREATH_OF_FIRE_COOLDOWN = 15 -- seconds
-local EXPLODING_KEG_COOLDOWN = 60 -- seconds
-local TIGER_PALM_COST = 25 -- Energy cost
-local BLACKOUT_KICK_COST = 0 -- No Energy cost in Brewmaster
-local KEG_SMASH_COST = 40 -- Energy cost
-local SPINNING_CRANE_KICK_COST = 15 -- Energy cost
+local FORT_BREW_DURATION = 15.0 -- seconds
+local SHUFFLE_BASE_DURATION = 15.0 -- seconds
+local ZEN_MEDITATION_DURATION = 8.0 -- seconds
+local INVOKE_NIUZAO_DURATION = 25.0 -- seconds
+local KEV_EYE_DURATION = 6.0 -- seconds (from Purifying Brew)
+local CELESTIAL_BREW_DURATION = 8.0 -- seconds
+local DAMPEN_HARM_DURATION = 10.0 -- seconds
+local DIFFUSE_MAGIC_DURATION = 6.0 -- seconds
+local BREATH_OF_FIRE_DURATION = 12.0 -- seconds
+local CHARRED_PASSIONS_DURATION = 6.0 -- seconds
+local BLACKOUT_COMBO_DURATION = 15.0 -- seconds
+local EXPLODING_KEG_DURATION = 3.0 -- seconds
+local WEAPONS_OF_ORDER_DURATION = 30.0 -- seconds
+local BONE_DUST_BREW_DURATION = 10.0 -- seconds
+local RUSHING_JADE_WIND_DURATION = 6.0 -- seconds
+local WHITE_TIGER_STATUE_DURATION = 30.0 -- seconds
+local SPECIAL_DELIVERY_DURATION = 5.0 -- seconds
+local NIUZAOS_MYSTERY_DURATION = 10.0 -- seconds (placeholder)
 
 -- Initialize the Brewmaster module
 function Brewmaster:Initialize()
@@ -130,129 +194,94 @@ end
 
 -- Register spell IDs
 function Brewmaster:RegisterSpells()
-    -- Core rotational abilities
+    -- Core abilities
+    spells.KEG_SMASH = 121253
     spells.TIGER_PALM = 100780
     spells.BLACKOUT_KICK = 205523
-    spells.KEG_SMASH = 121253
     spells.BREATH_OF_FIRE = 115181
-    spells.SPINNING_CRANE_KICK = 101546
-    spells.RUSHING_JADE_WIND = 116847
-    spells.EXPLODING_KEG = 325153
-    spells.CHI_BURST = 123986
-    spells.CHI_WAVE = 115098
-    
-    -- Defensive abilities
     spells.PURIFYING_BREW = 119582
     spells.CELESTIAL_BREW = 322507
+    spells.IRONSKIN_BREW = 115308 -- Legacy, now merged with Purifying Brew
+    spells.EXPEL_HARM = 322101
+    spells.RUSHING_JADE_WIND = 116847
+    spells.SPINNING_CRANE_KICK = 101546
+    spells.RISING_SUN_KICK = 107428
+    
+    -- Major defensives and cooldowns
     spells.FORTIFYING_BREW = 115203
     spells.ZEN_MEDITATION = 115176
     spells.DAMPEN_HARM = 122278
-    spells.EXPEL_HARM = 322101
-    spells.HEALING_ELIXIR = 122281
+    spells.DIFFUSE_MAGIC = 122783
+    spells.TOUCH_OF_DEATH = 115080
+    spells.INVOKE_NIUZAO = 132578
     
-    -- Core utilities
-    spells.DETOX = 218164
+    -- Covenant/Soul Bind abilities (now talents in Dragonflight)
+    spells.WEAPONS_OF_ORDER = 387184
+    spells.BONE_DUST_BREW = 386276
+    
+    -- Utility abilities
+    spells.SPEAR_HAND_STRIKE = 116705
+    spells.PROVOKE = 115546
     spells.LEG_SWEEP = 119381
     spells.PARALYSIS = 115078
-    spells.PROVOKE = 115546
-    spells.RING_OF_PEACE = 116844
-    spells.ROLL = 109132
-    spells.CHI_TORPEDO = 115008
+    spells.DETOX = 218164
+    spells.VIVIFY = 116670
     spells.TRANSCENDENCE = 101643
     spells.TRANSCENDENCE_TRANSFER = 119996
-    spells.VIVIFY = 116670
-    spells.RESUSCITATE = 115178
-    spells.CLASH = 324312
-    spells.SPEAR_HAND_STRIKE = 116705
+    spells.ROLL = 109132
+    spells.CHI_TORPEDO = 115008
+    spells.EXPLODING_KEG = 325153
+    spells.SUMMON_WHITE_TIGER_STATUE = 388686
     
     -- Talents and passives
-    spells.BLACKOUT_COMBO = 196736
-    spells.LIGHT_BREWING = 325093
-    spells.BLACK_OX_BREW = 115399
-    spells.SUMMON_BLACK_OX_STATUE = 115315
-    spells.INVOKE_NIUZAO = 132578
-    spells.SPECIAL_DELIVERY = 196730
-    spells.HIGH_TOLERANCE = 196737
-    spells.CELESTIAL_FLAMES = 325177
     spells.SHUFFLE = 215479
-    spells.STAGGER = 115069
-    spells.PURIFIED_CHI = 325092
-    spells.GIFT_OF_THE_OX = 124502
-    spells.CELESTIAL_FORTUNE = 216519
-    spells.CHARRED_PASSIONS = 386965
-    spells.PRESS_THE_ADVANTAGE = 418359
-    spells.TOUCH_OF_DEATH = 115080
-    spells.TOUCH_OF_KARMA = 122470
-    spells.CALL_TO_ARMS = 397251
-    spells.IMPROVED_INVOKE_NIUZAO = 322740
-    spells.QUICK_SIP = 388812
-    spells.GRACE_OF_THE_CRANE = 388811
-    spells.CALL_OF_THE_OX = 388809
-    spells.CELESTIAL_HARMONY = 388995
-    spells.ELUSIVE_FOOTWORK = 387046
-    spells.BOB_AND_WEAVE = 387048
-    spells.ATTENUATION = 386941
-    spells.IMPROVED_CELESTIAL_BREW = 322510
-    spells.STRENGTH_OF_SPIRIT = 387276
-    spells.HIT_COMBO = 196741
-    spells.MIGHTY_POUR = 387181
-    spells.FUNDAMENTAL_OBSERVATION = 387044
-    spells.PRETENSE_OF_INSTABILITY = 393516
-    spells.IMPROVED_PURIFYING_BREW = 343743
-    spells.FORTIFYING_INGREDIENTS = 405417
-    spells.STAGGERED_HITS = 418359
-    spells.NIMBLE_BREW = 213664
-    spells.FACE_PALM = 389942
-    spells.ZEN_MEDITATION_TALENT = 115176
-    spells.ESCAPE_FROM_REALITY = 394110
-    spells.GENEROUS_POUR = 389575
-    spells.SLEEPY_SHADOW = 394093
-    spells.SCALE_SADNESS = 405274
-    spells.IMPROVED_BREATH_OF_FIRE = 322964
-    spells.SALSALABIMS_STRENGTH = 387239
-    spells.WALK_WITH_THE_OX = 387220
-    spells.ADMONISHMENT = 207025
+    spells.CELESTIAL_FLAMES = 387571
+    spells.BLACKOUT_COMBO = 196736
+    spells.HIGH_TOLERANCE = 196737
+    spells.SPECIAL_DELIVERY = 196730
+    spells.KENSING_TEA = 387440
+    spells.SMITE = 387700
+    spells.KEV_EYE = 395414
+    spells.CHI_BURST = 123986
+    spells.CHI_WAVE = 115098
+    spells.ROLL_OUT = 328732
+    spells.PRESSURE_POINT = 337482
+    spells.DRINKING_HORN_COVER = 391370
+    spells.KEEPER_OF_THE_FLAME = 387041
+    spells.CHARRED_PASSIONS = 386963
+    spells.NIUZAOS_MYSTERY = 388814
     
     -- War Within Season 2 specific
-    spells.RUSHING_TIGER_PALM = 387621
-    spells.FLURRY_OF_FISTS = 405039
-    spells.FLUIDITY_OF_MOTION = 387230
-    spells.FAELINE_STOMP = 388193
-    spells.SHADOWBOXING_TREADS = 387638
-
-    -- Covenant abilities (for reference, may not be current)
-    spells.WEAPONS_OF_ORDER = 310454
-    spells.FALLEN_ORDER = 326860
-    spells.BONEDUST_BREW = 386276
-    spells.FAELINE_STOMP = 327104
+    spells.ZENSPHERE_BREW = 388854
     
     -- Buff IDs
     spells.SHUFFLE_BUFF = 215479
-    spells.BLACKOUT_COMBO_BUFF = 228563
-    spells.RUSHING_JADE_WIND_BUFF = 116847
-    spells.WEAPONS_OF_ORDER_BUFF = 310454
-    spells.FALLEN_ORDER_BUFF = 326860
-    spells.BONEDUST_BREW_BUFF = 386276
-    spells.LIGHT_STAGGER_BUFF = 124275
-    spells.MODERATE_STAGGER_BUFF = 124274
-    spells.HEAVY_STAGGER_BUFF = 124273
+    spells.IRONSKIN_BREW_BUFF = 215479 -- Now Shuffle in Dragonflight
+    spells.CELESTIAL_BREW_BUFF = 322507
+    spells.ZENSPHERE_BREW_BUFF = 388854
     spells.FORTIFYING_BREW_BUFF = 115203
     spells.ZEN_MEDITATION_BUFF = 115176
-    spells.DAMPEN_HARM_BUFF = 122278
-    spells.CELESTIAL_FLAMES_BUFF = 325190
-    spells.CELESTIAL_FORTUNE_BUFF = 216519
+    spells.BLACKOUT_COMBO_BUFF = 228563
+    spells.KENSING_TEA_BUFF = 387440
     spells.CHARRED_PASSIONS_BUFF = 386963
+    spells.RUSHING_JADE_WIND_BUFF = 116847
+    spells.WEAPONS_OF_ORDER_BUFF = 387184
+    spells.EXPLODING_KEG_BUFF = 325153
+    spells.CELESTIAL_FLAMES_BUFF = 387571
+    spells.DAMPEN_HARM_BUFF = 122278
+    spells.DIFFUSE_MAGIC_BUFF = 122783
+    spells.BONE_DUST_BREW_BUFF = 386276
     spells.INVOKE_NIUZAO_BUFF = 132578
-    spells.GIFTS_OF_THE_OX_BUFF = 124502
-    spells.HIT_COMBO_BUFF = 196741
-    spells.FAELINE_STOMP_BUFF = 388193
-    spells.FORTIFYING_INGREDIENTS_BUFF = 405417
+    spells.KEV_EYE_BUFF = 395414
+    spells.HIGH_TOLERANCE_BUFF = 196737
+    spells.KEEPER_OF_THE_FLAME_BUFF = 387041
+    spells.SPECIAL_DELIVERY_BUFF = 196730
+    spells.NIUZAOS_MYSTERY_BUFF = 388814
     
     -- Debuff IDs
+    spells.BREATH_OF_FIRE_DOT = 123725
     spells.KEG_SMASH_DEBUFF = 121253
-    spells.BREATH_OF_FIRE_DEBUFF = 123725
-    spells.EXPLODING_KEG_DEBUFF = 325153
-    spells.CLASH_DEBUFF = 324312
+    spells.MYSTIC_TOUCH_DEBUFF = 113746
     
     -- Register all spells with the API tracking system
     for spellName, spellID in pairs(spells) do
@@ -261,30 +290,30 @@ function Brewmaster:RegisterSpells()
     
     -- Define aura tracking
     buffs.SHUFFLE = spells.SHUFFLE_BUFF
-    buffs.BLACKOUT_COMBO = spells.BLACKOUT_COMBO_BUFF
-    buffs.RUSHING_JADE_WIND = spells.RUSHING_JADE_WIND_BUFF
-    buffs.WEAPONS_OF_ORDER = spells.WEAPONS_OF_ORDER_BUFF
-    buffs.FALLEN_ORDER = spells.FALLEN_ORDER_BUFF
-    buffs.BONEDUST_BREW = spells.BONEDUST_BREW_BUFF
-    buffs.LIGHT_STAGGER = spells.LIGHT_STAGGER_BUFF
-    buffs.MODERATE_STAGGER = spells.MODERATE_STAGGER_BUFF
-    buffs.HEAVY_STAGGER = spells.HEAVY_STAGGER_BUFF
     buffs.FORTIFYING_BREW = spells.FORTIFYING_BREW_BUFF
     buffs.ZEN_MEDITATION = spells.ZEN_MEDITATION_BUFF
-    buffs.DAMPEN_HARM = spells.DAMPEN_HARM_BUFF
-    buffs.CELESTIAL_FLAMES = spells.CELESTIAL_FLAMES_BUFF
-    buffs.CELESTIAL_FORTUNE = spells.CELESTIAL_FORTUNE_BUFF
+    buffs.CELESTIAL_BREW = spells.CELESTIAL_BREW_BUFF
+    buffs.ZENSPHERE_BREW = spells.ZENSPHERE_BREW_BUFF
+    buffs.BLACKOUT_COMBO = spells.BLACKOUT_COMBO_BUFF
+    buffs.KENSING_TEA = spells.KENSING_TEA_BUFF
     buffs.CHARRED_PASSIONS = spells.CHARRED_PASSIONS_BUFF
+    buffs.RUSHING_JADE_WIND = spells.RUSHING_JADE_WIND_BUFF
+    buffs.WEAPONS_OF_ORDER = spells.WEAPONS_OF_ORDER_BUFF
+    buffs.EXPLODING_KEG = spells.EXPLODING_KEG_BUFF
+    buffs.CELESTIAL_FLAMES = spells.CELESTIAL_FLAMES_BUFF
+    buffs.DAMPEN_HARM = spells.DAMPEN_HARM_BUFF
+    buffs.DIFFUSE_MAGIC = spells.DIFFUSE_MAGIC_BUFF
+    buffs.BONE_DUST_BREW = spells.BONE_DUST_BREW_BUFF
     buffs.INVOKE_NIUZAO = spells.INVOKE_NIUZAO_BUFF
-    buffs.GIFTS_OF_THE_OX = spells.GIFTS_OF_THE_OX_BUFF
-    buffs.HIT_COMBO = spells.HIT_COMBO_BUFF
-    buffs.FAELINE_STOMP = spells.FAELINE_STOMP_BUFF
-    buffs.FORTIFYING_INGREDIENTS = spells.FORTIFYING_INGREDIENTS_BUFF
+    buffs.KEV_EYE = spells.KEV_EYE_BUFF
+    buffs.HIGH_TOLERANCE = spells.HIGH_TOLERANCE_BUFF
+    buffs.KEEPER_OF_THE_FLAME = spells.KEEPER_OF_THE_FLAME_BUFF
+    buffs.SPECIAL_DELIVERY = spells.SPECIAL_DELIVERY_BUFF
+    buffs.NIUZAOS_MYSTERY = spells.NIUZAOS_MYSTERY_BUFF
     
+    debuffs.BREATH_OF_FIRE = spells.BREATH_OF_FIRE_DOT
     debuffs.KEG_SMASH = spells.KEG_SMASH_DEBUFF
-    debuffs.BREATH_OF_FIRE = spells.BREATH_OF_FIRE_DEBUFF
-    debuffs.EXPLODING_KEG = spells.EXPLODING_KEG_DEBUFF
-    debuffs.CLASH = spells.CLASH_DEBUFF
+    debuffs.MYSTIC_TOUCH = spells.MYSTIC_TOUCH_DEBUFF
     
     return true
 end
@@ -293,66 +322,37 @@ end
 function Brewmaster:RegisterVariables()
     -- Talent tracking
     talents.hasBlackoutCombo = false
-    talents.hasLightBrewing = false
-    talents.hasBlackOxBrew = false
-    talents.hasSummonBlackOxStatue = false
-    talents.hasInvokeNiuzao = false
-    talents.hasSpecialDelivery = false
     talents.hasHighTolerance = false
-    talents.hasCelestialFlames = false
-    talents.hasPurifiedChi = false
-    talents.hasCelestialFortune = false
-    talents.hasCharredPassions = false
-    talents.hasPressTheAdvantage = false
-    talents.hasTouchOfDeath = false
-    talents.hasTouchOfKarma = false
-    talents.hasCallToArms = false
-    talents.hasImprovedInvokeNiuzao = false
-    talents.hasQuickSip = false
-    talents.hasGraceOfTheCrane = false
-    talents.hasCallOfTheOx = false
-    talents.hasCelestialHarmony = false
-    talents.hasElusiveFootwork = false
-    talents.hasBobAndWeave = false
-    talents.hasAttenuation = false
-    talents.hasImprovedCelestialBrew = false
-    talents.hasStrengthOfSpirit = false
-    talents.hasHitCombo = false
-    talents.hasMightyPour = false
-    talents.hasFundamentalObservation = false
-    talents.hasPretenseOfInstability = false
-    talents.hasImprovedPurifyingBrew = false
-    talents.hasFortifyingIngredients = false
-    talents.hasStaggeredHits = false
-    talents.hasNimbleBrew = false
-    talents.hasFacePalm = false
     talents.hasZenMeditation = false
-    talents.hasEscapeFromReality = false
-    talents.hasGenerousPour = false
-    talents.hasSleepyShadow = false
-    talents.hasScaleSadness = false
-    talents.hasImprovedBreathOfFire = false
-    talents.hasSalsalabimStrength = false
-    talents.hasWalkWithTheOx = false
-    talents.hasAdmonishment = false
-    talents.hasRushingTigerPalm = false
-    talents.hasFlurryOfFists = false
-    talents.hasFluidityOfMotion = false
-    talents.hasFaelineStomp = false
-    talents.hasShadowboxingTreads = false
+    talents.hasSpecialDelivery = false
+    talents.hasExplodingKeg = false
+    talents.hasInvokeNiuzao = false
+    talents.hasKensingTea = false
+    talents.hasSmite = false
+    talents.hasKevEye = false
+    talents.hasRushingJadeWind = false
+    talents.hasChiBurst = false
+    talents.hasChiWave = false
+    talents.hasDampenHarm = false
+    talents.hasDiffuseMagic = false
+    talents.hasSummonWhiteTigerStatue = false
+    talents.hasRollOut = false
+    talents.hasPressurePoint = false
+    talents.hasDrinkingHornCover = false
+    talents.hasCharredPassions = false
+    talents.hasKeeperOfTheFlame = false
+    talents.hasWeaponsOfOrder = false
+    talents.hasBoneDustBrew = false
+    talents.hasNiuzaosMystery = false
     
     -- Initialize resources
-    currentEnergy = API.GetPlayerPower()
-    currentChi = API.GetPlayerComboPoints() or 0
+    currentChi = API.GetPlayerPower() or 0
+    maxChi = 5 -- Default, could be higher with talents
+    currentEnergy = API.GetPlayerEnergy() or 100
+    maxEnergy = API.GetPlayerMaxEnergy() or 100
     
     -- Initialize brew charges
-    celestialBrewCharges = API.GetSpellCharges(spells.CELESTIAL_BREW) or 0
-    celestialBrewMaxCharges = API.GetSpellMaxCharges(spells.CELESTIAL_BREW) or 1
-    purifyingBrewCharges = API.GetSpellCharges(spells.PURIFYING_BREW) or 0
-    purifyingBrewMaxCharges = API.GetSpellMaxCharges(spells.PURIFYING_BREW) or 2
-    
-    -- Initialize ability charges
-    kegSmashCharges = API.GetSpellCharges(spells.KEG_SMASH) or 0
+    purifyingBrewCharges, purifyingBrewMaxCharges = API.GetSpellCharges(spells.PURIFYING_BREW) or 0, 3
     
     return true
 end
@@ -363,7 +363,7 @@ function Brewmaster:RegisterSettings()
         rotationSettings = {
             burstEnabled = {
                 displayName = "Enable Burst Mode",
-                description = "Use cooldowns and focus on burst damage",
+                description = "Use cooldowns and focus on burst threat generation",
                 type = "toggle",
                 default = true
             },
@@ -379,61 +379,107 @@ function Brewmaster:RegisterSettings()
                 type = "slider",
                 min = 2,
                 max = 8,
-                default = DEFAULT_AOE_THRESHOLD
+                default = 3
+            },
+            chiPooling = {
+                displayName = "Chi Pooling",
+                description = "Pool Chi for upcoming abilities",
+                type = "toggle",
+                default = true
+            },
+            chiPoolingThreshold = {
+                displayName = "Chi Pooling Threshold",
+                description = "Minimum Chi to maintain",
+                type = "slider",
+                min = 1,
+                max = 4,
+                default = 2
+            },
+            energyPooling = {
+                displayName = "Energy Pooling",
+                description = "Pool Energy for optimal ability usage",
+                type = "toggle",
+                default = true
+            },
+            energyPoolingThreshold = {
+                displayName = "Energy Pooling Threshold",
+                description = "Minimum Energy to maintain",
+                type = "slider",
+                min = 10,
+                max = 80,
+                default = 30
+            },
+            maintainShuffle = {
+                displayName = "Maintain Shuffle",
+                description = "Always keep Shuffle active",
+                type = "toggle",
+                default = true
+            },
+            shuffleThreshold = {
+                displayName = "Shuffle Threshold",
+                description = "Minimum time remaining on Shuffle to refresh (seconds)",
+                type = "slider",
+                min = 1,
+                max = 8,
+                default = 4
             },
             kegSmashPriority = {
                 displayName = "Keg Smash Priority",
-                description = "How to prioritize Keg Smash",
-                type = "dropdown",
-                options = {"On Cooldown", "When Available", "With Blackout Combo"},
-                default = "On Cooldown"
+                description = "Prioritize using Keg Smash when available",
+                type = "toggle",
+                default = true
             },
-            breathOfFirePriority = {
-                displayName = "Breath of Fire Priority",
-                description = "How to prioritize Breath of Fire",
+            breathOfFireMode = {
+                displayName = "Breath of Fire Usage",
+                description = "When to use Breath of Fire",
                 type = "dropdown",
-                options = {"On Cooldown", "After Keg Smash", "With Blackout Combo"},
-                default = "After Keg Smash"
+                options = {"On Cooldown", "Only with Keg Smash Debuff", "With Keeper of Flame Stacks", "Manual Only"},
+                default = "Only with Keg Smash Debuff"
             },
-            useBlackoutKick = {
-                displayName = "Use Blackout Kick",
-                description = "When to use Blackout Kick",
-                type = "dropdown",
-                options = {"High Priority", "Low Priority", "For Shuffle Only"},
-                default = "High Priority"
-            },
-            useRushingJadeWind = {
-                displayName = "Use Rushing Jade Wind",
-                description = "Automatically use Rushing Jade Wind when talented",
+            blackoutKickWithCombo = {
+                displayName = "Blackout Kick with Combo",
+                description = "Prioritize Blackout Kick when Blackout Combo is active",
                 type = "toggle",
                 default = true
             }
         },
         
         defensiveSettings = {
-            purifyingBrewStrategy = {
-                displayName = "Purifying Brew Strategy",
+            purifyingBrewEnabled = {
+                displayName = "Use Purifying Brew",
+                description = "Automatically use Purifying Brew",
+                type = "toggle",
+                default = true
+            },
+            purifyingBrewMode = {
+                displayName = "Purifying Brew Usage",
                 description = "When to use Purifying Brew",
                 type = "dropdown",
-                options = {"Light Stagger", "Moderate Stagger", "Heavy Stagger Only", "Smart Management"},
-                default = "Smart Management"
+                options = {"Moderate/Heavy Stagger", "Heavy Stagger Only", "Based on Health", "Manual Only"},
+                default = "Moderate/Heavy Stagger"
             },
-            celestialBrewStrategy = {
-                displayName = "Celestial Brew Strategy",
-                description = "When to use Celestial Brew",
-                type = "dropdown",
-                options = {"On Cooldown", "With Purifying Buff", "Emergency Only"},
-                default = "With Purifying Buff"
-            },
-            purifyingBrewThreshold = {
-                displayName = "Purifying Brew Stagger Threshold",
-                description = "Stagger percentage to use Purifying Brew",
+            purifyingBrewHealthThreshold = {
+                displayName = "Purifying Brew Health Threshold",
+                description = "Health percentage to trigger Purifying Brew in Health mode",
                 type = "slider",
                 min = 10,
-                max = 100,
-                default = 60
+                max = 70,
+                default = 50
             },
-            celestialBrewThreshold = {
+            celestialBrewEnabled = {
+                displayName = "Use Celestial Brew",
+                description = "Automatically use Celestial Brew",
+                type = "toggle",
+                default = true
+            },
+            celestialBrewMode = {
+                displayName = "Celestial Brew Usage",
+                description = "When to use Celestial Brew",
+                type = "dropdown",
+                options = {"On Cooldown", "Based on Health", "After Purifying Brew", "Manual Only"},
+                default = "Based on Health"
+            },
+            celestialBrewHealthThreshold = {
                 displayName = "Celestial Brew Health Threshold",
                 description = "Health percentage to use Celestial Brew",
                 type = "slider",
@@ -441,15 +487,7 @@ function Brewmaster:RegisterSettings()
                 max = 80,
                 default = 60
             },
-            minCelestialBrewStacks = {
-                displayName = "Min Celestial Brew Stacks",
-                description = "Minimum Purified Chi stacks to use Celestial Brew",
-                type = "slider",
-                min = 0,
-                max = 10,
-                default = 2
-            },
-            useFortifyingBrew = {
+            fortifyingBrewEnabled = {
                 displayName = "Use Fortifying Brew",
                 description = "Automatically use Fortifying Brew",
                 type = "toggle",
@@ -459,25 +497,11 @@ function Brewmaster:RegisterSettings()
                 displayName = "Fortifying Brew Health Threshold",
                 description = "Health percentage to use Fortifying Brew",
                 type = "slider",
-                min = 20,
+                min = 10,
                 max = 60,
-                default = 35
-            },
-            useDampenHarm = {
-                displayName = "Use Dampen Harm",
-                description = "Automatically use Dampen Harm when talented",
-                type = "toggle",
-                default = true
-            },
-            dampenHarmThreshold = {
-                displayName = "Dampen Harm Health Threshold",
-                description = "Health percentage to use Dampen Harm",
-                type = "slider",
-                min = 20,
-                max = 70,
                 default = 40
             },
-            useExpelHarm = {
+            expelHarmEnabled = {
                 displayName = "Use Expel Harm",
                 description = "Automatically use Expel Harm",
                 type = "toggle",
@@ -487,107 +511,159 @@ function Brewmaster:RegisterSettings()
                 displayName = "Expel Harm Health Threshold",
                 description = "Health percentage to use Expel Harm",
                 type = "slider",
-                min = 30,
-                max = 80,
-                default = 65
+                min = 20,
+                max = 90,
+                default = 70
             },
-            expelHarmOrbCount = {
-                displayName = "Expel Harm Orb Count",
-                description = "Minimum Gift of the Ox orbs to use Expel Harm",
+            zenMeditationEnabled = {
+                displayName = "Use Zen Meditation",
+                description = "Automatically use Zen Meditation",
+                type = "toggle",
+                default = true
+            },
+            zenMeditationThreshold = {
+                displayName = "Zen Meditation Health Threshold",
+                description = "Health percentage to use Zen Meditation",
                 type = "slider",
-                min = 1,
-                max = 5,
-                default = 3
+                min = 10,
+                max = 50,
+                default = 30
+            },
+            dampenHarmEnabled = {
+                displayName = "Use Dampen Harm",
+                description = "Automatically use Dampen Harm when talented",
+                type = "toggle",
+                default = true
+            },
+            dampenHarmThreshold = {
+                displayName = "Dampen Harm Health Threshold",
+                description = "Health percentage to use Dampen Harm",
+                type = "slider",
+                min = 10,
+                max = 60,
+                default = 40
+            },
+            diffuseMagicEnabled = {
+                displayName = "Use Diffuse Magic",
+                description = "Automatically use Diffuse Magic when talented",
+                type = "toggle",
+                default = true
+            },
+            diffuseMagicThreshold = {
+                displayName = "Diffuse Magic Health Threshold",
+                description = "Health percentage to use Diffuse Magic",
+                type = "slider",
+                min = 10,
+                max = 60,
+                default = 40
             }
         },
         
-        offensiveSettings = {
-            useInvokeNiuzao = {
+        cooldownSettings = {
+            invokeNiuzaoEnabled = {
                 displayName = "Use Invoke Niuzao",
                 description = "Automatically use Invoke Niuzao when talented",
                 type = "toggle",
                 default = true
             },
-            useBlackOxBrew = {
-                displayName = "Use Black Ox Brew",
-                description = "Automatically use Black Ox Brew when talented",
+            invokeNiuzaoMode = {
+                displayName = "Invoke Niuzao Usage",
+                description = "When to use Invoke Niuzao",
+                type = "dropdown",
+                options = {"On Cooldown", "With Other Cooldowns", "Boss Only", "Manual Only"},
+                default = "With Other Cooldowns"
+            },
+            touchOfDeathEnabled = {
+                displayName = "Use Touch of Death",
+                description = "Automatically use Touch of Death",
                 type = "toggle",
                 default = true
             },
-            blackOxBrewChargesThreshold = {
-                displayName = "Black Ox Brew Charges",
-                description = "Maximum brew charges to use Black Ox Brew",
-                type = "slider",
-                min = 0,
-                max = 3,
-                default = 0
+            boneDustBrewEnabled = {
+                displayName = "Use Bonedust Brew",
+                description = "Automatically use Bonedust Brew when talented",
+                type = "toggle",
+                default = true
             },
-            useExplodingKeg = {
+            boneDustBrewMode = {
+                displayName = "Bonedust Brew Usage",
+                description = "When to use Bonedust Brew",
+                type = "dropdown",
+                options = {"On Cooldown", "With Cooldowns", "AoE Only", "Manual Only"},
+                default = "With Cooldowns"
+            },
+            weaponsOfOrderEnabled = {
+                displayName = "Use Weapons of Order",
+                description = "Automatically use Weapons of Order when talented",
+                type = "toggle",
+                default = true
+            },
+            weaponsOfOrderMode = {
+                displayName = "Weapons of Order Usage",
+                description = "When to use Weapons of Order",
+                type = "dropdown",
+                options = {"On Cooldown", "With Other Cooldowns", "Boss Only", "Manual Only"},
+                default = "With Other Cooldowns"
+            },
+            explodingKegEnabled = {
                 displayName = "Use Exploding Keg",
                 description = "Automatically use Exploding Keg when talented",
                 type = "toggle",
                 default = true
             },
-            explodingKegThreshold = {
-                displayName = "Exploding Keg Target Count",
-                description = "Minimum targets to use Exploding Keg",
-                type = "slider",
-                min = 1,
-                max = 6,
-                default = 3
+            explodingKegMode = {
+                displayName = "Exploding Keg Usage",
+                description = "When to use Exploding Keg",
+                type = "dropdown",
+                options = {"On Cooldown", "AoE Only", "With Cooldowns", "Manual Only"},
+                default = "AoE Only"
             },
-            useTouchOfDeath = {
-                displayName = "Use Touch of Death",
-                description = "Automatically use Touch of Death when talented",
+            kensingTeaEnabled = {
+                displayName = "Use Kensing Tea",
+                description = "Automatically use Kensing Tea when talented",
                 type = "toggle",
                 default = true
             },
-            useTouchOfKarma = {
-                displayName = "Use Touch of Karma",
-                description = "Automatically use Touch of Karma when talented",
+            rushingJadeWindEnabled = {
+                displayName = "Use Rushing Jade Wind",
+                description = "Automatically use Rushing Jade Wind when talented",
                 type = "toggle",
                 default = true
             },
-            touchOfKarmaThreshold = {
-                displayName = "Touch of Karma Health Threshold",
-                description = "Health percentage to use Touch of Karma",
-                type = "slider",
-                min = 30,
-                max = 80,
-                default = 60
-            }
-        },
-        
-        covenantSettings = {
-            useWeaponsOfOrder = {
-                displayName = "Use Weapons of Order",
-                description = "Automatically use Weapons of Order",
-                type = "toggle",
-                default = true
-            },
-            useFallenOrder = {
-                displayName = "Use Fallen Order",
-                description = "Automatically use Fallen Order",
-                type = "toggle",
-                default = true
-            },
-            useBoneDustBrew = {
-                displayName = "Use Bonedust Brew",
-                description = "Automatically use Bonedust Brew",
-                type = "toggle",
-                default = true
-            },
-            boneDustBrewTargetCount = {
-                displayName = "Bonedust Brew Target Count",
-                description = "Minimum targets to use Bonedust Brew",
+            rushingJadeWindAoEThreshold = {
+                displayName = "Rushing Jade Wind Target Threshold",
+                description = "Minimum number of targets to use Rushing Jade Wind",
                 type = "slider",
                 min = 1,
                 max = 6,
                 default = 2
+            }
+        },
+        
+        interruptSettings = {
+            useSpearHandStrike = {
+                displayName = "Use Spear Hand Strike",
+                description = "Automatically interrupt spellcasting",
+                type = "toggle",
+                default = true
             },
-            useFaelineStomp = {
-                displayName = "Use Faeline Stomp",
-                description = "Automatically use Faeline Stomp",
+            useLegSweep = {
+                displayName = "Use Leg Sweep",
+                description = "Use Leg Sweep for AoE stun",
+                type = "toggle",
+                default = true
+            },
+            legSweepMinTargets = {
+                displayName = "Leg Sweep Min Targets",
+                description = "Minimum number of targets to use Leg Sweep",
+                type = "slider",
+                min = 2,
+                max = 5,
+                default = 3
+            },
+            useParalysis = {
+                displayName = "Use Paralysis",
+                description = "Use Paralysis for crowd control",
                 type = "toggle",
                 default = true
             }
@@ -596,46 +672,13 @@ function Brewmaster:RegisterSettings()
         utilitySettings = {
             useDetox = {
                 displayName = "Use Detox",
-                description = "Automatically use Detox to remove debuffs",
+                description = "Automatically Detox harmful effects",
                 type = "toggle",
                 default = true
-            },
-            useLegSweep = {
-                displayName = "Use Leg Sweep",
-                description = "Automatically use Leg Sweep for AoE stun",
-                type = "toggle",
-                default = true
-            },
-            legSweepMinTargets = {
-                displayName = "Leg Sweep Min Targets",
-                description = "Minimum targets to use Leg Sweep",
-                type = "slider",
-                min = 2,
-                max = 6,
-                default = 3
-            },
-            useRingOfPeace = {
-                displayName = "Use Ring of Peace",
-                description = "Automatically use Ring of Peace when talented",
-                type = "toggle",
-                default = true
-            },
-            ringOfPeaceStrategy = {
-                displayName = "Ring of Peace Strategy",
-                description = "How to use Ring of Peace",
-                type = "dropdown",
-                options = {"Defensive", "Offensive", "Manual Only"},
-                default = "Defensive"
-            },
-            useRoll = {
-                displayName = "Use Roll",
-                description = "Automatically use Roll for movement",
-                type = "toggle",
-                default = false
             },
             useVivify = {
                 displayName = "Use Vivify",
-                description = "Automatically use Vivify for emergency healing",
+                description = "Use Vivify for emergency healing",
                 type = "toggle",
                 default = true
             },
@@ -643,33 +686,56 @@ function Brewmaster:RegisterSettings()
                 displayName = "Vivify Health Threshold",
                 description = "Health percentage to use Vivify",
                 type = "slider",
-                min = 20,
+                min = 10,
                 max = 60,
-                default = 40
+                default = 35
+            },
+            useTranscendence = {
+                displayName = "Use Transcendence",
+                description = "Automatically use Transcendence",
+                type = "toggle",
+                default = true
+            },
+            transcendenceMode = {
+                displayName = "Transcendence Usage",
+                description = "How to use Transcendence",
+                type = "dropdown",
+                options = {"Place on Cooldown", "Transfer When Low Health", "Manual Only"},
+                default = "Manual Only"
+            },
+            summonWhiteTigerStatueEnabled = {
+                displayName = "Use White Tiger Statue",
+                description = "Automatically use White Tiger Statue when talented",
+                type = "toggle",
+                default = true
             }
         },
         
         -- Advanced ability control settings
         abilityControls = {
-            -- Invoke Niuzao controls
-            invokeNiuzao = AAC.RegisterAbility(spells.INVOKE_NIUZAO, {
-                enabled = true,
-                useDuringBurstOnly = true,
-                minTargets = 1
-            }),
-            
-            -- Fortifying Brew controls
-            fortifyingBrew = AAC.RegisterAbility(spells.FORTIFYING_BREW, {
-                enabled = true,
-                useDuringEmergency = true,
-                minHealthThreshold = 40
-            }),
-            
-            -- Weapons of Order controls
-            weaponsOfOrder = AAC.RegisterAbility(spells.WEAPONS_OF_ORDER, {
+            -- Keg Smash controls
+            kegSmash = AAC.RegisterAbility(spells.KEG_SMASH, {
                 enabled = true,
                 useDuringBurstOnly = false,
-                minTargets = 1
+                prioritizeWithBlackoutCombo = true,
+                saveChargeForAdd = false
+            }),
+            
+            -- Breath of Fire controls
+            breathOfFire = AAC.RegisterAbility(spells.BREATH_OF_FIRE, {
+                enabled = true,
+                useDuringBurstOnly = false,
+                requireKegSmashDebuff = true,
+                minimumKeeperStacks = 0
+            }),
+            
+            -- Purifying Brew controls
+            purifyingBrew = AAC.RegisterAbility(spells.PURIFYING_BREW, {
+                enabled = true,
+                useDuringBurstOnly = false,
+                heavyStaggerOnly = false,
+                minHealthPercent = 0,
+                saveCharges = 1
             })
         }
     })
@@ -684,6 +750,13 @@ function Brewmaster:RegisterEvents()
         self:HandleCombatLogEvent(...) 
     end)
     
+    -- Register for chi updates
+    API.RegisterEvent("UNIT_POWER_FREQUENT", function(unit, powerType) 
+        if unit == "player" and powerType == "CHI" then
+            self:UpdateChi()
+        end
+    end)
+    
     -- Register for energy updates
     API.RegisterEvent("UNIT_POWER_FREQUENT", function(unit, powerType) 
         if unit == "player" and powerType == "ENERGY" then
@@ -691,10 +764,10 @@ function Brewmaster:RegisterEvents()
         end
     end)
     
-    -- Register for Chi updates
-    API.RegisterEvent("UNIT_POWER_FREQUENT", function(unit, powerType) 
-        if unit == "player" and powerType == "CHI" then
-            self:UpdateChi()
+    -- Register for health updates
+    API.RegisterEvent("UNIT_HEALTH", function(unit) 
+        if unit == "player" then
+            self:UpdateHealth()
         end
     end)
     
@@ -705,9 +778,11 @@ function Brewmaster:RegisterEvents()
         end
     end)
     
-    -- Register for target change events
-    API.RegisterEvent("PLAYER_TARGET_CHANGED", function() 
-        self:UpdateTargetData() 
+    -- Register for Purifying Brew charge updates
+    API.RegisterEvent("SPELL_UPDATE_CHARGES", function(spellID) 
+        if spellID == spells.PURIFYING_BREW then
+            self:UpdateBrewCharges()
+        end
     end)
     
     -- Register for talent update events
@@ -718,6 +793,12 @@ function Brewmaster:RegisterEvents()
     -- Initial talent info update
     self:UpdateTalentInfo()
     
+    -- Initial brew charges update
+    self:UpdateBrewCharges()
+    
+    -- Initial stagger update
+    self:UpdateStagger()
+    
     return true
 end
 
@@ -725,338 +806,485 @@ end
 function Brewmaster:UpdateTalentInfo()
     -- Check for important talents
     talents.hasBlackoutCombo = API.HasTalent(spells.BLACKOUT_COMBO)
-    talents.hasLightBrewing = API.HasTalent(spells.LIGHT_BREWING)
-    talents.hasBlackOxBrew = API.HasTalent(spells.BLACK_OX_BREW)
-    talents.hasSummonBlackOxStatue = API.HasTalent(spells.SUMMON_BLACK_OX_STATUE)
-    talents.hasInvokeNiuzao = API.HasTalent(spells.INVOKE_NIUZAO)
-    talents.hasSpecialDelivery = API.HasTalent(spells.SPECIAL_DELIVERY)
     talents.hasHighTolerance = API.HasTalent(spells.HIGH_TOLERANCE)
-    talents.hasCelestialFlames = API.HasTalent(spells.CELESTIAL_FLAMES)
-    talents.hasPurifiedChi = API.HasTalent(spells.PURIFIED_CHI)
-    talents.hasCelestialFortune = API.HasTalent(spells.CELESTIAL_FORTUNE)
+    talents.hasZenMeditation = API.HasTalent(spells.ZEN_MEDITATION)
+    talents.hasSpecialDelivery = API.HasTalent(spells.SPECIAL_DELIVERY)
+    talents.hasExplodingKeg = API.HasTalent(spells.EXPLODING_KEG)
+    talents.hasInvokeNiuzao = API.HasTalent(spells.INVOKE_NIUZAO)
+    talents.hasKensingTea = API.HasTalent(spells.KENSING_TEA)
+    talents.hasSmite = API.HasTalent(spells.SMITE)
+    talents.hasKevEye = API.HasTalent(spells.KEV_EYE)
+    talents.hasRushingJadeWind = API.HasTalent(spells.RUSHING_JADE_WIND)
+    talents.hasChiBurst = API.HasTalent(spells.CHI_BURST)
+    talents.hasChiWave = API.HasTalent(spells.CHI_WAVE)
+    talents.hasDampenHarm = API.HasTalent(spells.DAMPEN_HARM)
+    talents.hasDiffuseMagic = API.HasTalent(spells.DIFFUSE_MAGIC)
+    talents.hasSummonWhiteTigerStatue = API.HasTalent(spells.SUMMON_WHITE_TIGER_STATUE)
+    talents.hasRollOut = API.HasTalent(spells.ROLL_OUT)
+    talents.hasPressurePoint = API.HasTalent(spells.PRESSURE_POINT)
+    talents.hasDrinkingHornCover = API.HasTalent(spells.DRINKING_HORN_COVER)
     talents.hasCharredPassions = API.HasTalent(spells.CHARRED_PASSIONS)
-    talents.hasPressTheAdvantage = API.HasTalent(spells.PRESS_THE_ADVANTAGE)
-    talents.hasTouchOfDeath = API.HasTalent(spells.TOUCH_OF_DEATH)
-    talents.hasTouchOfKarma = API.HasTalent(spells.TOUCH_OF_KARMA)
-    talents.hasCallToArms = API.HasTalent(spells.CALL_TO_ARMS)
-    talents.hasImprovedInvokeNiuzao = API.HasTalent(spells.IMPROVED_INVOKE_NIUZAO)
-    talents.hasQuickSip = API.HasTalent(spells.QUICK_SIP)
-    talents.hasGraceOfTheCrane = API.HasTalent(spells.GRACE_OF_THE_CRANE)
-    talents.hasCallOfTheOx = API.HasTalent(spells.CALL_OF_THE_OX)
-    talents.hasCelestialHarmony = API.HasTalent(spells.CELESTIAL_HARMONY)
-    talents.hasElusiveFootwork = API.HasTalent(spells.ELUSIVE_FOOTWORK)
-    talents.hasBobAndWeave = API.HasTalent(spells.BOB_AND_WEAVE)
-    talents.hasAttenuation = API.HasTalent(spells.ATTENUATION)
-    talents.hasImprovedCelestialBrew = API.HasTalent(spells.IMPROVED_CELESTIAL_BREW)
-    talents.hasStrengthOfSpirit = API.HasTalent(spells.STRENGTH_OF_SPIRIT)
-    talents.hasHitCombo = API.HasTalent(spells.HIT_COMBO)
-    talents.hasMightyPour = API.HasTalent(spells.MIGHTY_POUR)
-    talents.hasFundamentalObservation = API.HasTalent(spells.FUNDAMENTAL_OBSERVATION)
-    talents.hasPretenseOfInstability = API.HasTalent(spells.PRETENSE_OF_INSTABILITY)
-    talents.hasImprovedPurifyingBrew = API.HasTalent(spells.IMPROVED_PURIFYING_BREW)
-    talents.hasFortifyingIngredients = API.HasTalent(spells.FORTIFYING_INGREDIENTS)
-    talents.hasStaggeredHits = API.HasTalent(spells.STAGGERED_HITS)
-    talents.hasNimbleBrew = API.HasTalent(spells.NIMBLE_BREW)
-    talents.hasFacePalm = API.HasTalent(spells.FACE_PALM)
-    talents.hasZenMeditation = API.HasTalent(spells.ZEN_MEDITATION_TALENT)
-    talents.hasEscapeFromReality = API.HasTalent(spells.ESCAPE_FROM_REALITY)
-    talents.hasGenerousPour = API.HasTalent(spells.GENEROUS_POUR)
-    talents.hasSleepyShadow = API.HasTalent(spells.SLEEPY_SHADOW)
-    talents.hasScaleSadness = API.HasTalent(spells.SCALE_SADNESS)
-    talents.hasImprovedBreathOfFire = API.HasTalent(spells.IMPROVED_BREATH_OF_FIRE)
-    talents.hasSalsalabimStrength = API.HasTalent(spells.SALSALABIMS_STRENGTH)
-    talents.hasWalkWithTheOx = API.HasTalent(spells.WALK_WITH_THE_OX)
-    talents.hasAdmonishment = API.HasTalent(spells.ADMONISHMENT)
-    talents.hasRushingTigerPalm = API.HasTalent(spells.RUSHING_TIGER_PALM)
-    talents.hasFlurryOfFists = API.HasTalent(spells.FLURRY_OF_FISTS)
-    talents.hasFluidityOfMotion = API.HasTalent(spells.FLUIDITY_OF_MOTION)
-    talents.hasFaelineStomp = API.HasTalent(spells.FAELINE_STOMP)
-    talents.hasShadowboxingTreads = API.HasTalent(spells.SHADOWBOXING_TREADS)
+    talents.hasKeeperOfTheFlame = API.HasTalent(spells.KEEPER_OF_THE_FLAME)
+    talents.hasWeaponsOfOrder = API.HasTalent(spells.WEAPONS_OF_ORDER)
+    talents.hasBoneDustBrew = API.HasTalent(spells.BONE_DUST_BREW)
+    talents.hasNiuzaosMystery = API.HasTalent(spells.NIUZAOS_MYSTERY)
     
     -- Set specialized variables based on talents
-    if talents.hasLightBrewing then
-        lightBrewingActive = true
+    if talents.hasBlackoutCombo then
+        blackoutCombo = true
     end
     
-    if talents.hasTouchOfDeath then
+    if talents.hasHighTolerance then
+        highTolerance = true
+    end
+    
+    if talents.hasZenMeditation then
+        zenMeditation = true
+    end
+    
+    if talents.hasSpecialDelivery then
+        specialDelivery = true
+    end
+    
+    if talents.hasExplodingKeg then
+        explodingKeg = true
+    end
+    
+    if talents.hasInvokeNiuzao then
+        invokeNiuzao = true
+    end
+    
+    if talents.hasKensingTea then
+        kensingTea = true
+    end
+    
+    if talents.hasSmite then
+        smite = true
+    end
+    
+    if talents.hasKevEye then
+        kevEye = true
+    end
+    
+    if talents.hasRushingJadeWind then
+        rushingJadeWind = true
+    end
+    
+    if talents.hasChiBurst then
+        chiBurst = true
+    end
+    
+    if talents.hasChiWave then
+        chiWave = true
+    end
+    
+    if talents.hasDampenHarm then
+        dampenHarm = true
+    end
+    
+    if talents.hasDiffuseMagic then
+        diffuseMagic = true
+    end
+    
+    if talents.hasSummonWhiteTigerStatue then
+        summonWhiteTigerStatue = true
+    end
+    
+    if talents.hasRollOut then
+        rollOut = true
+    end
+    
+    if talents.hasPressurePoint then
+        pressurePoint = true
+    end
+    
+    if talents.hasDrinkingHornCover then
+        drinkingHornCover = true
+    end
+    
+    if talents.hasCharredPassions then
+        charredPassions = true
+    end
+    
+    if talents.hasKeeperOfTheFlame then
+        keeperOfTheFlame = true
+    end
+    
+    if talents.hasWeaponsOfOrder then
+        weaponsOfOrder = true
+    end
+    
+    if talents.hasBoneDustBrew then
+        boneDustBrew = true
+    end
+    
+    if API.IsSpellKnown(spells.KEG_SMASH) then
+        kegSmash = true
+    end
+    
+    if API.IsSpellKnown(spells.TIGER_PALM) then
+        tigerPalm = true
+    end
+    
+    if API.IsSpellKnown(spells.BLACKOUT_KICK) then
+        blackoutKick = true
+    end
+    
+    if API.IsSpellKnown(spells.BREATH_OF_FIRE) then
+        breathOfFire = true
+    end
+    
+    if API.IsSpellKnown(spells.CELESTIAL_BREW) then
+        celestialBrew = true
+    end
+    
+    if API.IsSpellKnown(spells.PURIFYING_BREW) then
+        purifyingBrew = true
+    end
+    
+    if API.IsSpellKnown(spells.EXPEL_HARM) then
+        expelHarm = true
+    end
+    
+    if API.IsSpellKnown(spells.SPINNING_CRANE_KICK) then
+        spinningCraneKick = true
+    end
+    
+    if API.IsSpellKnown(spells.RISING_SUN_KICK) then
+        risingSunKick = true
+    end
+    
+    if API.IsSpellKnown(spells.TOUCH_OF_DEATH) then
         touchOfDeath = true
-    }
+    end
     
-    if talents.hasTouchOfKarma then
-        touchOfKarma = true
-    }
+    if API.IsSpellKnown(spells.PROVOKE) then
+        provoke = true
+    end
     
-    if talents.hasCallOfTheOx then
-        callOfTheOx = true
-    }
+    if API.IsSpellKnown(spells.SPEAR_HAND_STRIKE) then
+        spearHandStrike = true
+    end
     
-    if talents.hasSleepyShadow then
-        sleepingShadow = true
-    }
+    if API.IsSpellKnown(spells.LEG_SWEEP) then
+        legSweep = true
+    end
     
-    if talents.hasScaleSadness then
-        scaleSadness = true
-    }
+    if API.IsSpellKnown(spells.PARALYSIS) then
+        paralysis = true
+    end
     
-    if talents.hasDetoxEnergy then
-        detoxEnergy = true
-    }
+    if API.IsSpellKnown(spells.DETOX) then
+        detox = true
+    end
     
-    -- Update brew charges
-    celestialBrewCharges = API.GetSpellCharges(spells.CELESTIAL_BREW) or 0
-    purifyingBrewCharges = API.GetSpellCharges(spells.PURIFYING_BREW) or 0
+    if API.IsSpellKnown(spells.VIVIFY) then
+        vivify = true
+    end
+    
+    if API.IsSpellKnown(spells.TRANSCENDENCE) then
+        transcendence = true
+    end
+    
+    if API.IsSpellKnown(spells.TRANSCENDENCE_TRANSFER) then
+        transcendenceTransfer = true
+    end
     
     API.PrintDebug("Brewmaster Monk talents updated")
     
     return true
 end
 
--- Update energy tracking
-function Brewmaster:UpdateEnergy()
-    currentEnergy = API.GetPlayerPower()
-    return true
-end
-
 -- Update chi tracking
 function Brewmaster:UpdateChi()
-    currentChi = API.GetPlayerComboPoints() or 0
+    currentChi = API.GetPlayerPower()
     return true
 end
 
--- Update stagger information
+-- Update energy tracking
+function Brewmaster:UpdateEnergy()
+    currentEnergy = API.GetPlayerEnergy()
+    maxEnergy = API.GetPlayerMaxEnergy()
+    return true
+end
+
+-- Update health tracking
+function Brewmaster:UpdateHealth()
+    playerHealth = API.GetPlayerHealthPercent()
+    return true
+end
+
+-- Update stagger tracking
 function Brewmaster:UpdateStagger()
-    -- Check stagger buff types
-    local hasLightStagger = API.PlayerHasBuff(buffs.LIGHT_STAGGER)
-    local hasModerateStagger = API.PlayerHasBuff(buffs.MODERATE_STAGGER)
-    local hasHeavyStagger = API.PlayerHasBuff(buffs.HEAVY_STAGGER)
+    staggerPercentage = API.GetStaggerPercent() or 0
     
-    -- Determine stagger level
-    if hasHeavyStagger then
-        staggerLevel = "heavy"
-        staggerPercentage = 100
-    elseif hasModerateStagger then
-        staggerLevel = "moderate"
-        staggerPercentage = 60
-    elseif hasLightStagger then
-        staggerLevel = "light"
-        staggerPercentage = 30
-    else
-        staggerLevel = "none"
-        staggerPercentage = 0
+    -- Check if we have Shuffle (formerly Ironskin Brew)
+    shuffleActive = API.UnitHasBuff("player", buffs.SHUFFLE)
+    if shuffleActive then
+        shuffleEndTime = select(6, API.GetBuffInfo("player", buffs.SHUFFLE))
     end
     
-    -- Check for Shuffle buff
-    local shuffleInfo = API.GetBuffInfo("player", buffs.SHUFFLE)
-    if shuffleInfo then
-        shuffleActive = true
-        shuffleEndTime = select(6, shuffleInfo)
-    else
-        shuffleActive = false
-        shuffleEndTime = 0
+    -- Check for Celestial Brew
+    celestialBrewActive = API.UnitHasBuff("player", buffs.CELESTIAL_BREW)
+    if celestialBrewActive then
+        celestialBrewEndTime = select(6, API.GetBuffInfo("player", buffs.CELESTIAL_BREW))
     end
     
-    -- Check for Fortifying Ingredients
-    if talents.hasFortifyingIngredients then
-        local fiInfo = API.GetBuffInfo("player", buffs.FORTIFYING_INGREDIENTS)
-        if fiInfo then
-            fortifyingIngredientsActive = true
-            fortifyingIngredientsStacks = select(4, fiInfo) or 0
+    -- Check if we have Fortifying Brew
+    fortifyingBrewActive = API.UnitHasBuff("player", buffs.FORTIFYING_BREW)
+    if fortifyingBrewActive then
+        fortifyingBrewEndTime = select(6, API.GetBuffInfo("player", buffs.FORTIFYING_BREW))
+    end
+    
+    -- Zen Meditation
+    zenMeditationActive = API.UnitHasBuff("player", buffs.ZEN_MEDITATION)
+    if zenMeditationActive then
+        zenMeditationEndTime = select(6, API.GetBuffInfo("player", buffs.ZEN_MEDITATION))
+    end
+    
+    -- Check for High Tolerance stacks
+    if highTolerance then
+        highToleranceActive = true
+        if staggerPercentage >= moderateStaggerThreshold then
+            highToleranceStacks = 1
+            if staggerPercentage >= heavyStaggerThreshold then
+                highToleranceStacks = 2
+            end
         else
-            fortifyingIngredientsActive = false
-            fortifyingIngredientsStacks = 0
+            highToleranceStacks = 0
+            highToleranceActive = false
         end
     end
     
-    -- Check for Dampen Harm
-    if talents.hasDampenHarm then
-        local dhInfo = API.GetBuffInfo("player", buffs.DAMPEN_HARM)
-        if dhInfo then
-            dampenHarmActive = true
-            dampenHarmEndTime = select(6, dhInfo)
-            dampenHarmStacks = select(4, dhInfo) or 0
-        else
-            dampenHarmActive = false
-            dampenHarmEndTime = 0
-            dampenHarmStacks = 0
-        end
-    end
-    
-    -- Check for Fortifying Brew
-    local fbInfo = API.GetBuffInfo("player", buffs.FORTIFYING_BREW)
-    if fbInfo then
-        fortifyingBrewActive = true
-        fortifyingBrewEndTime = select(6, fbInfo)
-    else
-        fortifyingBrewActive = false
-        fortifyingBrewEndTime = 0
-    end
-    
-    -- Check for Zen Meditation
-    if talents.hasZenMeditation then
-        local zmInfo = API.GetBuffInfo("player", buffs.ZEN_MEDITATION)
-        if zmInfo then
-            zenMeditationActive = true
-        else
-            zenMeditationActive = false
-        end
-    end
-    
-    -- Update Gifts of the Ox count
-    if talents.hasGiftsOfTheOx then
-        giftsOfTheOxCount = API.CountActiveOrbs() or 0
-        giftsOfTheOxActive = giftsOfTheOxCount > 0
-    end
-    
-    -- Update Hit Combo status
-    if talents.hasHitCombo then
-        local hcInfo = API.GetBuffInfo("player", buffs.HIT_COMBO)
-        if hcInfo then
-            hitComboActive = true
-            hitComboStacks = select(4, hcInfo) or 0
-            hitComboEndTime = select(6, hcInfo)
-        else
-            hitComboActive = false
-            hitComboStacks = 0
-            hitComboEndTime = 0
-        end
-    end
-    
-    -- Update Celestial Flames stacks
-    if talents.hasCelestialFlames then
-        local cfInfo = API.GetBuffInfo("player", buffs.CELESTIAL_FLAMES)
-        if cfInfo then
-            celestialFlamesStacks = select(4, cfInfo) or 0
-        else
-            celestialFlamesStacks = 0
-        end
+    -- Other buffs
+    blackoutComboActive = API.UnitHasBuff("player", buffs.BLACKOUT_COMBO)
+    if blackoutComboActive then
+        blackoutComboEndTime = select(6, API.GetBuffInfo("player", buffs.BLACKOUT_COMBO))
     end
     
     return true
 end
 
--- Update target data
-function Brewmaster:UpdateTargetData()
-    -- Check if in melee range
-    inMeleeRange = API.IsUnitInRange("target", MELEE_RANGE)
-    inMeleeDamageRange = inMeleeRange
-    
-    -- Get target GUID
-    local targetGUID = API.GetTargetGUID()
-    
-    if targetGUID and targetGUID ~= "" then
-        -- Check for Keg Smash debuff
-        local kegSmashInfo = API.GetDebuffInfo(targetGUID, debuffs.KEG_SMASH)
-        local kegSmashActive = kegSmashInfo ~= nil
-        
-        -- Check for Breath of Fire debuff
-        local breathOfFireInfo = API.GetDebuffInfo(targetGUID, debuffs.BREATH_OF_FIRE)
-        local breathOfFireActive = breathOfFireInfo ~= nil
-        
-        -- Check for Exploding Keg debuff
-        local explodingKegInfo = API.GetDebuffInfo(targetGUID, debuffs.EXPLODING_KEG)
-        local explodingKegActive = explodingKegInfo ~= nil
+-- Update brew charges
+function Brewmaster:UpdateBrewCharges()
+    purifyingBrewCharges, purifyingBrewMaxCharges = API.GetSpellCharges(spells.PURIFYING_BREW)
+    return true
+end
+
+-- Update active enemy counts
+function Brewmaster:UpdateEnemyCounts()
+    activeEnemies = API.GetEnemyCount() or 0
+    return true
+end
+
+-- Check if unit is in melee range
+function Brewmaster:IsInMeleeRange(unit)
+    if not unit or not API.UnitExists(unit) then
+        return false
     end
     
-    -- Update AoE targets count
-    currentAoETargets = API.GetNearbyEnemiesCount(8) -- AoE radius (typically a bit bigger for tanks)
-    
-    return true
+    return API.GetUnitDistance("player", unit) <= meleeRange
 end
 
 -- Handle combat log events
 function Brewmaster:HandleCombatLogEvent(...)
     local timestamp, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID, spellName = CombatLogGetCurrentEventInfo()
     
-    -- Only process events from the player
-    if sourceGUID ~= API.GetPlayerGUID() then
-        return false
-    end
-    
-    -- Track buff applications
-    if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
-        -- Track player buffs
-        if destGUID == API.GetPlayerGUID() then
-            -- Track Blackout Combo
-            if spellID == buffs.BLACKOUT_COMBO then
-                blackoutKickActive = true
-                blackoutKickEndTime = GetTime() + BLACKOUT_COMBO_DURATION
-                blackoutComboActive = true
-                API.PrintDebug("Blackout Combo activated")
-            end
-            
-            -- Track Rushing Jade Wind
-            if spellID == buffs.RUSHING_JADE_WIND then
-                rushingJadeWindActive = true
-                rushingJadeWindEndTime = GetTime() + RUSHING_JADE_WIND_DURATION
-                API.PrintDebug("Rushing Jade Wind activated")
-            end
-            
-            -- Track Weapons of Order
-            if spellID == buffs.WEAPONS_OF_ORDER then
-                weaponsOfOrderActive = true
-                weaponsOfOrderEndTime = GetTime() + WEAPONS_OF_ORDER_DURATION
-                API.PrintDebug("Weapons of Order activated")
-            end
-            
-            -- Track Fallen Order
-            if spellID == buffs.FALLEN_ORDER then
-                fallenOrderActive = true
-                fallenOrderEndTime = GetTime() + FALLEN_ORDER_DURATION
-                API.PrintDebug("Fallen Order activated")
-            end
-            
-            -- Track Bonedust Brew
-            if spellID == buffs.BONEDUST_BREW then
-                boneDustBrewActive = true
-                boneDustBrewEndTime = GetTime() + BONE_DUST_BREW_DURATION
-                API.PrintDebug("Bonedust Brew activated")
-            end
-            
-            -- Track Shuffle
+    -- Track player events (casts, buffs, etc.)
+    if sourceGUID == API.GetPlayerGUID() then
+        -- Track buff applications
+        if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
+            -- Track Shuffle (formerly Ironskin Brew) application
             if spellID == buffs.SHUFFLE then
                 shuffleActive = true
-                shuffleEndTime = GetTime() + SHUFFLE_DURATION
+                shuffleEndTime = select(6, API.GetBuffInfo("player", buffs.SHUFFLE))
                 API.PrintDebug("Shuffle activated")
             end
             
-            -- Track Charred Passions
-            if spellID == buffs.CHARRED_PASSIONS then
-                charredPassionsActive = true
-                charredPassionsStacks = select(4, API.GetBuffInfo("player", buffs.CHARRED_PASSIONS)) or 1
-                API.PrintDebug("Charred Passions activated: " .. tostring(charredPassionsStacks) .. " stacks")
+            -- Track Celestial Brew application
+            if spellID == buffs.CELESTIAL_BREW then
+                celestialBrewActive = true
+                celestialBrewEndTime = select(6, API.GetBuffInfo("player", buffs.CELESTIAL_BREW))
+                API.PrintDebug("Celestial Brew activated")
             end
             
-            -- Track Invoke Niuzao
+            -- Track Zensphere Brew application
+            if spellID == buffs.ZENSPHERE_BREW then
+                zensphereBrewActive = true
+                zensphereBrewEndTime = select(6, API.GetBuffInfo("player", buffs.ZENSPHERE_BREW))
+                API.PrintDebug("Zensphere Brew activated")
+            end
+            
+            -- Track Fortifying Brew application
+            if spellID == buffs.FORTIFYING_BREW then
+                fortifyingBrewActive = true
+                fortifyingBrewEndTime = select(6, API.GetBuffInfo("player", buffs.FORTIFYING_BREW))
+                API.PrintDebug("Fortifying Brew activated")
+            end
+            
+            -- Track Zen Meditation application
+            if spellID == buffs.ZEN_MEDITATION then
+                zenMeditationActive = true
+                zenMeditationEndTime = select(6, API.GetBuffInfo("player", buffs.ZEN_MEDITATION))
+                API.PrintDebug("Zen Meditation activated")
+            end
+            
+            -- Track Blackout Combo application
+            if spellID == buffs.BLACKOUT_COMBO then
+                blackoutComboActive = true
+                blackoutComboEndTime = select(6, API.GetBuffInfo("player", buffs.BLACKOUT_COMBO))
+                API.PrintDebug("Blackout Combo activated")
+            end
+            
+            -- Track Kensing Tea application
+            if spellID == buffs.KENSING_TEA then
+                kensingTeaActive = true
+                kensingTeaEndTime = select(6, API.GetBuffInfo("player", buffs.KENSING_TEA))
+                API.PrintDebug("Kensing Tea activated")
+            end
+            
+            -- Track Charred Passions application
+            if spellID == buffs.CHARRED_PASSIONS then
+                charredPassionsActive = true
+                charredPassionsEndTime = select(6, API.GetBuffInfo("player", buffs.CHARRED_PASSIONS))
+                charredPassionsStacks = select(4, API.GetBuffInfo("player", buffs.CHARRED_PASSIONS)) or 1
+                API.PrintDebug("Charred Passions activated: " .. tostring(charredPassionsStacks) .. " stack(s)")
+            end
+            
+            -- Track Rushing Jade Wind application
+            if spellID == buffs.RUSHING_JADE_WIND then
+                rushingJadeWindActive = true
+                rushingJadeWindEndTime = select(6, API.GetBuffInfo("player", buffs.RUSHING_JADE_WIND))
+                API.PrintDebug("Rushing Jade Wind activated")
+            end
+            
+            -- Track Weapons of Order application
+            if spellID == buffs.WEAPONS_OF_ORDER then
+                weaponsOfOrderActive = true
+                weaponsOfOrderEndTime = select(6, API.GetBuffInfo("player", buffs.WEAPONS_OF_ORDER))
+                API.PrintDebug("Weapons of Order activated")
+            end
+            
+            -- Track Exploding Keg application
+            if spellID == buffs.EXPLODING_KEG then
+                explodingKegActive = true
+                explodingKegEndTime = select(6, API.GetBuffInfo("player", buffs.EXPLODING_KEG))
+                API.PrintDebug("Exploding Keg activated")
+            end
+            
+            -- Track Celestial Flames application
+            if spellID == buffs.CELESTIAL_FLAMES then
+                celestialFlamesActive = true
+                celestialFlamesEndTime = select(6, API.GetBuffInfo("player", buffs.CELESTIAL_FLAMES))
+                API.PrintDebug("Celestial Flames activated")
+            end
+            
+            -- Track Dampen Harm application
+            if spellID == buffs.DAMPEN_HARM then
+                dampenHarmActive = true
+                dampenHarmEndTime = select(6, API.GetBuffInfo("player", buffs.DAMPEN_HARM))
+                API.PrintDebug("Dampen Harm activated")
+            end
+            
+            -- Track Diffuse Magic application
+            if spellID == buffs.DIFFUSE_MAGIC then
+                diffuseMagicActive = true
+                diffuseMagicEndTime = select(6, API.GetBuffInfo("player", buffs.DIFFUSE_MAGIC))
+                API.PrintDebug("Diffuse Magic activated")
+            end
+            
+            -- Track Bone Dust Brew application
+            if spellID == buffs.BONE_DUST_BREW then
+                boneDustBrewActive = true
+                boneDustBrewEndTime = select(6, API.GetBuffInfo("player", buffs.BONE_DUST_BREW))
+                API.PrintDebug("Bone Dust Brew activated")
+            end
+            
+            -- Track Invoke Niuzao application
             if spellID == buffs.INVOKE_NIUZAO then
-                invokeNiuzaoActivated = true
-                invokeNiuzaoEndTime = GetTime() + INVOKE_NIUZAO_DURATION
+                invokeNiuzaoActive = true
+                invokeNiuzaoEndTime = select(6, API.GetBuffInfo("player", buffs.INVOKE_NIUZAO))
                 API.PrintDebug("Invoke Niuzao activated")
             end
             
-            -- Track Faeline Stomp
-            if spellID == buffs.FAELINE_STOMP then
-                faelineResonance = true
-                API.PrintDebug("Faeline Stomp resonance activated")
+            -- Track Kev Eye application
+            if spellID == buffs.KEV_EYE then
+                kevEyeActive = true
+                kevEyeEndTime = select(6, API.GetBuffInfo("player", buffs.KEV_EYE))
+                API.PrintDebug("Kev Eye activated")
             end
             
-            -- Track Fortifying Ingredients
-            if spellID == buffs.FORTIFYING_INGREDIENTS then
-                fortifyingIngredientsActive = true
-                fortifyingIngredientsStacks = select(4, API.GetBuffInfo("player", buffs.FORTIFYING_INGREDIENTS)) or 1
-                API.PrintDebug("Fortifying Ingredients activated: " .. tostring(fortifyingIngredientsStacks) .. " stacks")
+            -- Track Keeper of the Flame application
+            if spellID == buffs.KEEPER_OF_THE_FLAME then
+                keeperOfTheFlameActive = true
+                keeperOfTheFlameStacks = select(4, API.GetBuffInfo("player", buffs.KEEPER_OF_THE_FLAME)) or 1
+                API.PrintDebug("Keeper of the Flame activated: " .. tostring(keeperOfTheFlameStacks) .. " stack(s)")
+            end
+            
+            -- Track Special Delivery application
+            if spellID == buffs.SPECIAL_DELIVERY then
+                specialDeliveryActive = true
+                specialDeliveryEndTime = select(6, API.GetBuffInfo("player", buffs.SPECIAL_DELIVERY))
+                API.PrintDebug("Special Delivery activated")
+            end
+            
+            -- Track Niuzao's Mystery application
+            if spellID == buffs.NIUZAOS_MYSTERY then
+                niuzaosMysteryActive = true
+                niuzaosMysteryEndTime = select(6, API.GetBuffInfo("player", buffs.NIUZAOS_MYSTERY))
+                API.PrintDebug("Niuzao's Mystery activated")
             end
         end
-    end
-    
-    -- Track buff removals
-    if eventType == "SPELL_AURA_REMOVED" then
-        -- Track player buff removals
-        if destGUID == API.GetPlayerGUID() then
+        
+        -- Track buff removals
+        if eventType == "SPELL_AURA_REMOVED" then
+            -- Track Shuffle (formerly Ironskin Brew) removal
+            if spellID == buffs.SHUFFLE then
+                shuffleActive = false
+                API.PrintDebug("Shuffle faded")
+            end
+            
+            -- Track Celestial Brew removal
+            if spellID == buffs.CELESTIAL_BREW then
+                celestialBrewActive = false
+                API.PrintDebug("Celestial Brew faded")
+            end
+            
+            -- Track Zensphere Brew removal
+            if spellID == buffs.ZENSPHERE_BREW then
+                zensphereBrewActive = false
+                API.PrintDebug("Zensphere Brew faded")
+            end
+            
+            -- Track Fortifying Brew removal
+            if spellID == buffs.FORTIFYING_BREW then
+                fortifyingBrewActive = false
+                API.PrintDebug("Fortifying Brew faded")
+            end
+            
+            -- Track Zen Meditation removal
+            if spellID == buffs.ZEN_MEDITATION then
+                zenMeditationActive = false
+                API.PrintDebug("Zen Meditation faded")
+            end
+            
             -- Track Blackout Combo removal
             if spellID == buffs.BLACKOUT_COMBO then
-                blackoutKickActive = false
                 blackoutComboActive = false
                 API.PrintDebug("Blackout Combo faded")
+            end
+            
+            -- Track Kensing Tea removal
+            if spellID == buffs.KENSING_TEA then
+                kensingTeaActive = false
+                API.PrintDebug("Kensing Tea faded")
+            end
+            
+            -- Track Charred Passions removal
+            if spellID == buffs.CHARRED_PASSIONS then
+                charredPassionsActive = false
+                charredPassionsStacks = 0
+                API.PrintDebug("Charred Passions faded")
             end
             
             -- Track Rushing Jade Wind removal
@@ -1071,154 +1299,187 @@ function Brewmaster:HandleCombatLogEvent(...)
                 API.PrintDebug("Weapons of Order faded")
             end
             
-            -- Track Fallen Order removal
-            if spellID == buffs.FALLEN_ORDER then
-                fallenOrderActive = false
-                API.PrintDebug("Fallen Order faded")
+            -- Track Exploding Keg removal
+            if spellID == buffs.EXPLODING_KEG then
+                explodingKegActive = false
+                API.PrintDebug("Exploding Keg faded")
             end
             
-            -- Track Bonedust Brew removal
-            if spellID == buffs.BONEDUST_BREW then
+            -- Track Celestial Flames removal
+            if spellID == buffs.CELESTIAL_FLAMES then
+                celestialFlamesActive = false
+                API.PrintDebug("Celestial Flames faded")
+            end
+            
+            -- Track Dampen Harm removal
+            if spellID == buffs.DAMPEN_HARM then
+                dampenHarmActive = false
+                API.PrintDebug("Dampen Harm faded")
+            end
+            
+            -- Track Diffuse Magic removal
+            if spellID == buffs.DIFFUSE_MAGIC then
+                diffuseMagicActive = false
+                API.PrintDebug("Diffuse Magic faded")
+            end
+            
+            -- Track Bone Dust Brew removal
+            if spellID == buffs.BONE_DUST_BREW then
                 boneDustBrewActive = false
-                API.PrintDebug("Bonedust Brew faded")
-            end
-            
-            -- Track Shuffle removal
-            if spellID == buffs.SHUFFLE then
-                shuffleActive = false
-                API.PrintDebug("Shuffle faded")
-            end
-            
-            -- Track Charred Passions removal
-            if spellID == buffs.CHARRED_PASSIONS then
-                charredPassionsActive = false
-                charredPassionsStacks = 0
-                API.PrintDebug("Charred Passions faded")
+                API.PrintDebug("Bone Dust Brew faded")
             end
             
             -- Track Invoke Niuzao removal
             if spellID == buffs.INVOKE_NIUZAO then
-                invokeNiuzaoActivated = false
+                invokeNiuzaoActive = false
                 API.PrintDebug("Invoke Niuzao faded")
             end
             
-            -- Track Faeline Stomp removal
-            if spellID == buffs.FAELINE_STOMP then
-                faelineResonance = false
-                API.PrintDebug("Faeline Stomp resonance faded")
+            -- Track Kev Eye removal
+            if spellID == buffs.KEV_EYE then
+                kevEyeActive = false
+                API.PrintDebug("Kev Eye faded")
             end
             
-            -- Track Fortifying Ingredients removal
-            if spellID == buffs.FORTIFYING_INGREDIENTS then
-                fortifyingIngredientsActive = false
-                fortifyingIngredientsStacks = 0
-                API.PrintDebug("Fortifying Ingredients faded")
+            -- Track Keeper of the Flame removal
+            if spellID == buffs.KEEPER_OF_THE_FLAME then
+                keeperOfTheFlameActive = false
+                keeperOfTheFlameStacks = 0
+                API.PrintDebug("Keeper of the Flame faded")
+            end
+            
+            -- Track Special Delivery removal
+            if spellID == buffs.SPECIAL_DELIVERY then
+                specialDeliveryActive = false
+                API.PrintDebug("Special Delivery faded")
+            end
+            
+            -- Track Niuzao's Mystery removal
+            if spellID == buffs.NIUZAOS_MYSTERY then
+                niuzaosMysteryActive = false
+                API.PrintDebug("Niuzao's Mystery faded")
             end
         end
-    end
-    
-    -- Track Charred Passions stacks
-    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.CHARRED_PASSIONS and destGUID == API.GetPlayerGUID() then
-        charredPassionsStacks = select(4, API.GetBuffInfo("player", buffs.CHARRED_PASSIONS)) or 0
-        API.PrintDebug("Charred Passions stacks: " .. tostring(charredPassionsStacks))
-    end
-    
-    -- Track Fortifying Ingredients stacks
-    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.FORTIFYING_INGREDIENTS and destGUID == API.GetPlayerGUID() then
-        fortifyingIngredientsStacks = select(4, API.GetBuffInfo("player", buffs.FORTIFYING_INGREDIENTS)) or 0
-        API.PrintDebug("Fortifying Ingredients stacks: " .. tostring(fortifyingIngredientsStacks))
-    end
-    
-    -- Track spell casts
-    if eventType == "SPELL_CAST_SUCCESS" and sourceGUID == API.GetPlayerGUID() then
-        -- Track Tiger Palm casts for potential Face Palm procs
-        if spellID == spells.TIGER_PALM then
-            tigerPalmCount = tigerPalmCount + 1
-            API.PrintDebug("Tiger Palm cast, count: " .. tostring(tigerPalmCount))
-        elseif spellID == spells.BLACKOUT_KICK then
-            API.PrintDebug("Blackout Kick cast")
-        elseif spellID == spells.KEG_SMASH then
-            kegSmashCharges = API.GetSpellCharges(spells.KEG_SMASH) or 0
-            API.PrintDebug("Keg Smash cast, charges: " .. tostring(kegSmashCharges))
-        elseif spellID == spells.BREATH_OF_FIRE then
-            breathOfFireOnCooldown = true
-            breathOfFireEndTime = GetTime() + BREATH_OF_FIRE_COOLDOWN
-            -- Reset breathOfFireOnCooldown after cooldown duration
-            C_Timer.After(BREATH_OF_FIRE_COOLDOWN, function()
-                breathOfFireOnCooldown = false
-                API.PrintDebug("Breath of Fire cooldown reset")
-            end)
-            API.PrintDebug("Breath of Fire cast")
-        elseif spellID == spells.EXPLODING_KEG then
-            explodingKegOnCooldown = true
-            explodingKegCooldownRemaining = EXPLODING_KEG_COOLDOWN
+        
+        -- Track spell casts
+        if eventType == "SPELL_CAST_SUCCESS" then
+            if spellID == spells.KEG_SMASH then
+                lastKegSmash = GetTime()
+                API.PrintDebug("Keg Smash cast")
+            elseif spellID == spells.TIGER_PALM then
+                lastTigerPalm = GetTime()
+                API.PrintDebug("Tiger Palm cast")
+            elseif spellID == spells.BREATH_OF_FIRE then
+                lastBreathOfFire = GetTime()
+                breathOfFireActive = true
+                breathOfFireEndTime = GetTime() + BREATH_OF_FIRE_DURATION
+                API.PrintDebug("Breath of Fire cast")
+            elseif spellID == spells.RUSHING_JADE_WIND then
+                lastRushingJadeWind = GetTime()
+                rushingJadeWindActive = true
+                rushingJadeWindEndTime = GetTime() + RUSHING_JADE_WIND_DURATION
+                API.PrintDebug("Rushing Jade Wind cast")
+            elseif spellID == spells.SPINNING_CRANE_KICK then
+                lastSpinningCraneKick = GetTime()
+                spinningCraneKickActive = true
+                spinningCraneKickEndTime = GetTime() + 1.5 -- Duration of channel
+                API.PrintDebug("Spinning Crane Kick cast")
+            elseif spellID == spells.RISING_SUN_KICK then
+                lastRisingSunKick = GetTime()
+                API.PrintDebug("Rising Sun Kick cast")
+            elseif spellID == spells.BLACKOUT_KICK then
+                lastBlackoutKick = GetTime()
+                blackoutKickActive = true
+                blackoutKickEndTime = GetTime() + 1 -- Approximate duration
+                API.PrintDebug("Blackout Kick cast")
+            elseif spellID == spells.CELESTIAL_BREW then
+                lastCelestialBrew = GetTime()
+                celestialBrewActive = true
+                celestialBrewEndTime = GetTime() + CELESTIAL_BREW_DURATION
+                API.PrintDebug("Celestial Brew cast")
+            elseif spellID == spells.PURIFYING_BREW then
+                lastPurifyingBrew = GetTime()
+                purifyingBrewActive = true
+                API.PrintDebug("Purifying Brew cast")
+            elseif spellID == spells.EXPEL_HARM then
+                lastExpelHarm = GetTime()
+                API.PrintDebug("Expel Harm cast")
+            elseif spellID == spells.ZEN_MEDITATION then
+                lastZenMeditation = GetTime()
+                zenMeditationActive = true
+                zenMeditationEndTime = GetTime() + ZEN_MEDITATION_DURATION
+                API.PrintDebug("Zen Meditation cast")
+            elseif spellID == spells.TOUCH_OF_DEATH then
+                lastTouchOfDeath = GetTime()
+                API.PrintDebug("Touch of Death cast")
+            elseif spellID == spells.BONE_DUST_BREW then
+                lastBoneDustBrew = GetTime()
+                boneDustBrewActive = true
+                boneDustBrewEndTime = GetTime() + BONE_DUST_BREW_DURATION
+                API.PrintDebug("Bone Dust Brew cast")
+            elseif spellID == spells.WEAPONS_OF_ORDER then
+                lastWeaponsOfOrder = GetTime()
+                weaponsOfOrderActive = true
+                weaponsOfOrderEndTime = GetTime() + WEAPONS_OF_ORDER_DURATION
+                API.PrintDebug("Weapons of Order cast")
+            elseif spellID == spells.EXPLODING_KEG then
+                lastExplodingKeg = GetTime()
+                explodingKegActive = true
+                explodingKegEndTime = GetTime() + EXPLODING_KEG_DURATION
+                API.PrintDebug("Exploding Keg cast")
+            elseif spellID == spells.CHI_BURST then
+                lastChiBurst = GetTime()
+                API.PrintDebug("Chi Burst cast")
+            elseif spellID == spells.CHI_WAVE then
+                lastChiWave = GetTime()
+                API.PrintDebug("Chi Wave cast")
+            elseif spellID == spells.INVOKE_NIUZAO then
+                lastInvokeNiuzao = GetTime()
+                invokeNiuzaoActive = true
+                invokeNiuzaoEndTime = GetTime() + INVOKE_NIUZAO_DURATION
+                API.PrintDebug("Invoke Niuzao cast")
+            elseif spellID == spells.DAMPEN_HARM then
+                lastDampenHarm = GetTime()
+                dampenHarmActive = true
+                dampenHarmEndTime = GetTime() + DAMPEN_HARM_DURATION
+                API.PrintDebug("Dampen Harm cast")
+            elseif spellID == spells.DIFFUSE_MAGIC then
+                lastDiffuseMagic = GetTime()
+                diffuseMagicActive = true
+                diffuseMagicEndTime = GetTime() + DIFFUSE_MAGIC_DURATION
+                API.PrintDebug("Diffuse Magic cast")
+            elseif spellID == spells.LEG_SWEEP then
+                lastLegSweep = GetTime()
+                API.PrintDebug("Leg Sweep cast")
+            elseif spellID == spells.PARALYSIS then
+                lastParalysis = GetTime()
+                API.PrintDebug("Paralysis cast")
+            elseif spellID == spells.DETOX then
+                lastDetox = GetTime()
+                API.PrintDebug("Detox cast")
+            elseif spellID == spells.VIVIFY then
+                lastVivify = GetTime()
+                API.PrintDebug("Vivify cast")
+            elseif spellID == spells.TRANSCENDENCE then
+                lastTranscendence = GetTime()
+                API.PrintDebug("Transcendence cast")
+            elseif spellID == spells.TRANSCENDENCE_TRANSFER then
+                lastTranscendenceTransfer = GetTime()
+                API.PrintDebug("Transcendence Transfer cast")
+            end
+        end
+        
+        -- Track debuff applications
+        if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
+            -- Track Breath of Fire DoT application
+            if spellID == debuffs.BREATH_OF_FIRE and destGUID then
+                API.PrintDebug("Breath of Fire DoT applied to " .. destName)
+            end
             
-            -- Reset explodingKegOnCooldown after cooldown duration
-            C_Timer.After(EXPLODING_KEG_COOLDOWN, function()
-                explodingKegOnCooldown = false
-                API.PrintDebug("Exploding Keg cooldown reset")
-            end)
-            
-            API.PrintDebug("Exploding Keg cast")
-        elseif spellID == spells.SPINNING_CRANE_KICK then
-            spinningCraneKickActive = true
-            
-            -- Reset spinningCraneKickActive after duration
-            C_Timer.After(1.5, function() -- approximate duration
-                spinningCraneKickActive = false
-                API.PrintDebug("Spinning Crane Kick finished")
-            end)
-            
-            API.PrintDebug("Spinning Crane Kick cast")
-        elseif spellID == spells.RUSHING_JADE_WIND then
-            rushingJadeWindActive = true
-            rushingJadeWindEndTime = GetTime() + RUSHING_JADE_WIND_DURATION
-            API.PrintDebug("Rushing Jade Wind cast")
-        elseif spellID == spells.PURIFYING_BREW then
-            lastPurifyTime = GetTime()
-            purifyingBrewCharges = API.GetSpellCharges(spells.PURIFYING_BREW) or 0
-            lastBrewUsed = spells.PURIFYING_BREW
-            lastBrewTime = GetTime()
-            API.PrintDebug("Purifying Brew cast, charges remaining: " .. tostring(purifyingBrewCharges))
-        elseif spellID == spells.CELESTIAL_BREW then
-            celestialBrewCharges = API.GetSpellCharges(spells.CELESTIAL_BREW) or 0
-            lastBrewUsed = spells.CELESTIAL_BREW
-            lastBrewTime = GetTime()
-            API.PrintDebug("Celestial Brew cast, charges remaining: " .. tostring(celestialBrewCharges))
-        elseif spellID == spells.BLACK_OX_BREW then
-            -- Reset brew cooldowns
-            purifyingBrewCharges = API.GetSpellMaxCharges(spells.PURIFYING_BREW) or 3
-            celestialBrewCharges = API.GetSpellMaxCharges(spells.CELESTIAL_BREW) or 1
-            lastBrewUsed = spells.BLACK_OX_BREW
-            lastBrewTime = GetTime()
-            API.PrintDebug("Black Ox Brew cast, reset brew charges")
-        elseif spellID == spells.INVOKE_NIUZAO then
-            invokeNiuzaoActivated = true
-            invokeNiuzaoEndTime = GetTime() + INVOKE_NIUZAO_DURATION
-            API.PrintDebug("Invoke Niuzao cast")
-        elseif spellID == spells.WEAPONS_OF_ORDER then
-            weaponsOfOrderActive = true
-            weaponsOfOrderEndTime = GetTime() + WEAPONS_OF_ORDER_DURATION
-            API.PrintDebug("Weapons of Order cast")
-        elseif spellID == spells.FALLEN_ORDER then
-            fallenOrderActive = true
-            fallenOrderEndTime = GetTime() + FALLEN_ORDER_DURATION
-            API.PrintDebug("Fallen Order cast")
-        elseif spellID == spells.BONEDUST_BREW then
-            boneDustBrewActive = true
-            boneDustBrewEndTime = GetTime() + BONE_DUST_BREW_DURATION
-            API.PrintDebug("Bonedust Brew cast")
-        elseif spellID == spells.FAELINE_STOMP then
-            faelineStompOnCooldown = true
-            faelineResonance = true
-            
-            -- Reset faelineStompOnCooldown after cooldown duration (30s)
-            C_Timer.After(30, function()
-                faelineStompOnCooldown = false
-                API.PrintDebug("Faeline Stomp cooldown reset")
-            end)
-            
-            API.PrintDebug("Faeline Stomp cast")
+            -- Track Keg Smash debuff application
+            if spellID == debuffs.KEG_SMASH and destGUID then
+                API.PrintDebug("Keg Smash debuff applied to " .. destName)
+            end
         end
     end
     
@@ -1232,8 +1493,8 @@ function Brewmaster:RunRotation()
         return false
     end
     
-    -- Skip rotation if player is casting or channeling
-    if API.IsPlayerCasting() or API.IsPlayerChanneling() or spinningCraneKickActive then
+    -- Skip rotation if player is casting
+    if API.IsPlayerCasting() then
         return false
     end
     
@@ -1241,11 +1502,14 @@ function Brewmaster:RunRotation()
     local settings = ConfigRegistry:GetSettings("BrewmasterMonk")
     
     -- Update variables
-    self:UpdateEnergy()
     self:UpdateChi()
+    self:UpdateEnergy()
     self:UpdateStagger()
+    self:UpdateEnemyCounts()
     burstModeActive = settings.rotationSettings.burstEnabled and API.ShouldUseBurst()
-    self:UpdateTargetData() -- Makes sure we have current target information
+    
+    -- Check if in melee range
+    isInMelee = self:IsInMeleeRange("target")
     
     -- Handle next cast override
     if nextCastOverride and API.CanCast(nextCastOverride) then
@@ -1255,82 +1519,71 @@ function Brewmaster:RunRotation()
         return true
     end
     
-    -- Handle interrupts first (high priority)
-    if self:HandleInterrupts() then
+    -- Handle stagger situations first
+    if self:HandleStagger(settings) then
         return true
     end
     
-    -- Handle purifying and defensive brews next (high priority)
+    -- Handle defensive cooldowns
     if self:HandleDefensives(settings) then
         return true
     end
     
-    -- Handle GCD offensive abilities
-    if self:HandleOffensives(settings) then
+    -- Handle interrupts
+    if self:HandleInterrupts(settings) then
         return true
     end
     
-    -- Check if in melee range for main rotation
-    if not inMeleeRange then
-        -- Skip rest of rotation if not in range
-        return false
+    -- Handle major cooldowns (Niuzao, Weapons of Order, etc.)
+    if self:HandleMajorCooldowns(settings) then
+        return true
     end
     
-    -- Check for AoE or Single Target
-    if settings.rotationSettings.aoeEnabled and currentAoETargets >= settings.rotationSettings.aoeThreshold then
-        return self:HandleAoERotation(settings)
+    -- Handle core rotation
+    if activeEnemies >= settings.rotationSettings.aoeThreshold and settings.rotationSettings.aoeEnabled then
+        return self:HandleAoE(settings)
     else
-        return self:HandleSingleTargetRotation(settings)
+        return self:HandleSingleTarget(settings)
     end
 end
 
--- Handle interrupts
-function Brewmaster:HandleInterrupts()
-    -- Only attempt to interrupt if in range
-    if inMeleeRange and API.CanCast(spells.SPEAR_HAND_STRIKE) and API.TargetIsSpellCastable() then
-        API.CastSpell(spells.SPEAR_HAND_STRIKE)
-        return true
-    end
-    
-    return false
-end
-
--- Handle defensive abilities
-function Brewmaster:HandleDefensives(settings)
-    local playerHealth = API.GetPlayerHealthPercent()
-    
-    -- Handle Purifying Brew first to clear stagger
-    if API.CanCast(spells.PURIFYING_BREW) and purifyingBrewCharges > 0 then
+-- Handle stagger situations
+function Brewmaster:HandleStagger(settings)
+    -- Use Purifying Brew to clear stagger
+    if purifyingBrew and 
+       settings.defensiveSettings.purifyingBrewEnabled and 
+       settings.defensiveSettings.purifyingBrewMode ~= "Manual Only" and
+       settings.abilityControls.purifyingBrew.enabled and
+       API.CanCast(spells.PURIFYING_BREW) then
+        
         local shouldPurify = false
         
-        -- Check different strategies
-        if settings.defensiveSettings.purifyingBrewStrategy == "Light Stagger" then
-            shouldPurify = staggerLevel != "none"
-        elseif settings.defensiveSettings.purifyingBrewStrategy == "Moderate Stagger" then
-            shouldPurify = staggerLevel == "moderate" or staggerLevel == "heavy"
-        elseif settings.defensiveSettings.purifyingBrewStrategy == "Heavy Stagger Only" then
-            shouldPurify = staggerLevel == "heavy"
-        else -- Smart Management
-            -- Consider health percentage and stagger level
-            if staggerLevel == "heavy" then
-                shouldPurify = true
-            elseif staggerLevel == "moderate" and playerHealth < 70 then
-                shouldPurify = true
-            elseif staggerLevel == "light" and playerHealth < 50 then
-                shouldPurify = true
-            end
-            
-            -- Check if we have stagger above threshold percentage
-            if staggerPercentage >= settings.defensiveSettings.purifyingBrewThreshold then
-                shouldPurify = true
-            end
-            
-            -- Save at least one charge for emergencies if health is ok
-            if purifyingBrewCharges == 1 and playerHealth > 60 and staggerLevel != "heavy" then
-                shouldPurify = false
-            end
+        if settings.defensiveSettings.purifyingBrewMode == "Moderate/Heavy Stagger" then
+            shouldPurify = staggerPercentage >= moderateStaggerThreshold
+        elseif settings.defensiveSettings.purifyingBrewMode == "Heavy Stagger Only" then
+            shouldPurify = staggerPercentage >= heavyStaggerThreshold
+        elseif settings.defensiveSettings.purifyingBrewMode == "Based on Health" then
+            shouldPurify = playerHealth <= settings.defensiveSettings.purifyingBrewHealthThreshold and staggerPercentage >= 20
         end
         
+        -- Check AAC settings
+        if settings.abilityControls.purifyingBrew.heavyStaggerOnly and staggerPercentage < heavyStaggerThreshold then
+            shouldPurify = false
+        end
+        
+        if settings.abilityControls.purifyingBrew.minHealthPercent > 0 and playerHealth > settings.abilityControls.purifyingBrew.minHealthPercent then
+            shouldPurify = false
+        end
+        
+        if settings.abilityControls.purifyingBrew.saveCharges > 0 and purifyingBrewCharges <= settings.abilityControls.purifyingBrew.saveCharges then
+            shouldPurify = false
+        end
+        
+        if settings.abilityControls.purifyingBrew.useDuringBurstOnly and not burstModeActive then
+            shouldPurify = false
+        end
+        
+        -- Use Purifying Brew if criteria met
         if shouldPurify then
             API.CastSpell(spells.PURIFYING_BREW)
             return true
@@ -1338,18 +1591,19 @@ function Brewmaster:HandleDefensives(settings)
     end
     
     -- Use Celestial Brew for mitigation
-    if API.CanCast(spells.CELESTIAL_BREW) and celestialBrewCharges > 0 then
+    if celestialBrew and 
+       settings.defensiveSettings.celestialBrewEnabled and 
+       settings.defensiveSettings.celestialBrewMode ~= "Manual Only" and
+       API.CanCast(spells.CELESTIAL_BREW) then
+        
         local shouldUseCelestialBrew = false
         
-        -- Check different strategies
-        if settings.defensiveSettings.celestialBrewStrategy == "On Cooldown" then
+        if settings.defensiveSettings.celestialBrewMode == "On Cooldown" then
             shouldUseCelestialBrew = true
-        elseif settings.defensiveSettings.celestialBrewStrategy == "With Purifying Buff" then
-            -- Check if we have enough Purified Chi stacks
-            shouldUseCelestialBrew = talents.hasPurifiedChi and GetTime() - lastPurifyTime < 6 and 
-                                    playerHealth <= settings.defensiveSettings.celestialBrewThreshold
-        else -- Emergency Only
-            shouldUseCelestialBrew = playerHealth <= settings.defensiveSettings.celestialBrewThreshold
+        elseif settings.defensiveSettings.celestialBrewMode == "Based on Health" then
+            shouldUseCelestialBrew = playerHealth <= settings.defensiveSettings.celestialBrewHealthThreshold
+        elseif settings.defensiveSettings.celestialBrewMode == "After Purifying Brew" then
+            shouldUseCelestialBrew = GetTime() - lastPurifyingBrew < 3
         end
         
         if shouldUseCelestialBrew then
@@ -1358,151 +1612,273 @@ function Brewmaster:HandleDefensives(settings)
         end
     end
     
-    -- Use Fortifying Brew
-    if settings.defensiveSettings.useFortifyingBrew and
-       playerHealth <= settings.defensiveSettings.fortifyingBrewThreshold and
-       not fortifyingBrewActive and
-       API.CanCast(spells.FORTIFYING_BREW) then
-        API.CastSpell(spells.FORTIFYING_BREW)
-        return true
-    end
-    
-    -- Use Dampen Harm
-    if talents.hasDampenHarm and
-       settings.defensiveSettings.useDampenHarm and
-       playerHealth <= settings.defensiveSettings.dampenHarmThreshold and
-       not dampenHarmActive and
-       API.CanCast(spells.DAMPEN_HARM) then
-        API.CastSpell(spells.DAMPEN_HARM)
-        return true
-    end
-    
-    -- Use Expel Harm
-    if settings.defensiveSettings.useExpelHarm and
+    -- Use Expel Harm for healing
+    if expelHarm and 
+       settings.defensiveSettings.expelHarmEnabled and
        playerHealth <= settings.defensiveSettings.expelHarmThreshold and
-       giftsOfTheOxCount >= settings.defensiveSettings.expelHarmOrbCount and
        API.CanCast(spells.EXPEL_HARM) then
         API.CastSpell(spells.EXPEL_HARM)
         return true
     end
     
-    -- Use Vivify for emergency healing
-    if settings.utilitySettings.useVivify and
-       playerHealth <= settings.utilitySettings.vivifyThreshold and
-       currentEnergy >= 30 and -- Approximate energy cost
-       API.CanCast(spells.VIVIFY) then
-        API.CastSpellOnSelf(spells.VIVIFY)
+    -- Maintain Shuffle (formerly Ironskin Brew)
+    if settings.rotationSettings.maintainShuffle and
+       (not shuffleActive or (shuffleEndTime - GetTime() < settings.rotationSettings.shuffleThreshold)) then
+        
+        -- Refresh Shuffle with Keg Smash + Blackout Combo
+        if blackoutCombo and blackoutComboActive and API.CanCast(spells.KEG_SMASH) then
+            API.CastSpellOnUnit(spells.KEG_SMASH, "target")
+            return true
+        end
+        
+        -- Refresh Shuffle with Tiger Palm + Blackout Combo
+        if blackoutCombo and blackoutComboActive and API.CanCast(spells.TIGER_PALM) then
+            API.CastSpellOnUnit(spells.TIGER_PALM, "target")
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Handle defensive cooldowns
+function Brewmaster:HandleDefensives(settings)
+    -- Use Fortifying Brew for major damage reduction
+    if fortifyingBrew and 
+       settings.defensiveSettings.fortifyingBrewEnabled and 
+       playerHealth <= settings.defensiveSettings.fortifyingBrewThreshold and 
+       API.CanCast(spells.FORTIFYING_BREW) then
+        API.CastSpell(spells.FORTIFYING_BREW)
         return true
     end
     
-    -- Use Black Ox Brew to refresh brews
-    if talents.hasBlackOxBrew and
-       settings.offensiveSettings.useBlackOxBrew and
-       purifyingBrewCharges <= settings.offensiveSettings.blackOxBrewChargesThreshold and
-       celestialBrewCharges == 0 and
-       API.CanCast(spells.BLACK_OX_BREW) then
-        API.CastSpell(spells.BLACK_OX_BREW)
+    -- Use Zen Meditation for major damage reduction
+    if zenMeditation and 
+       settings.defensiveSettings.zenMeditationEnabled and 
+       playerHealth <= settings.defensiveSettings.zenMeditationThreshold and 
+       API.CanCast(spells.ZEN_MEDITATION) and
+       not API.IsPlayerMoving() then
+        API.CastSpell(spells.ZEN_MEDITATION)
+        return true
+    end
+    
+    -- Use Dampen Harm
+    if dampenHarm and 
+       settings.defensiveSettings.dampenHarmEnabled and 
+       playerHealth <= settings.defensiveSettings.dampenHarmThreshold and 
+       API.CanCast(spells.DAMPEN_HARM) then
+        API.CastSpell(spells.DAMPEN_HARM)
+        return true
+    end
+    
+    -- Use Diffuse Magic when taking magic damage
+    if diffuseMagic and 
+       settings.defensiveSettings.diffuseMagicEnabled and 
+       playerHealth <= settings.defensiveSettings.diffuseMagicThreshold and 
+       API.CanCast(spells.DIFFUSE_MAGIC) and
+       API.IsTakingMagicDamage("player") then
+        API.CastSpell(spells.DIFFUSE_MAGIC)
         return true
     end
     
     return false
 end
 
--- Handle GCD offensive abilities
-function Brewmaster:HandleOffensives(settings)
-    -- Skip if GCD is not ready
-    if not API.IsGCDReady() then
-        return false
-    }
+-- Handle interrupts and utility
+function Brewmaster:HandleInterrupts(settings)
+    -- Use Spear Hand Strike to interrupt
+    if spearHandStrike and 
+       settings.interruptSettings.useSpearHandStrike and 
+       API.CanCast(spells.SPEAR_HAND_STRIKE) and
+       API.IsUnitCasting("target") and
+       API.CanBeInterrupted("target") then
+        API.CastSpellOnUnit(spells.SPEAR_HAND_STRIKE, "target")
+        return true
+    end
     
-    -- Skip offensive cooldowns if not in burst mode
-    if not burstModeActive and not API.IsInCombat() then
-        return false
-    }
-
-    -- Use Weapons of Order
-    if settings.covenantSettings.useWeaponsOfOrder and
-       settings.abilityControls.weaponsOfOrder.enabled and
-       not weaponsOfOrderActive and
-       API.CanCast(spells.WEAPONS_OF_ORDER) then
+    -- Use Leg Sweep for AoE stun
+    if legSweep and 
+       settings.interruptSettings.useLegSweep and 
+       API.CanCast(spells.LEG_SWEEP) and
+       activeEnemies >= settings.interruptSettings.legSweepMinTargets then
+        API.CastSpell(spells.LEG_SWEEP)
+        return true
+    end
+    
+    -- Use Paralysis for CC
+    if paralysis and 
+       settings.interruptSettings.useParalysis and 
+       API.CanCast(spells.PARALYSIS) and
+       API.ShouldCrowdControl("target") then
+        API.CastSpellOnUnit(spells.PARALYSIS, "target")
+        return true
+    end
+    
+    -- Use Detox to cleanse
+    if detox and 
+       settings.utilitySettings.useDetox and 
+       API.CanCast(spells.DETOX) then
         
-        -- Use if enough targets or in burst mode
-        if currentAoETargets >= settings.abilityControls.weaponsOfOrder.minTargets or burstModeActive then
-            API.CastSpell(spells.WEAPONS_OF_ORDER)
+        -- Check for dispellable debuffs on group members
+        for i = 1, API.GetGroupSize() do
+            local unit
+            if API.IsInRaid() then
+                unit = "raid" .. i
+            else
+                unit = i == 1 and "player" or "party" .. (i - 1)
+            end
+            
+            if API.UnitExists(unit) and not API.UnitIsDead(unit) then
+                -- Check for dispellable debuffs (poison, disease, magic)
+                if API.CanDispelUnit(unit, "Poison") or API.CanDispelUnit(unit, "Disease") then
+                    API.CastSpellOnUnit(spells.DETOX, unit)
+                    return true
+                end
+            end
+        end
+    end
+    
+    -- Use Vivify for emergency healing
+    if vivify and 
+       settings.utilitySettings.useVivify and 
+       playerHealth <= settings.utilitySettings.vivifyThreshold and
+       API.CanCast(spells.VIVIFY) and
+       not API.IsInPvPCombat() then
+        API.CastSpellOnUnit(spells.VIVIFY, "player")
+        return true
+    end
+    
+    -- Use Transcendence
+    if transcendence and 
+       settings.utilitySettings.useTranscendence and 
+       settings.utilitySettings.transcendenceMode ~= "Manual Only" and
+       ((settings.utilitySettings.transcendenceMode == "Place on Cooldown" and API.CanCast(spells.TRANSCENDENCE)) or
+        (settings.utilitySettings.transcendenceMode == "Transfer When Low Health" and playerHealth <= 30 and API.CanCast(spells.TRANSCENDENCE_TRANSFER))) then
+        
+        if settings.utilitySettings.transcendenceMode == "Place on Cooldown" then
+            API.CastSpell(spells.TRANSCENDENCE)
+            return true
+        elseif settings.utilitySettings.transcendenceMode == "Transfer When Low Health" then
+            API.CastSpell(spells.TRANSCENDENCE_TRANSFER)
             return true
         end
     end
     
+    -- Use White Tiger Statue
+    if summonWhiteTigerStatue and 
+       settings.utilitySettings.summonWhiteTigerStatueEnabled and 
+       API.CanCast(spells.SUMMON_WHITE_TIGER_STATUE) and
+       not summonWhiteTigerStatueActive then
+        API.CastSpellAtBestLocation(spells.SUMMON_WHITE_TIGER_STATUE)
+        return true
+    end
+    
+    return false
+end
+
+-- Handle major cooldowns
+function Brewmaster:HandleMajorCooldowns(settings)
     -- Use Invoke Niuzao
-    if talents.hasInvokeNiuzao and
-       settings.offensiveSettings.useInvokeNiuzao and
-       settings.abilityControls.invokeNiuzao.enabled and
-       not invokeNiuzaoActivated and
+    if invokeNiuzao and 
+       settings.cooldownSettings.invokeNiuzaoEnabled and 
+       settings.cooldownSettings.invokeNiuzaoMode ~= "Manual Only" and
        API.CanCast(spells.INVOKE_NIUZAO) then
         
-        -- Use if enough targets or in burst mode
-        if currentAoETargets >= settings.abilityControls.invokeNiuzao.minTargets or 
-           (burstModeActive and settings.abilityControls.invokeNiuzao.useDuringBurstOnly) then
+        local shouldUseNiuzao = false
+        
+        if settings.cooldownSettings.invokeNiuzaoMode == "On Cooldown" then
+            shouldUseNiuzao = true
+        elseif settings.cooldownSettings.invokeNiuzaoMode == "With Other Cooldowns" then
+            shouldUseNiuzao = weaponsOfOrderActive or fortifyingBrewActive or burstModeActive
+        elseif settings.cooldownSettings.invokeNiuzaoMode == "Boss Only" then
+            shouldUseNiuzao = API.IsFightingBoss()
+        end
+        
+        if shouldUseNiuzao then
             API.CastSpell(spells.INVOKE_NIUZAO)
             return true
         end
     end
     
-    -- Use Fallen Order
-    if settings.covenantSettings.useFallenOrder and
-       not fallenOrderActive and
-       API.CanCast(spells.FALLEN_ORDER) then
-        API.CastSpell(spells.FALLEN_ORDER)
+    -- Use Touch of Death
+    if touchOfDeath and 
+       settings.cooldownSettings.touchOfDeathEnabled and 
+       API.CanCast(spells.TOUCH_OF_DEATH) then
+        API.CastSpellOnUnit(spells.TOUCH_OF_DEATH, "target")
         return true
     end
     
-    -- Use Bonedust Brew
-    if settings.covenantSettings.useBoneDustBrew and
-       not boneDustBrewActive and
-       API.CanCast(spells.BONEDUST_BREW) then
+    -- Use Weapons of Order
+    if weaponsOfOrder and 
+       settings.cooldownSettings.weaponsOfOrderEnabled and 
+       settings.cooldownSettings.weaponsOfOrderMode ~= "Manual Only" and
+       API.CanCast(spells.WEAPONS_OF_ORDER) then
         
-        -- Check if enough targets
-        if currentAoETargets >= settings.covenantSettings.boneDustBrewTargetCount then
-            API.CastSpellAtBestLocation(spells.BONEDUST_BREW, 8) -- 8 yard radius
+        local shouldUseWoO = false
+        
+        if settings.cooldownSettings.weaponsOfOrderMode == "On Cooldown" then
+            shouldUseWoO = true
+        elseif settings.cooldownSettings.weaponsOfOrderMode == "With Other Cooldowns" then
+            shouldUseWoO = invokeNiuzaoActive or fortifyingBrewActive or burstModeActive
+        elseif settings.cooldownSettings.weaponsOfOrderMode == "Boss Only" then
+            shouldUseWoO = API.IsFightingBoss()
+        end
+        
+        if shouldUseWoO then
+            API.CastSpell(spells.WEAPONS_OF_ORDER)
+            return true
+        end
+    end
+    
+    -- Use Bone Dust Brew
+    if boneDustBrew and 
+       settings.cooldownSettings.boneDustBrewEnabled and 
+       settings.cooldownSettings.boneDustBrewMode ~= "Manual Only" and
+       API.CanCast(spells.BONE_DUST_BREW) then
+        
+        local shouldUseBDB = false
+        
+        if settings.cooldownSettings.boneDustBrewMode == "On Cooldown" then
+            shouldUseBDB = true
+        elseif settings.cooldownSettings.boneDustBrewMode == "With Cooldowns" then
+            shouldUseBDB = invokeNiuzaoActive or weaponsOfOrderActive or burstModeActive
+        elseif settings.cooldownSettings.boneDustBrewMode == "AoE Only" then
+            shouldUseBDB = activeEnemies >= 3
+        end
+        
+        if shouldUseBDB then
+            API.CastSpellOnUnit(spells.BONE_DUST_BREW, "target")
             return true
         end
     end
     
     -- Use Exploding Keg
-    if settings.offensiveSettings.useExplodingKeg and
-       not explodingKegOnCooldown and
-       currentAoETargets >= settings.offensiveSettings.explodingKegThreshold and
+    if explodingKeg and 
+       settings.cooldownSettings.explodingKegEnabled and 
+       settings.cooldownSettings.explodingKegMode ~= "Manual Only" and
        API.CanCast(spells.EXPLODING_KEG) then
-        API.CastSpellAtBestLocation(spells.EXPLODING_KEG, 8) -- 8 yard radius
-        return true
-    end
-    
-    -- Use Touch of Death
-    if touchOfDeath and
-       settings.offensiveSettings.useTouchOfDeath and
-       API.CanCast(spells.TOUCH_OF_DEATH) then
-        local canUseTouchOfDeath = API.CanUseTouchOfDeath("target")
-        if canUseTouchOfDeath then
-            API.CastSpell(spells.TOUCH_OF_DEATH)
+        
+        local shouldUseEK = false
+        
+        if settings.cooldownSettings.explodingKegMode == "On Cooldown" then
+            shouldUseEK = true
+        elseif settings.cooldownSettings.explodingKegMode == "AoE Only" then
+            shouldUseEK = activeEnemies >= 3
+        elseif settings.cooldownSettings.explodingKegMode == "With Cooldowns" then
+            shouldUseEK = invokeNiuzaoActive or weaponsOfOrderActive or burstModeActive
+        end
+        
+        if shouldUseEK then
+            API.CastSpellAtBestLocation(spells.EXPLODING_KEG)
             return true
         end
     end
     
-    -- Use Touch of Karma
-    if touchOfKarma and
-       settings.offensiveSettings.useTouchOfKarma and
-       API.GetPlayerHealthPercent() <= settings.offensiveSettings.touchOfKarmaThreshold and
-       API.CanCast(spells.TOUCH_OF_KARMA) then
-        API.CastSpell(spells.TOUCH_OF_KARMA)
-        return true
-    end
-    
-    -- Use Faeline Stomp
-    if talents.hasFaelineStomp and
-       settings.covenantSettings.useFaelineStomp and
-       not faelineStompOnCooldown and
-       API.CanCast(spells.FAELINE_STOMP) then
-        API.CastSpellAtCursor(spells.FAELINE_STOMP)
+    -- Use Kensing Tea
+    if kensingTea and 
+       settings.cooldownSettings.kensingTeaEnabled and 
+       API.CanCast(spells.KENSING_TEA) then
+        API.CastSpell(spells.KENSING_TEA)
         return true
     end
     
@@ -1510,117 +1886,209 @@ function Brewmaster:HandleOffensives(settings)
 end
 
 -- Handle AoE rotation
-function Brewmaster:HandleAoERotation(settings)
-    -- Use Keg Smash first if available (AoE threat generation and damage)
-    if API.CanCast(spells.KEG_SMASH) and 
-       (settings.rotationSettings.kegSmashPriority == "On Cooldown" || 
-        (settings.rotationSettings.kegSmashPriority == "With Blackout Combo" && blackoutComboActive)) then
-        API.CastSpell(spells.KEG_SMASH)
-        return true
-    end
-    
-    -- Use Rushing Jade Wind if talented and enabled
-    if talents.hasRushingJadeWind and
-       settings.rotationSettings.useRushingJadeWind and
+function Brewmaster:HandleAoE(settings)
+    -- Use Rushing Jade Wind
+    if rushingJadeWind and 
+       settings.cooldownSettings.rushingJadeWindEnabled and 
        not rushingJadeWindActive and
+       activeEnemies >= settings.cooldownSettings.rushingJadeWindAoEThreshold and
        API.CanCast(spells.RUSHING_JADE_WIND) then
         API.CastSpell(spells.RUSHING_JADE_WIND)
         return true
     end
     
-    -- Use Breath of Fire if available (AoE damage and mitigation)
-    if API.CanCast(spells.BREATH_OF_FIRE) and
-       (settings.rotationSettings.breathOfFirePriority == "On Cooldown" || 
-        settings.rotationSettings.breathOfFirePriority == "After Keg Smash" ||
-        (settings.rotationSettings.breathOfFirePriority == "With Blackout Combo" && blackoutComboActive)) then
-        API.CastSpell(spells.BREATH_OF_FIRE)
+    -- Use Keg Smash
+    if API.CanCast(spells.KEG_SMASH) and
+       settings.abilityControls.kegSmash.enabled and
+       settings.rotationSettings.kegSmashPriority then
+        
+        local shouldUseKegSmash = true
+        
+        -- Check if we're saving for Blackout Combo
+        if blackoutCombo and settings.abilityControls.kegSmash.prioritizeWithBlackoutCombo and not blackoutComboActive then
+            shouldUseKegSmash = false
+        end
+        
+        if settings.abilityControls.kegSmash.useDuringBurstOnly and not burstModeActive then
+            shouldUseKegSmash = false
+        end
+        
+        if shouldUseKegSmash then
+            API.CastSpellOnUnit(spells.KEG_SMASH, "target")
+            return true
+        end
+    end
+    
+    -- Use Breath of Fire
+    if breathOfFire and
+       API.CanCast(spells.BREATH_OF_FIRE) and
+       settings.abilityControls.breathOfFire.enabled then
+        
+        local shouldUseBoF = true
+        
+        if settings.rotationSettings.breathOfFireMode == "Only with Keg Smash Debuff" then
+            shouldUseBoF = API.UnitHasDebuff("target", debuffs.KEG_SMASH)
+        elseif settings.rotationSettings.breathOfFireMode == "With Keeper of Flame Stacks" then
+            shouldUseBoF = keeperOfTheFlameActive and keeperOfTheFlameStacks >= settings.abilityControls.breathOfFire.minimumKeeperStacks
+        elseif settings.rotationSettings.breathOfFireMode == "Manual Only" then
+            shouldUseBoF = false
+        end
+        
+        if settings.abilityControls.breathOfFire.requireKegSmashDebuff and not API.UnitHasDebuff("target", debuffs.KEG_SMASH) then
+            shouldUseBoF = false
+        end
+        
+        if settings.abilityControls.breathOfFire.useDuringBurstOnly and not burstModeActive then
+            shouldUseBoF = false
+        end
+        
+        if shouldUseBoF then
+            API.CastSpell(spells.BREATH_OF_FIRE)
+            return true
+        end
+    end
+    
+    -- Use Blackout Kick with Blackout Combo talent
+    if blackoutKick and
+       blackoutCombo and
+       blackoutComboActive and
+       settings.rotationSettings.blackoutKickWithCombo and
+       API.CanCast(spells.BLACKOUT_KICK) then
+        API.CastSpellOnUnit(spells.BLACKOUT_KICK, "target")
         return true
     end
     
-    -- Use Spinning Crane Kick for AoE damage and hit combo stacks
-    if API.CanCast(spells.SPINNING_CRANE_KICK) and currentEnergy >= SPINNING_CRANE_KICK_COST then
+    -- Use Spinning Crane Kick for AoE damage
+    if spinningCraneKick and
+       API.CanCast(spells.SPINNING_CRANE_KICK) and
+       activeEnemies >= 3 and
+       (not settings.rotationSettings.energyPooling or currentEnergy > settings.rotationSettings.energyPoolingThreshold + 30) then
         API.CastSpell(spells.SPINNING_CRANE_KICK)
         return true
     end
     
-    -- Use Blackout Kick for shuffle extension if needed
-    if API.CanCast(spells.BLACKOUT_KICK) and
-       (settings.rotationSettings.useBlackoutKick == "High Priority" || 
-        (settings.rotationSettings.useBlackoutKick == "For Shuffle Only" && shuffleEndTime - GetTime() < 3)) then
-        API.CastSpell(spells.BLACKOUT_KICK)
+    -- Use Chi Burst if talented
+    if chiBurst and
+       API.CanCast(spells.CHI_BURST) and
+       activeEnemies >= 3 then
+        API.CastSpell(spells.CHI_BURST)
         return true
     end
     
-    -- Use Keg Smash as filler if available
-    if API.CanCast(spells.KEG_SMASH) then
-        API.CastSpell(spells.KEG_SMASH)
+    -- Use Rising Sun Kick
+    if risingSunKick and API.CanCast(spells.RISING_SUN_KICK) then
+        API.CastSpellOnUnit(spells.RISING_SUN_KICK, "target")
         return true
     end
     
-    -- Use Tiger Palm if nothing else is available
-    if API.CanCast(spells.TIGER_PALM) and currentEnergy >= TIGER_PALM_COST then
-        API.CastSpell(spells.TIGER_PALM)
+    -- Use Tiger Palm for Chi generation
+    if tigerPalm and
+       API.CanCast(spells.TIGER_PALM) and
+       (not settings.rotationSettings.energyPooling or currentEnergy > settings.rotationSettings.energyPoolingThreshold) then
+        API.CastSpellOnUnit(spells.TIGER_PALM, "target")
         return true
-    }
+    end
     
     return false
 end
 
--- Handle Single Target rotation
-function Brewmaster:HandleSingleTargetRotation(settings)
-    -- Use Keg Smash if available
+-- Handle single target rotation
+function Brewmaster:HandleSingleTarget(settings)
+    -- Use Keg Smash
     if API.CanCast(spells.KEG_SMASH) and
-       (settings.rotationSettings.kegSmashPriority == "On Cooldown" || 
-        settings.rotationSettings.kegSmashPriority == "When Available" ||
-        (settings.rotationSettings.kegSmashPriority == "With Blackout Combo" && blackoutComboActive)) then
-        API.CastSpell(spells.KEG_SMASH)
-        return true
+       settings.abilityControls.kegSmash.enabled and
+       settings.rotationSettings.kegSmashPriority then
+        
+        local shouldUseKegSmash = true
+        
+        -- Check if we're saving for Blackout Combo
+        if blackoutCombo and settings.abilityControls.kegSmash.prioritizeWithBlackoutCombo and not blackoutComboActive then
+            shouldUseKegSmash = false
+        end
+        
+        if settings.abilityControls.kegSmash.useDuringBurstOnly and not burstModeActive then
+            shouldUseKegSmash = false
+        end
+        
+        if shouldUseKegSmash then
+            API.CastSpellOnUnit(spells.KEG_SMASH, "target")
+            return true
+        end
     end
     
-    -- Use Blackout Kick for shuffle maintenance
-    if API.CanCast(spells.BLACKOUT_KICK) and 
-       (settings.rotationSettings.useBlackoutKick == "High Priority" || 
-        (settings.rotationSettings.useBlackoutKick == "For Shuffle Only" && shuffleEndTime - GetTime() < 5)) then
-        API.CastSpell(spells.BLACKOUT_KICK)
+    -- Use Blackout Kick with Blackout Combo talent
+    if blackoutKick and
+       blackoutCombo and
+       blackoutComboActive and
+       settings.rotationSettings.blackoutKickWithCombo and
+       API.CanCast(spells.BLACKOUT_KICK) then
+        API.CastSpellOnUnit(spells.BLACKOUT_KICK, "target")
         return true
     end
     
     -- Use Breath of Fire
-    if API.CanCast(spells.BREATH_OF_FIRE) and
-       (settings.rotationSettings.breathOfFirePriority == "On Cooldown" || 
-        settings.rotationSettings.breathOfFirePriority == "After Keg Smash" ||
-        (settings.rotationSettings.breathOfFirePriority == "With Blackout Combo" && blackoutComboActive)) then
-        API.CastSpell(spells.BREATH_OF_FIRE)
+    if breathOfFire and
+       API.CanCast(spells.BREATH_OF_FIRE) and
+       settings.abilityControls.breathOfFire.enabled then
+        
+        local shouldUseBoF = true
+        
+        if settings.rotationSettings.breathOfFireMode == "Only with Keg Smash Debuff" then
+            shouldUseBoF = API.UnitHasDebuff("target", debuffs.KEG_SMASH)
+        elseif settings.rotationSettings.breathOfFireMode == "With Keeper of Flame Stacks" then
+            shouldUseBoF = keeperOfTheFlameActive and keeperOfTheFlameStacks >= settings.abilityControls.breathOfFire.minimumKeeperStacks
+        elseif settings.rotationSettings.breathOfFireMode == "Manual Only" then
+            shouldUseBoF = false
+        end
+        
+        if settings.abilityControls.breathOfFire.requireKegSmashDebuff and not API.UnitHasDebuff("target", debuffs.KEG_SMASH) then
+            shouldUseBoF = false
+        end
+        
+        if settings.abilityControls.breathOfFire.useDuringBurstOnly and not burstModeActive then
+            shouldUseBoF = false
+        end
+        
+        if shouldUseBoF then
+            API.CastSpell(spells.BREATH_OF_FIRE)
+            return true
+        end
+    end
+    
+    -- Use Chi Wave if talented
+    if chiWave and API.CanCast(spells.CHI_WAVE) then
+        API.CastSpellOnUnit(spells.CHI_WAVE, "target")
         return true
     end
     
-    -- Use Rushing Jade Wind if talented
-    if talents.hasRushingJadeWind and
-       settings.rotationSettings.useRushingJadeWind and
+    -- Use Rushing Jade Wind in single target for DPS if talented
+    if rushingJadeWind and 
+       settings.cooldownSettings.rushingJadeWindEnabled and 
        not rushingJadeWindActive and
        API.CanCast(spells.RUSHING_JADE_WIND) then
         API.CastSpell(spells.RUSHING_JADE_WIND)
         return true
     end
     
-    -- Use Blackout Kick to maintain Hit Combo
-    if talents.hasHitCombo and API.CanCast(spells.BLACKOUT_KICK) and 
-       (hitComboEndTime - GetTime() < 2 || not hitComboActive) then
-        API.CastSpell(spells.BLACKOUT_KICK)
+    -- Use Rising Sun Kick
+    if risingSunKick and API.CanCast(spells.RISING_SUN_KICK) then
+        API.CastSpellOnUnit(spells.RISING_SUN_KICK, "target")
         return true
     end
     
-    -- Use Tiger Palm as filler
-    if API.CanCast(spells.TIGER_PALM) and currentEnergy >= TIGER_PALM_COST then
-        API.CastSpell(spells.TIGER_PALM)
+    -- Use Blackout Kick
+    if blackoutKick and API.CanCast(spells.BLACKOUT_KICK) then
+        API.CastSpellOnUnit(spells.BLACKOUT_KICK, "target")
         return true
-    }
+    end
     
-    -- Use Blackout Kick as filler
-    if API.CanCast(spells.BLACKOUT_KICK) and settings.rotationSettings.useBlackoutKick != "For Shuffle Only" then
-        API.CastSpell(spells.BLACKOUT_KICK)
+    -- Use Tiger Palm for Chi generation and filler
+    if tigerPalm and
+       API.CanCast(spells.TIGER_PALM) and
+       (not settings.rotationSettings.energyPooling or currentEnergy > settings.rotationSettings.energyPoolingThreshold) then
+        API.CastSpellOnUnit(spells.TIGER_PALM, "target")
         return true
-    }
+    end
     
     return false
 end
@@ -1633,74 +2101,141 @@ function Brewmaster:OnSpecializationChanged()
     -- Reset state variables
     nextCastOverride = nil
     burstModeActive = false
-    currentAoETargets = 0
-    currentEnergy = API.GetPlayerPower()
-    maxEnergy = 100
-    currentChi = API.GetPlayerComboPoints() or 0
+    currentChi = 0
     maxChi = 5
-    staggerLevel = "none"
+    currentEnergy = 100
+    maxEnergy = 100
     staggerPercentage = 0
-    tigerPalmCount = 0
+    heavyStaggerThreshold = 60
+    moderateStaggerThreshold = 30
+    ironskinBrewActive = false
+    ironskinBrewEndTime = 0
+    ironskinBrewCharges = 0
+    ironskinBrewMaxCharges = 0
+    purifyingBrewActive = false
+    purifyingBrewCharges = 0
+    purifyingBrewMaxCharges = 0
+    zensphereBrewActive = false
+    zensphereBrewEndTime = 0
+    celestialBrewActive = false
+    celestialBrewEndTime = 0
     blackoutKickActive = false
     blackoutKickEndTime = 0
-    blackoutComboActive = false
-    celestialBrewCharges = API.GetSpellCharges(spells.CELESTIAL_BREW) or 0
-    celestialBrewMaxCharges = API.GetSpellMaxCharges(spells.CELESTIAL_BREW) or 1
-    purifyingBrewCharges = API.GetSpellCharges(spells.PURIFYING_BREW) or 0
-    purifyingBrewMaxCharges = API.GetSpellMaxCharges(spells.PURIFYING_BREW) or 2
-    explodingKegOnCooldown = false
-    explodingKegCooldownRemaining = 0
-    spinningCraneKickActive = false
-    weaponsOfOrderActive = false
-    weaponsOfOrderEndTime = 0
-    fallenOrderActive = false
-    fallenOrderEndTime = 0
-    boneDustBrewActive = false
-    boneDustBrewEndTime = 0
-    callToArmsActive = false
-    charredPassionsActive = false
-    charredPassionsStacks = 0
-    invokeNiuzaoActivated = false
+    kensingTea = false
+    kensingTeaActive = false
+    kensingTeaEndTime = 0
+    invokeNiuzaoActive = false
     invokeNiuzaoEndTime = 0
-    faelineStompOnCooldown = false
-    faelineResonance = false
-    lastBrewUsed = 0
-    lastBrewTime = 0
-    lastPurifyTime = 0
-    celestialFlamesStacks = 0
-    kegSmashCharges = API.GetSpellCharges(spells.KEG_SMASH) or 0
-    breathOfFireOnCooldown = false
+    breathOfFireActive = false
     breathOfFireEndTime = 0
-    charredPassionsCooldownRemaining = 0
-    rushingJadeWindActive = false
-    rushingJadeWindEndTime = 0
+    blackoutComboActive = false
+    blackoutComboEndTime = 0
     shuffleActive = false
     shuffleEndTime = 0
-    fortifyingIngredientsActive = false
-    fortifyingIngredientsStacks = 0
-    staggeredHits = 0
-    zensphereActive = false
-    detoxEnergy = false
-    sleepingShadow = false
-    scaleSadness = false
-    touchOfDeath = false
-    touchOfKarma = false
-    callOfTheOx = false
-    dampenHarmActive = false
-    dampenHarmEndTime = 0
-    dampenHarmStacks = 0
-    dampenHarmMaxStacks = 0
     fortifyingBrewActive = false
     fortifyingBrewEndTime = 0
-    lightBrewingActive = false
-    giftsOfTheOxActive = false
-    giftsOfTheOxCount = 0
-    hitComboActive = false
-    hitComboStacks = 0
-    hitComboEndTime = 0
+    zenMeditation = false
     zenMeditationActive = false
-    inMeleeRange = false
-    inMeleeDamageRange = false
+    zenMeditationEndTime = 0
+    boneDustBrew = false
+    boneDustBrewActive = false
+    boneDustBrewEndTime = 0
+    weaponsOfOrder = false
+    weaponsOfOrderActive = false
+    weaponsOfOrderEndTime = 0
+    charredPassions = false
+    charredPassionsActive = false
+    charredPassionsEndTime = 0
+    charredPassionsStacks = 0
+    blackoutCombo = false
+    highTolerance = false
+    highToleranceStacks = 0
+    highToleranceActive = false
+    celestialFlamesActive = false
+    celestialFlamesEndTime = 0
+    explodingKeg = false
+    explodingKegActive = false
+    explodingKegEndTime = 0
+    rushingJadeWind = false
+    rushingJadeWindActive = false
+    rushingJadeWindEndTime = 0
+    summonWhiteTigerStatue = false
+    summonWhiteTigerStatueActive = false
+    summonWhiteTigerStatueEndTime = 0
+    dampenHarm = false
+    dampenHarmActive = false
+    dampenHarmEndTime = 0
+    diffuseMagic = false
+    diffuseMagicActive = false
+    diffuseMagicEndTime = 0
+    invokeNiuzao = false
+    chiBurst = false
+    chiWave = false
+    smite = false
+    smiteActive = false
+    smiteEndTime = 0
+    spinningCraneKick = false
+    spinningCraneKickActive = false
+    spinningCraneKickEndTime = 0
+    tigerPalm = false
+    blackoutKick = false
+    risingSunKick = false
+    keeperOfTheFlame = false
+    keeperOfTheFlameActive = false
+    keeperOfTheFlameStacks = 0
+    breathOfFire = false
+    kevEye = false
+    kevEyeActive = false
+    kevEyeEndTime = 0
+    celestialBrew = false
+    purifyingBrew = false
+    expelHarm = false
+    legSweep = false
+    paralysis = false
+    provoke = false
+    spearHandStrike = false
+    detox = false
+    vivify = false
+    transcendence = false
+    transcendenceTransfer = false
+    rollOut = false
+    pressurePoint = false
+    drinkingHornCover = false
+    touchOfDeath = false
+    specialDelivery = false
+    specialDeliveryActive = false
+    specialDeliveryEndTime = 0
+    niuzaosMysteryActive = false
+    niuzaosMysteryEndTime = 0
+    lastKegSmash = 0
+    lastTigerPalm = 0
+    lastBreathOfFire = 0
+    lastRushingJadeWind = 0
+    lastSpinningCraneKick = 0
+    lastRisingSunKick = 0
+    lastBlackoutKick = 0
+    lastCelestialBrew = 0
+    lastPurifyingBrew = 0
+    lastExpelHarm = 0
+    lastZenMeditation = 0
+    lastTouchOfDeath = 0
+    lastBoneDustBrew = 0
+    lastWeaponsOfOrder = 0
+    lastExplodingKeg = 0
+    lastChiBurst = 0
+    lastChiWave = 0
+    lastInvokeNiuzao = 0
+    lastDampenHarm = 0
+    lastDiffuseMagic = 0
+    lastLegSweep = 0
+    lastParalysis = 0
+    lastDetox = 0
+    lastVivify = 0
+    lastTranscendence = 0
+    lastTranscendenceTransfer = 0
+    playerHealth = 100
+    activeEnemies = 0
+    isInMelee = false
     
     API.PrintDebug("Brewmaster Monk state reset on spec change")
     
