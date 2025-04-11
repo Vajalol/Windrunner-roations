@@ -1,370 +1,435 @@
-local addonName, WR = ...
+------------------------------------------
+-- WindrunnerRotations - API Module
+-- Author: VortexQ8
+-- Core API functions for all class modules
+------------------------------------------
 
--- API module - provides interface to Tinkr and core functions
-local API = {}
-WR.API = API
+local addonName, addon = ...
+addon.API = {}
 
--- Initialization
-function API:Initialize()
-    if not WR:VerifyTinkr() then
+local API = addon.API
+local registeredSpells = {}
+local registeredEvents = {}
+local debugMode = true
+
+-- Print debug messages
+function API.PrintDebug(message)
+    if debugMode and message then
+        print("|cFF69CCF0[WindrunnerRotations]|r " .. tostring(message))
+    end
+end
+
+-- Print error messages
+function API.PrintError(message)
+    print("|cFFFF0000[WindrunnerRotations] ERROR:|r " .. tostring(message))
+end
+
+-- Register a spell for tracking
+function API.RegisterSpell(spellID)
+    if not spellID or type(spellID) ~= "number" then
+        API.PrintError("Invalid spell ID: " .. tostring(spellID))
         return false
     end
     
-    -- Store references to frequently used API functions
-    self.ObjectManager = Tinkr.api.ObjectManager
-    self.Spell = Tinkr.api.Spell
-    self.Cast = Tinkr.api.Cast
-    self.UnitCachingEnabled = false
+    registeredSpells[spellID] = true
+    return true
+end
+
+-- Register event handler
+function API.RegisterEvent(event, handler)
+    if not event or not handler then
+        API.PrintError("Invalid event registration")
+        return false
+    end
     
-    -- Initialize unit cache
-    self:InitializeUnitCache()
+    if not registeredEvents[event] then
+        registeredEvents[event] = {}
+    end
+    
+    table.insert(registeredEvents[event], handler)
+    return true
+end
+
+-- Get player class ID
+function API.GetPlayerClass()
+    local _, _, classID = UnitClass("player")
+    return classID
+end
+
+-- Get active specialization ID
+function API.GetActiveSpecID()
+    return GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or 0
+end
+
+-- Check if player has a specific talent
+function API.HasTalent(talentID)
+    -- This would need implementation specific to WoW's talent API
+    return IsPlayerSpellKnown(talentID)
+end
+
+-- Check if player has a specific legendary effect
+function API.HasLegendaryEffect(effectID)
+    -- This would need implementation specific to WoW's item API
+    return false -- Placeholder
+end
+
+-- Cast spell
+function API.CastSpell(spellID)
+    if not spellID then return false end
+    
+    -- This would call into Tinkr API for actual execution
+    TinkrCast(spellID) -- Placeholder function for Tinkr integration
+    return true
+end
+
+-- Cast spell on unit
+function API.CastSpellOnUnit(spellID, unit)
+    if not spellID or not unit then return false end
+    
+    -- This would call into Tinkr API for actual execution
+    TinkrCastOnUnit(spellID, unit) -- Placeholder function for Tinkr integration
+    return true
+end
+
+-- Cast spell at cursor position
+function API.CastSpellAtCursor(spellID)
+    if not spellID then return false end
+    
+    -- This would call into Tinkr API for actual execution
+    TinkrCastAtCursor(spellID) -- Placeholder function for Tinkr integration
+    return true
+end
+
+-- Cast spell at best enemy clump
+function API.CastSpellAtBestClump(spellID, radius)
+    if not spellID or not radius then return false end
+    
+    -- This would call into Tinkr API for actual execution
+    TinkrCastAtBestClump(spellID, radius) -- Placeholder function for Tinkr integration
+    return true
+end
+
+-- Check if spell is ready to cast
+function API.CanCast(spellID)
+    if not spellID then return false end
+    
+    -- This would call into Tinkr API for actual checks
+    return TinkrCanCast(spellID) -- Placeholder function for Tinkr integration
+end
+
+-- Check if GCD is ready
+function API.IsGCDReady()
+    -- This would call into Tinkr API for GCD status
+    return TinkrIsGCDReady() -- Placeholder function for Tinkr integration
+end
+
+-- Check if player is casting
+function API.IsPlayerCasting()
+    -- This would call into Tinkr API
+    return TinkrIsPlayerCasting() -- Placeholder function for Tinkr integration
+end
+
+-- Check if player is channeling
+function API.IsPlayerChanneling()
+    -- This would call into Tinkr API
+    return TinkrIsPlayerChanneling() -- Placeholder function for Tinkr integration
+end
+
+-- Check if spell is on cooldown
+function API.IsSpellOnCooldown(spellID)
+    if not spellID then return true end
+    
+    -- This would call into Tinkr API
+    return TinkrIsSpellOnCooldown(spellID) -- Placeholder function for Tinkr integration
+end
+
+-- Get spell cooldown remaining
+function API.GetSpellCooldownRemaining(spellID)
+    if not spellID then return 999 end
+    
+    -- This would call into Tinkr API
+    return TinkrGetSpellCooldownRemaining(spellID) -- Placeholder function for Tinkr integration
+end
+
+-- Check if spell is in range of target
+function API.IsSpellInRange(spellID)
+    if not spellID then return false end
+    
+    -- This would call into Tinkr API
+    return TinkrIsSpellInRange(spellID) -- Placeholder function for Tinkr integration
+end
+
+-- Check if spell is ready (off cooldown)
+function API.IsSpellReady(spellID)
+    if not spellID then return false end
+    
+    -- This would call into Tinkr API
+    return not TinkrIsSpellOnCooldown(spellID) -- Placeholder function for Tinkr integration
+end
+
+-- Get player health percentage
+function API.GetPlayerHealthPercent()
+    return UnitHealth("player") / UnitHealthMax("player") * 100
+end
+
+-- Get target health percentage
+function API.GetTargetHealthPercent()
+    if not UnitExists("target") then return 0 end
+    return UnitHealth("target") / UnitHealthMax("target") * 100
+end
+
+-- Get unit health percentage
+function API.GetUnitHealthPercent(unit)
+    if not UnitExists(unit) then return 0 end
+    return UnitHealth(unit) / UnitHealthMax(unit) * 100
+end
+
+-- Get player power (rage, energy, mana, holy power, etc.)
+function API.GetPlayerPower()
+    -- This would call into Tinkr API
+    return TinkrGetPlayerPower() -- Placeholder function for Tinkr integration
+end
+
+-- Check if player has a buff
+function API.PlayerHasBuff(buffID)
+    -- This would call into Tinkr API
+    return TinkrPlayerHasBuff(buffID) -- Placeholder function for Tinkr integration
+end
+
+-- Get player buff time remaining
+function API.GetPlayerBuffTimeRemaining(buffID)
+    -- This would call into Tinkr API
+    return TinkrGetPlayerBuffTimeRemaining(buffID) -- Placeholder function for Tinkr integration
+end
+
+-- Get player buff stacks
+function API.GetPlayerBuffStacks(buffID)
+    -- This would call into Tinkr API
+    return TinkrGetPlayerBuffStacks(buffID) -- Placeholder function for Tinkr integration
+end
+
+-- Check if unit has a buff
+function API.UnitHasBuff(unit, buffID)
+    -- This would call into Tinkr API
+    return TinkrUnitHasBuff(unit, buffID) -- Placeholder function for Tinkr integration
+end
+
+-- Get debuff info on a unit
+function API.GetDebuffInfo(unitGUID, debuffID)
+    -- This would call into Tinkr API to get debuff details
+    return TinkrGetDebuffInfo(unitGUID, debuffID) -- Placeholder function for Tinkr integration
+end
+
+-- Check if player is moving
+function API.IsPlayerMoving()
+    return GetUnitSpeed("player") > 0
+end
+
+-- Get player GUID
+function API.GetPlayerGUID()
+    return UnitGUID("player")
+end
+
+-- Get target GUID
+function API.GetTargetGUID()
+    return UnitGUID("target")
+end
+
+-- Get number of nearby enemies
+function API.GetNearbyEnemiesCount(radius)
+    -- This would call into Tinkr API
+    return TinkrGetNearbyEnemiesCount(radius) -- Placeholder function for Tinkr integration
+end
+
+-- Check if target is casting
+function API.IsTargetCasting()
+    -- This would call into Tinkr API
+    return TinkrIsTargetCasting() -- Placeholder function for Tinkr integration
+end
+
+-- Get target distance
+function API.GetTargetDistance()
+    -- This would call into Tinkr API
+    return TinkrGetTargetDistance() -- Placeholder function for Tinkr integration
+end
+
+-- Get unit distance
+function API.GetUnitDistance(unit)
+    -- This would call into Tinkr API
+    return TinkrGetUnitDistance(unit) -- Placeholder function for Tinkr integration
+end
+
+-- Check if target is in range
+function API.IsTargetInRange(range)
+    -- This would call into Tinkr API
+    return TinkrIsTargetInRange(range) -- Placeholder function for Tinkr integration
+end
+
+-- Get party members in range
+function API.GetPartyMembersInRange(range)
+    -- This would call into Tinkr API
+    return TinkrGetPartyMembersInRange(range) -- Placeholder function for Tinkr integration
+end
+
+-- Check if we should use burst cooldowns
+function API.ShouldUseBurst()
+    -- This would be implemented with logic for detecting boss fights, etc.
+    return TinkrShouldUseBurst() -- Placeholder function for Tinkr integration
+end
+
+-- Get time in combat
+function API.GetInCombatTime()
+    -- This would call into Tinkr API
+    return TinkrGetInCombatTime() -- Placeholder function for Tinkr integration
+end
+
+-- Check if player is in combat
+function API.IsInCombat()
+    return UnitAffectingCombat("player")
+end
+
+-- Cancel harmful debuffs (e.g., when using Divine Shield)
+function API.CancelHarmfulDebuffs()
+    -- This would call into Tinkr API
+    TinkrCancelHarmfulDebuffs() -- Placeholder function for Tinkr integration
+end
+
+-- Get player moving time
+function API.GetPlayerMovingTime()
+    -- This would call into Tinkr API
+    return TinkrGetPlayerMovingTime() -- Placeholder function for Tinkr integration
+end
+
+-- Get group size
+function API.GetGroupSize()
+    return IsInRaid() and GetNumGroupMembers() or IsInGroup() and GetNumGroupMembers() or 1
+end
+
+-- Get group unit ID
+function API.GetGroupUnitID(index)
+    if index == 1 and not IsInGroup() then
+        return "player"
+    end
+    
+    return IsInRaid() and "raid"..index or "party"..index
+end
+
+-- Get unit name
+function API.GetUnitName(unit)
+    return UnitName(unit)
+end
+
+-- Get unit role
+function API.GetUnitRole(unit)
+    return UnitGroupRolesAssigned(unit)
+end
+
+-- Check if unit is main tank
+function API.IsMainTank(unit)
+    -- This would call into Tinkr API or use WoW's built-in tank detection
+    return UnitGroupRolesAssigned(unit) == "TANK" and true or false -- Simplified placeholder
+end
+
+-- Check if unit is off-tank
+function API.IsOffTank(unit)
+    -- This would require more complex logic in a real implementation
+    return UnitGroupRolesAssigned(unit) == "TANK" and not API.IsMainTank(unit)
+end
+
+-- Convert GUID to UnitID
+function API.GUIDToUnitID(guid)
+    -- This would search through group members to find a match
+    if UnitGUID("player") == guid then
+        return "player"
+    end
+    
+    for i = 1, API.GetGroupSize() do
+        local unitID = API.GetGroupUnitID(i)
+        if UnitGUID(unitID) == guid then
+            return unitID
+        end
+    end
+    
+    return nil
+end
+
+-- Check if unit is rooted
+function API.IsUnitRooted(unit)
+    -- This would check for root effects
+    -- Simplified placeholder
+    return false
+end
+
+-- Check if unit is slowed
+function API.IsUnitSlowed(unit)
+    -- This would check for slow effects
+    -- Simplified placeholder
+    return false
+end
+
+-- Get target reaction (friendly/hostile)
+function API.GetTargetReaction()
+    return UnitReaction("player", "target") >= 4 and "friendly" or "hostile"
+end
+
+-- Get relative unit angle
+function API.GetRelativeUnitAngle(unit)
+    -- This would call into Tinkr API
+    return TinkrGetRelativeUnitAngle(unit) -- Placeholder function for Tinkr integration
+end
+
+-- Set player facing direction
+function API.SetPlayerFacing(angle)
+    -- This would call into Tinkr API
+    TinkrSetPlayerFacing(angle) -- Placeholder function for Tinkr integration
+end
+
+-- Verify Tinkr is running and compatible
+function API.VerifyTinkr()
+    -- Check if Tinkr global exists
+    if not _G.Tinkr then
+        API.PrintError("Tinkr is not loaded. Please make sure Tinkr is running before using WindrunnerRotations.")
+        return false
+    end
+    
+    -- Check Tinkr version
+    local minVersion = "1.0.0" -- Minimum required version
+    local currentVersion = _G.Tinkr.GetVersion and _G.Tinkr:GetVersion() or "0.0.0"
+    
+    -- Simple version check (would need more robust checking in practice)
+    if currentVersion < minVersion then
+        API.PrintError("Tinkr version " .. currentVersion .. " is outdated. WindrunnerRotations requires version " .. minVersion .. " or higher.")
+        return false
+    end
+    
+    API.PrintDebug("Tinkr verified: v" .. currentVersion)
+    return true
+end
+
+-- Handle an event
+function API.HandleEvent(event, ...)
+    if registeredEvents[event] then
+        for _, handler in ipairs(registeredEvents[event]) do
+            handler(...)
+        end
+    end
+end
+
+-- Initialize the API
+function API.Initialize()
+    -- Create frame for event handling
+    local eventFrame = CreateFrame("Frame")
+    
+    -- Register for events
+    eventFrame:SetScript("OnEvent", function(self, event, ...)
+        API.HandleEvent(event, ...)
+    end)
+    
+    -- Print initialization message
+    API.PrintDebug("API initialized")
     
     return true
 end
 
--- Unit caching to improve performance
-function API:InitializeUnitCache()
-    self.UnitCache = {
-        player = nil,
-        target = nil,
-        focus = nil,
-        pet = nil,
-        mouseover = nil,
-        units = {},
-        lastUpdate = 0,
-        updateInterval = 0.1, -- 100ms cache
-    }
-end
-
--- Enable/disable unit caching
-function API:SetUnitCaching(enabled)
-    self.UnitCachingEnabled = enabled
-end
-
--- Update the unit cache 
-function API:UpdateUnitCache()
-    if not self.UnitCachingEnabled then return end
-    
-    local now = GetTime()
-    if now - self.UnitCache.lastUpdate < self.UnitCache.updateInterval then
-        return -- Cache is still valid
-    end
-    
-    -- Update common units
-    self.UnitCache.player = self:GetUnit("player")
-    self.UnitCache.target = self:GetUnit("target")
-    self.UnitCache.focus = self:GetUnit("focus")
-    self.UnitCache.pet = self:GetUnit("pet")
-    self.UnitCache.mouseover = self:GetUnit("mouseover")
-    
-    -- Clear the units table to prevent memory leaks
-    wipe(self.UnitCache.units)
-    
-    -- Update timestamp
-    self.UnitCache.lastUpdate = now
-end
-
--- Clear the unit cache
-function API:ClearUnitCache()
-    if not self.UnitCachingEnabled then return end
-    wipe(self.UnitCache.units)
-    self.UnitCache.player = nil
-    self.UnitCache.target = nil
-    self.UnitCache.focus = nil
-    self.UnitCache.pet = nil
-    self.UnitCache.mouseover = nil
-    self.UnitCache.lastUpdate = 0
-end
-
--- Get a unit from Tinkr API or cache
-function API:GetUnit(unit)
-    if not self.UnitCachingEnabled then
-        return self.ObjectManager:GetUnit(unit)
-    end
-    
-    -- Common units are cached separately for frequent access
-    if unit == "player" then
-        if not self.UnitCache.player then
-            self.UnitCache.player = self.ObjectManager:GetUnit(unit)
-        end
-        return self.UnitCache.player
-    elseif unit == "target" then
-        if not self.UnitCache.target then
-            self.UnitCache.target = self.ObjectManager:GetUnit(unit)
-        end
-        return self.UnitCache.target
-    elseif unit == "focus" then
-        if not self.UnitCache.focus then
-            self.UnitCache.focus = self.ObjectManager:GetUnit(unit)
-        end
-        return self.UnitCache.focus
-    elseif unit == "pet" then
-        if not self.UnitCache.pet then
-            self.UnitCache.pet = self.ObjectManager:GetUnit(unit)
-        end
-        return self.UnitCache.pet
-    elseif unit == "mouseover" then
-        if not self.UnitCache.mouseover then
-            self.UnitCache.mouseover = self.ObjectManager:GetUnit(unit)
-        end
-        return self.UnitCache.mouseover
-    end
-    
-    -- Other units go in the general cache
-    if not self.UnitCache.units[unit] then
-        self.UnitCache.units[unit] = self.ObjectManager:GetUnit(unit)
-    end
-    
-    return self.UnitCache.units[unit]
-end
-
--- Get all units from Tinkr API
-function API:GetUnits()
-    return self.ObjectManager:GetUnits()
-end
-
--- Check if a unit exists and is valid
-function API:UnitExists(unit)
-    local u = self:GetUnit(unit)
-    return u ~= nil and u:Exists()
-end
-
--- Check if a unit is dead
-function API:UnitIsDead(unit)
-    local u = self:GetUnit(unit)
-    return u ~= nil and u:Exists() and u:IsDead()
-end
-
--- Get unit health percentage
-function API:UnitHealthPercent(unit)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        return u:HealthPercent()
-    end
-    return 0
-end
-
--- Get unit power percentage (mana, energy, rage, etc.)
-function API:UnitPowerPercent(unit, powerType)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        if powerType then
-            return u:PowerPercent(powerType)
-        else
-            return u:PowerPercent()
-        end
-    end
-    return 0
-end
-
--- Get unit power amount
-function API:UnitPower(unit, powerType)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        if powerType then
-            return u:Power(powerType)
-        else
-            return u:Power()
-        end
-    end
-    return 0
-end
-
--- Get unit max power
-function API:UnitPowerMax(unit, powerType)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        if powerType then
-            return u:PowerMax(powerType)
-        else
-            return u:PowerMax()
-        end
-    end
-    return 0
-end
-
--- Check if a unit has an aura
-function API:UnitHasAura(unit, auraName, filter)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        return u:HasAura(auraName, filter)
-    end
-    return false
-end
-
--- Get an aura on a unit
-function API:UnitAura(unit, auraName, filter)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        return u:GetAura(auraName, filter)
-    end
-    return nil
-end
-
--- Get all auras on a unit
-function API:UnitAuras(unit, filter)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() and not u:IsDead() then
-        return u:GetAuras(filter)
-    end
-    return {}
-end
-
--- Get distance to a unit
-function API:UnitDistance(unit)
-    local player = self:GetUnit("player")
-    local target = self:GetUnit(unit)
-    
-    if player and target and player:Exists() and target:Exists() then
-        return player:GetDistance(target)
-    end
-    
-    return 9999 -- Return a large value if distance can't be calculated
-end
-
--- Check if player is in combat
-function API:InCombat()
-    return UnitAffectingCombat("player")
-end
-
--- Check if unit is in combat
-function API:UnitInCombat(unit)
-    return UnitAffectingCombat(unit)
-end
-
--- Get current talent tier selections
-function API:GetTalents()
-    local talents = {}
-    
-    -- Implementation depends on WoW version
-    -- For retail, this needs to query the loadout API
-    
-    return talents
-end
-
--- Create a spell object
-function API:CreateSpell(spellId)
-    return self.Spell:New(spellId)
-end
-
--- Cast a spell
-function API:CastSpell(spellId, unit)
-    local spell = self:CreateSpell(spellId)
-    if unit then
-        return spell:Cast(unit)
-    else
-        return spell:Cast()
-    end
-end
-
--- Check if a spell is castable
-function API:IsSpellCastable(spellId, unit)
-    local spell = self:CreateSpell(spellId)
-    if unit then
-        return spell:IsReady(unit)
-    else
-        return spell:IsReady()
-    end
-end
-
--- Get the cooldown of a spell
-function API:GetSpellCooldown(spellId)
-    local spell = self:CreateSpell(spellId)
-    return spell:Cooldown()
-end
-
--- Check if player is moving
-function API:IsMoving()
-    return GetUnitSpeed("player") > 0
-end
-
--- Check if a unit is hostile
-function API:IsHostile(unit)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() then
-        return u:IsEnemy()
-    end
-    return false
-end
-
--- Check if a unit is friendly
-function API:IsFriendly(unit)
-    local u = self:GetUnit(unit)
-    if u and u:Exists() then
-        return u:IsFriend()
-    end
-    return false
-end
-
--- Check if a spell is in range of a unit
-function API:IsSpellInRange(spellId, unit)
-    local spell = self:CreateSpell(spellId)
-    if unit then
-        return spell:IsInRange(unit)
-    end
-    return false
-end
-
--- Data serialization/deserialization functions
-function API:Serialize(data)
-    if type(data) ~= "table" then
-        return tostring(data)
-    end
-    
-    -- Simple table serialization
-    local result = "{"
-    for k, v in pairs(data) do
-        local key = type(k) == "string" and string.format("[%q]", k) or string.format("[%s]", tostring(k))
-        local value = type(v) == "table" and self:Serialize(v) or 
-                      type(v) == "string" and string.format("%q", v) or tostring(v)
-        result = result .. key .. "=" .. value .. ","
-    end
-    result = result .. "}"
-    return result
-end
-
-function API:Deserialize(str)
-    -- This is a simplified deserializer and not secure for production
-    -- A real implementation would use a proper serialization library
-    local func, err = loadstring("return " .. str)
-    if not func then
-        return nil, err
-    end
-    
-    setfenv(func, {}) -- Sandbox environment
-    local success, result = pcall(func)
-    if not success then
-        return nil, result
-    end
-    
-    return result
-end
-
--- Compression/decompression functions (simplified)
-function API:Compress(str)
-    -- In a real implementation, you would use a compression library
-    -- This is just a placeholder
-    return str
-end
-
-function API:Decompress(str)
-    -- In a real implementation, you would use a compression library
-    -- This is just a placeholder
-    return str
-end
-
--- Base64 encoding/decoding (simplified)
-function API:Encode(str)
-    -- In a real implementation, you would use a proper base64 library
-    -- This is just a placeholder
-    return str
-end
-
-function API:Decode(str)
-    -- In a real implementation, you would use a proper base64 library
-    -- This is just a placeholder
-    return str
-end
-
--- Initialize the API module
-API:Initialize()
+-- Export the API module
+return API

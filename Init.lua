@@ -1,565 +1,181 @@
--------------------------------------------------------------------------------
--- Windrunner Rotations - Better than Phoenix Rotations
--- World of Warcraft: The War Within - Season 2
--- Author: WindrunnerDev
--------------------------------------------------------------------------------
+------------------------------------------
+-- WindrunnerRotations - Initialization
+-- Author: VortexQ8
+------------------------------------------
 
-local addonName, WR = ...
-_G["WindrunnerRotations"] = WR
+-- Setup addon structure
+local addonName, addon = ...
+addon.version = "1.0.0"
+addon.Classes = {}
+addon.Core = {}
 
--- Global addon namespace
-WR = {
-    name = "WindrunnerRotations",
-    version = "1.0.0",
-    author = "WindrunnerDev",
-    isRunning = false,
-    debugMode = true, -- Set to true during development
-    currentSpec = nil,
-    class = "MAGE", -- Set a mock class during development
-    
-    -- Core functionality 
-    API = {},
-    Rotation = {},
-    Target = {},
-    Queue = {},
-    Combat = {},
-    Profiles = {},
-    Dungeons = {},
-    
-    -- Data storage
-    Data = {
-        Classes = {},
-        Spells = {},
-        Dungeons = {},
-    },
-    
-    -- Class modules
-    Classes = {},
-    
-    -- UI elements
-    UI = {},
-    
-    -- Enhanced Class Rotation System (Phase 8)
-    ClassKnowledge = {},
-    BuildAnalyzer = {},
-    ResourceOptimizer = {},
-    LegendaryAndSetManager = {},
-    PlaystyleManager = {},
-    EncounterManager = {},
-    RotationEnhancer = {},
-    
-    -- Advanced Rotation Optimization (Phase 9)
-    MachineLearning = {},
-    PvPSystem = {},
-    PartySynergy = {},
-    ExternalDataIntegration = {},
-    
-    -- Advanced Ability Control (Phase 10)
-    AdvancedAbilityControl = {}
-}
+-- Local variables
+local initialized = false
+local debugMode = true
+local combatData = {}
 
--- Verify Tinkr API exists - for demonstration we'll mock Tinkr
-function WR:VerifyTinkr()
-    -- In a testing environment, create mock Tinkr
-    if not _G.Tinkr then
-        _G.Tinkr = {
-            api = {},
-            ObjectManager = {
-                TargetUnit = function(self, unit) 
-                    print("Tinkr: Targeting unit", unit)
-                    return true
-                end
-            }
-        }
-        print("Created mock Tinkr API for demonstration environment")
-    end
-    
-    -- Check if the real API exists in the game environment
-    if not Tinkr then
-        print("|cFFFF0000[Windrunner Rotations]|r Tinkr API not detected. The addon requires Tinkr to function.")
-        return false
-    end
-    
-    if not Tinkr.api then
-        print("|cFFFF0000[Windrunner Rotations]|r Tinkr API is outdated. Please update Tinkr.")
-        return false
-    end
-    
-    return true
-end
+-- Get a local reference to API once available
+local API = nil
 
--- Initial setup on load
-function WR:OnInitialize()
-    -- Check for Tinkr
-    if not self:VerifyTinkr() then return end
-    
-    -- Get player information
-    self.playerGUID = UnitGUID("player")
-    self.playerName = UnitName("player")
-    self.playerLevel = UnitLevel("player")
-    
-    -- Initialize databases
-    self:InitializeDB()
-    
-    -- For testing purposes, we're simulating a WoW environment
-    -- In a real WoW addon, these would be actual WoW API functions
-    
-    -- Mock required WoW API functions for testing
-    -- These are normally provided by the WoW client
-    if not _G.UnitClass then
-        _G.UnitClass = function(unit) return "Mage", "MAGE" end
-        _G.UnitGUID = function(unit) return "Player-1234" end
-        _G.UnitName = function(unit) return "TestPlayer" end
-        _G.UnitLevel = function(unit) return 70 end
-        _G.GetSpecialization = function() return 1 end
-        _G.GetSpecializationInfo = function(spec) return 62 end -- Arcane Mage
-        _G.CreateFrame = function(type, name, parent, template) return {} end
-        _G.SlashCmdList = {}
-        
-        print("Created mock WoW API functions for testing environment")
+-- Main initialization function
+local function Initialize()
+    if initialized then
+        return
     end
     
-    -- Initialize core systems in the correct order
-    -- Load GCD tracker first as other systems depend on it
-    if self.GCD and self.GCD.Initialize then self.GCD:Initialize() end
-    
-    -- Initialize API system for accessing WoW and Tinkr functionality
-    if self.API and self.API.Initialize then self.API:Initialize() end
-    
-    -- Then initialize condition system for spell evaluations
-    if self.Condition and self.Condition.Initialize then self.Condition:Initialize() end
-    
-    -- Initialize aura tracking system
-    if self.Auras and self.Auras.Initialize then self.Auras:Initialize() end
-    
-    -- Initialize cooldown tracking system
-    if self.Cooldown and self.Cooldown.Initialize then self.Cooldown:Initialize() end
-    
-    -- Combat analysis for performance tracking
-    if self.CombatAnalysis and self.CombatAnalysis.Initialize then self.CombatAnalysis:Initialize() end
-    
-    -- Core rotation components
-    if self.Queue and self.Queue.Initialize then self.Queue:Initialize() end
-    if self.Target and self.Target.Initialize then self.Target:Initialize() end
-    if self.Combat and self.Combat.Initialize then self.Combat:Initialize() end
-    if self.Rotation and self.Rotation.Initialize then self.Rotation:Initialize() end
-    
-    -- Configuration and data components
-    if self.ProfileManager and self.ProfileManager.Initialize then self.ProfileManager:Initialize() end
-    if self.DungeonIntelligence and self.DungeonIntelligence.Initialize then self.DungeonIntelligence:Initialize() end
-    
-    -- Enhanced Class Rotation System (Phase 8)
-    if self.ClassKnowledge and self.ClassKnowledge.Initialize then self.ClassKnowledge:Initialize() end
-    if self.BuildAnalyzer and self.BuildAnalyzer.Initialize then self.BuildAnalyzer:Initialize() end
-    if self.ResourceOptimizer and self.ResourceOptimizer.Initialize then self.ResourceOptimizer:Initialize() end
-    if self.LegendaryAndSetManager and self.LegendaryAndSetManager.Initialize then self.LegendaryAndSetManager:Initialize() end
-    if self.PlaystyleManager and self.PlaystyleManager.Initialize then self.PlaystyleManager:Initialize() end
-    if self.EncounterManager and self.EncounterManager.Initialize then self.EncounterManager:Initialize() end
-    
-    -- Initialize the RotationEnhancer last since it depends on the other modules
-    if self.RotationEnhancer and self.RotationEnhancer.Initialize then self.RotationEnhancer:Initialize() end
-    
-    -- Advanced Rotation Optimization (Phase 9)
-    if self.MachineLearning and self.MachineLearning.Initialize then self.MachineLearning:Initialize() end
-    if self.PvPSystem and self.PvPSystem.Initialize then self.PvPSystem:Initialize() end
-    if self.PartySynergy and self.PartySynergy.Initialize then self.PartySynergy:Initialize() end
-    if self.ExternalDataIntegration and self.ExternalDataIntegration.Initialize then self.ExternalDataIntegration:Initialize() end
-    
-    -- Advanced UI Customization (Phase 9)
-    if self.UI and self.UI.AdvancedSettingsUI and self.UI.AdvancedSettingsUI.Initialize then self.UI.AdvancedSettingsUI:Initialize() end
-    if self.UI and self.UI.VisualEditMode and self.UI.VisualEditMode.Initialize then self.UI.VisualEditMode:Initialize() end
-    if self.UI and self.UI.GuidedLearning and self.UI.GuidedLearning.Initialize then self.UI.GuidedLearning:Initialize() end
-    
-    -- Configuration Registry (Core System)
-    if self.ConfigurationRegistry and self.ConfigurationRegistry.Initialize then 
-        self.ConfigurationRegistry:Initialize()
-        self.ConfigurationRegistry:RegisterBuiltInModules()
+    -- Initialize API first
+    if addon.API and addon.API.Initialize then
+        addon.API.Initialize()
+        API = addon.API
+        API.PrintDebug("API loaded")
+    else
+        print("|cFFFF0000[WindrunnerRotations] ERROR:|r API module not found!")
+        return
     end
     
-    -- Advanced Ability Control (Phase 10)
-    if self.AdvancedAbilityControl and self.AdvancedAbilityControl.Initialize then self.AdvancedAbilityControl:Initialize() end
-    if self.UI and self.UI.AdvancedAbilityControlUI and self.UI.AdvancedAbilityControlUI.Initialize then self.UI.AdvancedAbilityControlUI:Initialize() end
-    
-    -- Register for events
-    self:RegisterEvents()
-    
-    -- Add more mock functions for demonstration
-    if not _G.GetTime then
-        _G.GetTime = function() return os.time() end
-        _G.UnitExists = function(unit) return true end
-        _G.UnitIsDead = function(unit) return false end
-        _G.UnitCanAttack = function(unit1, unit2) return true end
-        _G.print = function(...) 
-            local args = {...}
-            local message = ""
-            for i, v in ipairs(args) do
-                message = message .. tostring(v) .. " "
-            end
-            print(message)
-        end
-    end
-
-    print("Mocking class/spec for demonstration: MAGE, Arcane Spec (62)")
-    
-    -- Initialize a basic Config functionality for testing
-    if not self.Config then
-        self.Config = {}
-        
-        function self.Config:Get(key, subkey)
-            return true
-        end
-        
-        function self.Config:Set(key, value, subkey)
-            -- Do nothing in demo
-        end
-        
-        function self.Config:GetCurrentProfile()
-            return "Default"
-        end
-        
-        function self.Config:SaveClassProfile(profile, name)
-            -- Do nothing in demo
-        end
-        
-        function self.Config:DeleteProfile(name)
-            -- Do nothing in demo
-        end
+    -- Verify Tinkr is loaded
+    if not API.VerifyTinkr() then
+        API.PrintError("Tinkr verification failed. Please make sure Tinkr is running and up to date.")
+        -- Continue initialization but warn user
     end
     
-    -- Show initialization message
-    print("WindrunnerRotations demonstration initialized")
-    
-    -- For demonstration, we'll skip these
-    -- self:LoadClassModule()
-    -- self.UI:Initialize()
-    
-    print("|cFF00FF00[Windrunner Rotations v" .. self.version .. "]|r loaded successfully.")
-    print("|cFF00FFFF[Windrunner Rotations]|r Type /wr or /windrunner to open settings.")
-end
-
--- Set up saved variables
-function WR:InitializeDB()
-    -- Initialize default profile settings
-    local defaults = {
-        profile = {
-            enabled = true,
-            enableAutoTargeting = true,
-            enableInterrupts = true,
-            enableDefensives = true,
-            enableCooldowns = false,
-            enableAOE = false,
-            enableDungeonAwareness = true,
-            rotationSpeed = 100, -- milliseconds
-            minimapIcon = { hide = false },
-            UI = {
-                scale = 1.0,
-                locked = false,
-                position = { point = "CENTER", x = 0, y = 0 },
-            },
-        },
-        char = {
-            currentProfile = "Default",
-            classProfiles = {},
-        },
+    -- Initialize core modules
+    local coreModules = {
+        "ConfigRegistry",
+        "AdvancedAbilityControl",
+        "ModuleManager"
     }
     
-    -- AceDB setup would go here, but we're avoiding dependencies
-    -- Just set up the basic structure for now
-    if not WindrunnerRotationsDB then WindrunnerRotationsDB = defaults.profile end
-    if not WindrunnerRotationsCharDB then WindrunnerRotationsCharDB = defaults.char end
-    
-    self.db = WindrunnerRotationsDB
-    self.charDB = WindrunnerRotationsCharDB
-end
-
--- Register for WoW events
-function WR:RegisterEvents()
-    -- Create an event frame
-    local eventFrame = CreateFrame("Frame")
-    eventFrame:RegisterEvent("PLAYER_LOGIN")
-    eventFrame:RegisterEvent("PLAYER_LOGOUT")
-    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-    
-    eventFrame:SetScript("OnEvent", function(self, event, ...)
-        if event == "PLAYER_LOGIN" then
-            WR:OnInitialize()
-        elseif event == "PLAYER_LOGOUT" then
-            WR:OnShutdown()
-        elseif event == "PLAYER_ENTERING_WORLD" then
-            WR:UpdatePlayerInfo()
-        elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-            WR:LoadClassModule()
-        elseif event == "ZONE_CHANGED_NEW_AREA" then
-            if WR.DungeonIntelligence then
-                WR.DungeonIntelligence:UpdateCurrentDungeon()
+    for _, moduleName in ipairs(coreModules) do
+        if addon.Core[moduleName] and addon.Core[moduleName].Initialize then
+            local success = addon.Core[moduleName].Initialize()
+            if success then
+                API.PrintDebug(moduleName .. " initialized successfully")
+            else
+                API.PrintError("Failed to initialize " .. moduleName)
+                return
             end
+        else
+            API.PrintError(moduleName .. " module not found!")
+            return
         end
+    end
+    
+    -- Create main frame for OnUpdate and events
+    local frame = CreateFrame("Frame")
+    
+    -- Register events
+    frame:RegisterEvent("ADDON_LOADED")
+    frame:RegisterEvent("PLAYER_LOGIN")
+    frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    
+    -- Event handler
+    frame:SetScript("OnEvent", function(self, event, ...)
+        HandleEvent(event, ...)
     end)
     
-    -- Create a slash command handler
-    SLASH_WINDRUNNERROTATIONS1 = "/windrunner"
-    SLASH_WINDRUNNERROTATIONS2 = "/wr"
-    SlashCmdList["WINDRUNNERROTATIONS"] = function(msg)
-        WR:HandleSlashCommand(msg)
+    -- OnUpdate handler for rotation execution
+    frame:SetScript("OnUpdate", function(self, elapsed)
+        OnUpdate(elapsed)
+    end)
+    
+    -- Set initialized flag
+    initialized = true
+    API.PrintDebug("WindrunnerRotations v" .. addon.version .. " initialized")
+end
+
+-- Event handler
+local function HandleEvent(event, ...)
+    if not API then
+        -- API not initialized yet, store events for later
+        return
+    end
+    
+    -- Pass event to API for distribution to listeners
+    API.HandleEvent(event, ...)
+    
+    -- Special handling for specific events
+    if event == "ADDON_LOADED" then
+        local loadedAddon = ...
+        if loadedAddon == addonName then
+            API.PrintDebug("Addon loaded")
+        end
+    elseif event == "PLAYER_LOGIN" then
+        -- Delayed initialization to ensure other addons are loaded
+        C_Timer.After(1, function()
+            -- Finalize initialization here
+        end)
     end
 end
 
--- Load the appropriate class module
-function WR:LoadClassModule()
-    local _, class = UnitClass("player")
-    local spec = GetSpecialization()
-    local specID = spec and GetSpecializationInfo(spec) or nil
-    
-    if not specID then return end
-    
-    self.currentSpec = specID
-    
-    -- Ensure the Classes table exists
-    self.Classes = self.Classes or {}
-    
-    -- Initialize class modules if we haven't already
-    if not self.classModulesInitialized then
-        -- Create a placeholder for all potential class modules
-        self.classModulesInitialized = true
-        
-        -- Check which class files are available and initialize them
-        local classFiles = {
-            "Mage",
-            "Warrior",
-            "Hunter",
-            "Priest",
-            "Warlock",
-            "Paladin",
-            "Druid",
-            "Rogue",
-            "Shaman",
-            "Monk",
-            "DemonHunter",
-            "DeathKnight",
-            "Evoker"
-        }
-        
-        for _, className in ipairs(classFiles) do
-            -- Try to load the class module
-            local success, module = pcall(function() return self.Classes[className] end)
-            if success and module then
-                WR:Debug("Found class module:", className)
-            end
-        end
+-- OnUpdate handler
+local function OnUpdate(elapsed)
+    if not initialized or not API then
+        return
     end
     
-    -- Load class-specific rotation if available
-    if self.Classes[class] and self.Classes[class].LoadSpec then
-        self.Classes[class]:LoadSpec(specID)
-        print("|cFF00FFFF[Windrunner Rotations]|r Loaded rotation for " .. class .. " spec " .. specID)
+    -- Only run rotation in combat
+    if not InCombatLockdown() then
+        return
+    end
+    
+    -- Run rotation through Module Manager
+    if addon.Core.ModuleManager and addon.Core.ModuleManager.RunRotation then
+        addon.Core.ModuleManager:RunRotation()
+    end
+end
+
+-- Start initialization
+Initialize()
+
+-- Helper function to toggle the addon
+function addon:Toggle()
+    if initialized then
+        -- Toggle enabled state
+        enabled = not enabled
+        API.PrintDebug("WindrunnerRotations " .. (enabled and "enabled" or "disabled"))
     else
-        print("|cFFFFFF00[Windrunner Rotations]|r No rotation found for your class/spec")
+        API.PrintError("WindrunnerRotations not initialized")
     end
 end
 
--- Update player information when world is entered
-function WR:UpdatePlayerInfo()
-    self.playerGUID = UnitGUID("player")
-    self.playerName = UnitName("player")
-    self.playerLevel = UnitLevel("player")
+-- Helper function to get version
+function addon:GetVersion()
+    return addon.version
+end
+
+-- Create slash commands
+SLASH_WINDRUNNERROTATIONS1 = "/wr"
+SLASH_WINDRUNNERROTATIONS2 = "/windrunner"
+
+SlashCmdList["WINDRUNNERROTATIONS"] = function(msg)
+    if not initialized or not API then
+        print("|cFFFF0000[WindrunnerRotations]|r Not initialized yet")
+        return
+    end
     
-    -- Check if we're in a dungeon
-    if self.DungeonIntelligence then
-        self.DungeonIntelligence:UpdateCurrentDungeon()
-    end
-end
-
--- Handle slash commands
-function WR:HandleSlashCommand(msg)
-    if not msg or msg == "" then
-        -- Open main UI
-        self.UI:Toggle()
-    elseif msg == "debug" then
-        -- Toggle debug mode
-        self.debugMode = not self.debugMode
-        print("|cFF00FFFF[Windrunner Rotations]|r Debug mode: " .. (self.debugMode and "ENABLED" or "DISABLED"))
-    elseif msg == "start" or msg == "enable" then
-        -- Start rotations
-        self:StartRotation()
-    elseif msg == "stop" or msg == "disable" then
-        -- Stop rotations
-        self:StopRotation()
-    elseif msg == "toggle" then
-        -- Toggle rotation
-        if self.isRunning then
-            self:StopRotation()
-        else
-            self:StartRotation()
-        end
-    elseif msg == "reload" then
-        -- Reload class module
-        self:LoadClassModule()
-    elseif msg:match("^build") then
-        -- Pass to BuildAnalyzer
-        if self.BuildAnalyzer and self.BuildAnalyzer.HandleCommand then
-            self.BuildAnalyzer:HandleCommand(msg:sub(6))
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r BuildAnalyzer module not available")
-        end
-    elseif msg:match("^playstyle") then
-        -- Pass to PlaystyleManager
-        if self.PlaystyleManager and self.PlaystyleManager.HandleCommand then
-            self.PlaystyleManager:HandleCommand(msg:sub(11))
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r PlaystyleManager module not available")
-        end
-    elseif msg:match("^gear") then
-        -- Pass to LegendaryAndSetManager
-        if self.LegendaryAndSetManager and self.LegendaryAndSetManager.ForceScan then
-            self.LegendaryAndSetManager:ForceScan()
-            print("|cFF00FFFF[Windrunner Rotations]|r Rescanned gear for legendary and set effects")
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r LegendaryAndSetManager module not available")
-        end
-    elseif msg:match("^encounter") then
-        -- Pass to EncounterManager
-        if self.EncounterManager and self.EncounterManager.ForceCheckMechanics then
-            self.EncounterManager:ForceCheckMechanics()
-            print("|cFF00FFFF[Windrunner Rotations]|r Checked for active encounter mechanics")
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r EncounterManager module not available")
-        end
-    elseif msg == "enhanced" or msg == "ui" then
-        -- Show enhanced UI
-        if self.RotationEnhancer and self.RotationEnhancer.CreateEnhancedUI then
-            local enhancedUI = self.RotationEnhancer:CreateEnhancedUI(UIParent)
-            enhancedUI:Show()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r Enhanced UI not available")
-        end
-    elseif msg:match("^ml") or msg:match("^learning") then
-        -- Pass to MachineLearning
-        if self.MachineLearning and self.MachineLearning.HandleCommand then
-            self.MachineLearning:HandleCommand(msg:match("^ml%s*(.*)") or msg:match("^learning%s*(.*)") or "")
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r MachineLearning module not available")
-        end
-    elseif msg:match("^pvp") then
-        -- Pass to PvPSystem
-        if self.PvPSystem and self.PvPSystem.HandleCommand then
-            self.PvPSystem:HandleCommand(msg:sub(4))
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r PvPSystem module not available")
-        end
-    elseif msg == "classui" then
-        -- Toggle ClassSpecificUI
-        if self.UI and self.UI.ClassSpecificUI then
-            self.UI.ClassSpecificUI:Toggle()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r ClassSpecificUI module not available")
-        end
-    elseif msg == "forecast" then
-        -- Toggle ResourceForecast
-        if self.UI and self.UI.ResourceForecast then
-            self.UI.ResourceForecast:Toggle()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r ResourceForecast module not available")
-        end
-    elseif msg == "settings" or msg == "options" then
-        -- Show Advanced Settings
-        if self.UI and self.UI.AdvancedSettingsUI then
-            self.UI.AdvancedSettingsUI:Toggle()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r AdvancedSettingsUI module not available")
-        end
-    elseif msg == "editmode" or msg == "edit" then
-        -- Toggle Visual Edit Mode
-        if self.UI and self.UI.VisualEditMode then
-            self.UI.VisualEditMode:Toggle()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r VisualEditMode module not available")
-        end
-    elseif msg == "tutorial" or msg == "help" then
-        -- Show Tutorials
-        if self.UI and self.UI.GuidedLearning then
-            self.UI.GuidedLearning:ShowTutorialMenu()
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r GuidedLearning module not available")
-        end
-    elseif msg == "synergy" or msg:match("^synergy") then
-        -- Party Synergy
-        if self.PartySynergy then
-            if msg == "synergy" then
-                self.PartySynergy:Toggle()
-            else
-                self.PartySynergy:HandleSlashCommand(msg:sub(8))
-            end
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r PartySynergy module not available")
-        end
-    elseif msg == "external" or msg:match("^external") then
-        -- External Data Integration
-        if self.ExternalDataIntegration then
-            if msg == "external" then
-                self.ExternalDataIntegration:Toggle()
-            else
-                self.ExternalDataIntegration:HandleSlashCommand(msg:sub(9))
-            end
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r ExternalDataIntegration module not available")
-        end
-    elseif msg == "abilitycontrol" or msg == "ac" or msg:match("^abilitycontrol") or msg:match("^ac") then
-        -- Advanced Ability Control
-        if self.AdvancedAbilityControl then
-            local subCommand = ""
-            if msg:match("^abilitycontrol%s+(.+)") then
-                subCommand = msg:match("^abilitycontrol%s+(.+)")
-            elseif msg:match("^ac%s+(.+)") then
-                subCommand = msg:match("^ac%s+(.+)")
-            end
-            
-            if subCommand == "" then
-                -- Toggle settings panel
-                if self.UI and self.UI.AdvancedSettingsUI then
-                    self.UI.AdvancedSettingsUI:SelectPanel("Ability Control")
-                else
-                    self.AdvancedAbilityControl:HandleSlashCommand(subCommand)
-                end
-            else
-                self.AdvancedAbilityControl:HandleSlashCommand(subCommand)
-            end
-        else
-            print("|cFFFFFF00[Windrunner Rotations]|r AdvancedAbilityControl module not available")
-        end
-    end
-end
-
--- Start rotation system
-function WR:StartRotation()
-    if not self:VerifyTinkr() then return end
+    local command, args = msg:match("^(%S+)%s*(.*)$")
+    command = command and command:lower() or "help"
     
-    if not self.isRunning then
-        self.isRunning = true
-        self.Rotation:Start()
-        print("|cFF00FF00[Windrunner Rotations]|r Rotations ENABLED")
+    if command == "toggle" or command == "enable" or command == "disable" then
+        addon:Toggle()
+    elseif command == "version" or command == "ver" then
+        API.PrintDebug("WindrunnerRotations v" .. addon.version)
+    elseif command == "settings" or command == "config" then
+        -- Open settings panel (would be implemented elsewhere)
+        API.PrintDebug("Settings panel not implemented yet")
+    elseif command == "help" or command == "?" then
+        print("|cFF69CCF0WindrunnerRotations Commands:|r")
+        print("/wr toggle - Toggle rotation on/off")
+        print("/wr version - Show version information")
+        print("/wr settings - Open settings panel")
+        print("/wr help - Show this help message")
+    else
+        API.PrintDebug("Unknown command: " .. command)
+        print("|cFF69CCF0Type /wr help for available commands|r")
     end
 end
 
--- Stop rotation system
-function WR:StopRotation()
-    if self.isRunning then
-        self.isRunning = false
-        self.Rotation:Stop()
-        print("|cFFFF0000[Windrunner Rotations]|r Rotations DISABLED")
-    end
-end
-
--- Clean up on shutdown
-function WR:OnShutdown()
-    self:StopRotation()
-    -- Save any necessary data
-end
-
--- Debug utility function
-function WR:Debug(...)
-    if self.debugMode then
-        print("|cFF00FFFF[WR Debug]|r", ...)
-    end
-end
+-- Return the addon table
+return addon
