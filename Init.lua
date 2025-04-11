@@ -170,6 +170,12 @@ function WR:OnInitialize()
     if self.UI and self.UI.VisualEditMode and self.UI.VisualEditMode.Initialize then self.UI.VisualEditMode:Initialize() end
     if self.UI and self.UI.GuidedLearning and self.UI.GuidedLearning.Initialize then self.UI.GuidedLearning:Initialize() end
     
+    -- Configuration Registry (Core System)
+    if self.ConfigurationRegistry and self.ConfigurationRegistry.Initialize then 
+        self.ConfigurationRegistry:Initialize()
+        self.ConfigurationRegistry:RegisterBuiltInModules()
+    end
+    
     -- Advanced Ability Control (Phase 10)
     if self.AdvancedAbilityControl and self.AdvancedAbilityControl.Initialize then self.AdvancedAbilityControl:Initialize() end
     if self.UI and self.UI.AdvancedAbilityControlUI and self.UI.AdvancedAbilityControlUI.Initialize then self.UI.AdvancedAbilityControlUI:Initialize() end

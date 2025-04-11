@@ -49,6 +49,7 @@ Core\MachineLearning.lua
 Core\PvPSystem.lua
 Core\PartySynergy.lua
 Core\ExternalDataIntegration.lua
+Core\ConfigurationRegistry.lua
 Core\AdvancedAbilityControl.lua
 
 # Data

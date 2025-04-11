@@ -293,15 +293,33 @@ function AdvancedAbilityControl:Initialize()
 
 -- Load settings
 function AdvancedAbilityControl:LoadSettings()
-    if WindrunnerRotationsDB and WindrunnerRotationsDB.AdvancedAbilityControl then
-        -- Load existing settings
-        settings = WindrunnerRotationsDB.AdvancedAbilityControl
-        
-        -- Ensure all fields exist by populating missing ones from defaults
-        settings = self:EnsureDefaults(settings, defaultSettings)
+    -- Try to load from Configuration Registry if available
+    local registrySettings = nil
+    if WR.ConfigurationRegistry then
+        -- Check if our module is registered
+        local module = WR.ConfigurationRegistry:GetModule("AdvancedAbilityControl")
+        if module then
+            -- Get settings from registry
+            registrySettings = module.settings
+        end
+    end
+    
+    -- If registry settings exist, use them
+    if registrySettings and next(registrySettings) then
+        -- Load settings from registry into our format
+        settings = self:LoadFromRegistry(registrySettings)
     else
-        -- Initialize with defaults
-        settings = self:DeepCopy(defaultSettings)
+        -- Fall back to direct DB loading
+        if WindrunnerRotationsDB and WindrunnerRotationsDB.AdvancedAbilityControl then
+            -- Load existing settings
+            settings = WindrunnerRotationsDB.AdvancedAbilityControl
+            
+            -- Ensure all fields exist by populating missing ones from defaults
+            settings = self:EnsureDefaults(settings, defaultSettings)
+        else
+            -- Initialize with defaults
+            settings = self:DeepCopy(defaultSettings)
+        end
     end
     
     -- Initialize exclusion and inclusion lists
@@ -343,6 +361,29 @@ function AdvancedAbilityControl:LoadSettings()
     end
 }
 
+-- Convert registry settings to our format
+function AdvancedAbilityControl:LoadFromRegistry(registrySettings)
+    -- Create a settings object with our structure
+    local convertedSettings = self:DeepCopy(defaultSettings)
+    
+    -- Map registry settings to our format
+    if registrySettings.Enabled ~= nil then
+        convertedSettings.enabled = registrySettings.Enabled.value
+    end
+    
+    if registrySettings.EnableInterrupts ~= nil then
+        convertedSettings.global.interrupts.enabled = registrySettings.EnableInterrupts.value
+    end
+    
+    if registrySettings.InterruptTimingMode ~= nil then
+        convertedSettings.global.interrupts.timingMode = registrySettings.InterruptTimingMode.value
+    end
+    
+    -- Add more mappings as needed for other settings
+    
+    return convertedSettings
+}
+
 -- Save settings
 function AdvancedAbilityControl:SaveSettings()
     -- Ensure DB exists
@@ -350,8 +391,26 @@ function AdvancedAbilityControl:SaveSettings()
         WindrunnerRotationsDB = {}
     end
     
-    -- Save settings
+    -- Save settings directly to DB
     WindrunnerRotationsDB.AdvancedAbilityControl = settings
+    
+    -- Also update the Configuration Registry if available
+    if WR.ConfigurationRegistry then
+        -- Update registry values
+        if settings.enabled ~= nil then
+            WR.ConfigurationRegistry:SetSetting("AdvancedAbilityControl", "Enabled", settings.enabled)
+        end
+        
+        if settings.global.interrupts.enabled ~= nil then
+            WR.ConfigurationRegistry:SetSetting("AdvancedAbilityControl", "EnableInterrupts", settings.global.interrupts.enabled)
+        end
+        
+        if settings.global.interrupts.timingMode ~= nil then
+            WR.ConfigurationRegistry:SetSetting("AdvancedAbilityControl", "InterruptTimingMode", settings.global.interrupts.timingMode)
+        end
+        
+        -- Add more registry updates as needed
+    end
     
     if debugMode then
         self:Debug("Settings saved")
@@ -417,7 +476,74 @@ function AdvancedAbilityControl:RegisterEvents()
 
 -- Register with main addon
 function AdvancedAbilityControl:RegisterWithAddon()
-    -- Add to UI settings panel
+    -- Register with the Configuration Registry if available
+    if WR.ConfigurationRegistry then
+        -- Register the module
+        WR.ConfigurationRegistry:RegisterModule(
+            "AdvancedAbilityControl", 
+            "Advanced Ability Control", 
+            "Configure fine-grained control over interrupts, dispels, and crowd control abilities",
+            nil,  -- Icon (none for now)
+            "Advanced"  -- Category
+        )
+        
+        -- Register main settings panel
+        WR.ConfigurationRegistry:RegisterPanel(
+            "AdvancedAbilityControl",  -- Module ID
+            "Main",  -- Panel ID
+            "Main Settings",  -- Panel Name
+            function(panel) self:CreateSettingsUI(panel) end,  -- Render function
+            10  -- Display order (low = displayed first)
+        )
+        
+        -- Register core settings
+        WR.ConfigurationRegistry:RegisterSetting(
+            "AdvancedAbilityControl",  -- Module ID
+            "Enabled",  -- Setting ID
+            "boolean",  -- Setting type
+            true,  -- Default value
+            "Enable Advanced Ability Control",  -- Display name
+            "Enables or disables the entire Advanced Ability Control system"  -- Description
+        )
+        
+        -- Register interrupt settings
+        WR.ConfigurationRegistry:RegisterSetting(
+            "AdvancedAbilityControl", 
+            "EnableInterrupts", 
+            "boolean", 
+            true, 
+            "Enable Automatic Interrupts", 
+            "Enables or disables automatic interrupting of enemy spellcasts"
+        )
+        
+        WR.ConfigurationRegistry:RegisterSetting(
+            "AdvancedAbilityControl", 
+            "InterruptTimingMode", 
+            "select", 
+            "human", 
+            "Interrupt Timing Mode", 
+            "How interrupts are timed",
+            {values = {"instant", "human", "random", "variable", "percentage"}, 
+             texts = {"Instant (0 delay)", "Human-like", "Random", "Variable", "Cast Percentage"}}
+        )
+        
+        -- Register commands
+        WR.ConfigurationRegistry:RegisterCommand(
+            "AdvancedAbilityControl",
+            "abilitycontrol",
+            function(msg) self:HandleSlashCommand(msg) end,
+            "Configure advanced ability control settings"
+        )
+        
+        WR.ConfigurationRegistry:RegisterCommand(
+            "AdvancedAbilityControl",
+            "ac",
+            function(msg) self:HandleSlashCommand(msg) end,
+            "Shorthand for /abilitycontrol"
+        )
+    end
+    
+    -- Legacy support for direct UI integration
     if WR.UI and WR.UI.AdvancedSettingsUI then
         WR.UI.AdvancedSettingsUI:AddPanel("Ability Control", function(panel)
             self:CreateSettingsUI(panel)
@@ -2275,19 +2401,744 @@ function AdvancedAbilityControl:PrintStatus()
     print("Pending Actions: " .. #pendingActions)
 }
 
+-- Create a checkbox helper function
+function AdvancedAbilityControl:CreateCheckBox(parent, label, tooltip, x, y)
+    if not parent then return end
+    
+    local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
+    checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    
+    if checkbox.Text then
+        checkbox.Text:SetText(label or "")
+    end
+    checkbox.tooltipText = tooltip
+    
+    -- Add OnEnter/OnLeave for tooltip display
+    checkbox:SetScript("OnEnter", function(self)
+        if self.tooltipText then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+            GameTooltip:Show()
+        end
+    end)
+    
+    checkbox:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+    
+    return checkbox
+end
+
 -- Create settings UI panel
 function AdvancedAbilityControl:CreateSettingsUI(panel)
-    -- This function would create a comprehensive settings UI
-    -- Since it would be quite large, we'll stub it out for now
-    -- In a real implementation, this would create all the UI widgets for the settings panel
+    if not panel then return end
     
-    -- Example structure:
-    -- - Tab for Global Settings
-    -- - Tab for Interrupts
-    -- - Tab for Dispels
-    -- - Tab for Crowd Control
-    -- - Tab for Spell Lists
-    -- - Tab for Encounter Rules
+    -- Create main container
+    local container = CreateFrame("Frame", nil, panel)
+    container:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -10)
+    container:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -10, 10)
+    
+    -- Title and description
+    local title = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+    title:SetText("Advanced Ability Control")
+    
+    local desc = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
+    desc:SetPoint("RIGHT", container, "RIGHT", 0, 0)
+    desc:SetJustifyH("LEFT")
+    desc:SetText("Configure how interrupts, dispels, and crowd control abilities are automatically used in combat. Customize delays, priorities, and ability-specific behavior.")
+    
+    -- Create main settings section (scroll frame)
+    local scrollFrame = CreateFrame("ScrollFrame", nil, container, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -20)
+    scrollFrame:SetPoint("BOTTOMRIGHT", container, "BOTTOMRIGHT", -25, 10)
+    
+    local scrollChild = CreateFrame("Frame")
+    scrollFrame:SetScrollChild(scrollChild)
+    scrollChild:SetSize(scrollFrame:GetWidth(), 1200) -- Height will adjust as needed
+    
+    -- Master enable switch
+    local enableCheckbox = self:CreateCheckBox(scrollChild, "Enable Advanced Ability Control", 
+                                              "Enables or disables the entire system", 0, -10)
+    enableCheckbox:SetChecked(self.settings.enabled)
+    enableCheckbox:SetScript("OnClick", function(btn)
+        self.settings.enabled = btn:GetChecked()
+        self:SaveSettings()
+        self:UpdateAllControls(scrollChild)
+    end)
+    
+    -- Create sections for different ability types
+    local yOffset = -60
+    
+    -- INTERRUPT SETTINGS
+    local interruptTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    interruptTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    interruptTitle:SetText("Interrupt Settings")
+    yOffset = yOffset - 30
+    
+    -- Interrupt enable checkbox
+    local interruptEnableCheckbox = self:CreateCheckBox(scrollChild, "Enable Automatic Interrupts", 
+                                                      "Enables or disables automatic interrupting of enemy spellcasts", 20, yOffset)
+    interruptEnableCheckbox:SetChecked(self.settings.global.interrupts.enabled)
+    interruptEnableCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.interrupts.enabled = btn:GetChecked()
+        self:SaveSettings()
+        self:UpdateAllControls(scrollChild)
+    end)
+    yOffset = yOffset - 30
+    
+    -- Interrupt timing mode
+    local interruptTimingLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    interruptTimingLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 40, yOffset)
+    interruptTimingLabel:SetText("Timing Mode:")
+    
+    local interruptTimingDropdown = CreateFrame("Frame", "WR_InterruptTimingDropdown", scrollChild, "UIDropDownMenuTemplate")
+    interruptTimingDropdown:SetPoint("TOPLEFT", interruptTimingLabel, "TOPRIGHT", 10, 0)
+    
+    local function InterruptTimingDropdown_OnClick(self)
+        UIDropDownMenu_SetSelectedValue(interruptTimingDropdown, self.value)
+        AdvancedAbilityControl.settings.global.interrupts.timingMode = self.value
+        AdvancedAbilityControl:SaveSettings()
+    end
+    
+    local function InterruptTimingDropdown_Initialize(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        info.text = "Instant (0 delay)"
+        info.value = "instant"
+        info.checked = AdvancedAbilityControl.settings.global.interrupts.timingMode == "instant"
+        info.func = InterruptTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Human-like (randomized middle)"
+        info.value = "human"
+        info.checked = AdvancedAbilityControl.settings.global.interrupts.timingMode == "human"
+        info.func = InterruptTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Random (fully random)"
+        info.value = "random"
+        info.checked = AdvancedAbilityControl.settings.global.interrupts.timingMode == "random"
+        info.func = InterruptTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Variable (based on priority)"
+        info.value = "variable"
+        info.checked = AdvancedAbilityControl.settings.global.interrupts.timingMode == "variable"
+        info.func = InterruptTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Percentage (cast % based)"
+        info.value = "percentage"
+        info.checked = AdvancedAbilityControl.settings.global.interrupts.timingMode == "percentage"
+        info.func = InterruptTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+    end
+    
+    UIDropDownMenu_Initialize(interruptTimingDropdown, InterruptTimingDropdown_Initialize)
+    UIDropDownMenu_SetWidth(interruptTimingDropdown, 200)
+    UIDropDownMenu_SetButtonWidth(interruptTimingDropdown, 224)
+    UIDropDownMenu_SetSelectedValue(interruptTimingDropdown, self.settings.global.interrupts.timingMode)
+    UIDropDownMenu_JustifyText(interruptTimingDropdown, "LEFT")
+    
+    yOffset = yOffset - 50
+    
+    -- Min/Max Delay Sliders
+    local delayContainer = CreateFrame("Frame", nil, scrollChild)
+    delayContainer:SetSize(scrollChild:GetWidth() - 80, 120)
+    delayContainer:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 40, yOffset)
+    
+    -- Only show if not using instant mode
+    delayContainer:SetShown(self.settings.global.interrupts.timingMode ~= "instant")
+    
+    -- Min Delay Slider
+    local minDelaySlider = CreateFrame("Slider", "WR_InterruptMinDelaySlider", delayContainer, "OptionsSliderTemplate")
+    minDelaySlider:SetPoint("TOPLEFT", delayContainer, "TOPLEFT", 0, 0)
+    minDelaySlider:SetWidth(delayContainer:GetWidth() - 20)
+    minDelaySlider:SetMinMaxValues(0, 2)
+    minDelaySlider:SetValueStep(0.05)
+    minDelaySlider:SetObeyStepOnDrag(true)
+    minDelaySlider:SetValue(self.settings.global.interrupts.minDelay)
+    
+    minDelaySlider.Low:SetText("0")
+    minDelaySlider.High:SetText("2")
+    minDelaySlider.Text:SetText("Minimum Delay: " .. string.format("%.2f", self.settings.global.interrupts.minDelay) .. "s")
+    
+    minDelaySlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value * 100) / 100 -- Round to 2 decimal places
+        self.Text:SetText("Minimum Delay: " .. string.format("%.2f", value) .. "s")
+        AdvancedAbilityControl.settings.global.interrupts.minDelay = value
+        
+        -- Ensure max is not less than min
+        if value > AdvancedAbilityControl.settings.global.interrupts.maxDelay then
+            AdvancedAbilityControl.settings.global.interrupts.maxDelay = value
+            maxDelaySlider:SetValue(value)
+        end
+        
+        AdvancedAbilityControl:SaveSettings()
+    end)
+    
+    -- Max Delay Slider
+    local maxDelaySlider = CreateFrame("Slider", "WR_InterruptMaxDelaySlider", delayContainer, "OptionsSliderTemplate")
+    maxDelaySlider:SetPoint("TOPLEFT", minDelaySlider, "BOTTOMLEFT", 0, -30)
+    maxDelaySlider:SetWidth(delayContainer:GetWidth() - 20)
+    maxDelaySlider:SetMinMaxValues(0, 3)
+    maxDelaySlider:SetValueStep(0.05)
+    maxDelaySlider:SetObeyStepOnDrag(true)
+    maxDelaySlider:SetValue(self.settings.global.interrupts.maxDelay)
+    
+    maxDelaySlider.Low:SetText("0")
+    maxDelaySlider.High:SetText("3")
+    maxDelaySlider.Text:SetText("Maximum Delay: " .. string.format("%.2f", self.settings.global.interrupts.maxDelay) .. "s")
+    
+    maxDelaySlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value * 100) / 100 -- Round to 2 decimal places
+        self.Text:SetText("Maximum Delay: " .. string.format("%.2f", value) .. "s")
+        AdvancedAbilityControl.settings.global.interrupts.maxDelay = value
+        
+        -- Ensure min is not greater than max
+        if value < AdvancedAbilityControl.settings.global.interrupts.minDelay then
+            AdvancedAbilityControl.settings.global.interrupts.minDelay = value
+            minDelaySlider:SetValue(value)
+        end
+        
+        AdvancedAbilityControl:SaveSettings()
+    end)
+    
+    -- For percentage mode: cast percentage slider
+    local percentContainer = CreateFrame("Frame", nil, scrollChild)
+    percentContainer:SetSize(scrollChild:GetWidth() - 80, 60)
+    percentContainer:SetPoint("TOPLEFT", delayContainer, "BOTTOMLEFT", 0, -10)
+    
+    -- Only show if using percentage mode
+    percentContainer:SetShown(self.settings.global.interrupts.timingMode == "percentage")
+    
+    local percentSlider = CreateFrame("Slider", "WR_InterruptPercentSlider", percentContainer, "OptionsSliderTemplate")
+    percentSlider:SetPoint("TOPLEFT", percentContainer, "TOPLEFT", 0, 0)
+    percentSlider:SetWidth(percentContainer:GetWidth() - 20)
+    percentSlider:SetMinMaxValues(1, 99)
+    percentSlider:SetValueStep(1)
+    percentSlider:SetObeyStepOnDrag(true)
+    percentSlider:SetValue(self.settings.global.interrupts.targetPercentage)
+    
+    percentSlider.Low:SetText("1%")
+    percentSlider.High:SetText("99%")
+    percentSlider.Text:SetText("Interrupt at: " .. self.settings.global.interrupts.targetPercentage .. "% cast completion")
+    
+    percentSlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value)
+        self.Text:SetText("Interrupt at: " .. value .. "% cast completion")
+        AdvancedAbilityControl.settings.global.interrupts.targetPercentage = value
+        AdvancedAbilityControl:SaveSettings()
+    end)
+    
+    -- Behavioral options
+    yOffset = yOffset - 190 -- Adjusted for the container heights
+    
+    local behaviorTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    behaviorTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    behaviorTitle:SetText("Interrupt Behavior:")
+    yOffset = yOffset - 25
+    
+    -- Ignore Unknown Spells
+    local ignoreUnknownCheckbox = self:CreateCheckBox(scrollChild, "Ignore Unknown Spells", 
+                                                    "Don't interrupt spells that aren't in the database", 40, yOffset)
+    ignoreUnknownCheckbox:SetChecked(self.settings.global.interrupts.ignoreUnknownSpells)
+    ignoreUnknownCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.interrupts.ignoreUnknownSpells = btn:GetChecked()
+        self:SaveSettings()
+    end)
+    yOffset = yOffset - 25
+    
+    -- Save For Priority
+    local saveForPriorityCheckbox = self:CreateCheckBox(scrollChild, "Save Interrupt for High Priority Spells", 
+                                                      "Save interrupt cooldown for more important spells", 40, yOffset)
+    saveForPriorityCheckbox:SetChecked(self.settings.global.interrupts.saveForPriority)
+    saveForPriorityCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.interrupts.saveForPriority = btn:GetChecked()
+        self:SaveSettings()
+    end)
+    yOffset = yOffset - 25
+    
+    -- Rotate With Party
+    local rotateWithPartyCheckbox = self:CreateCheckBox(scrollChild, "Coordinate with Party Members", 
+                                                      "Take turns interrupting with other party members", 40, yOffset)
+    rotateWithPartyCheckbox:SetChecked(self.settings.global.interrupts.rotateWithParty)
+    rotateWithPartyCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.interrupts.rotateWithParty = btn:GetChecked()
+        self:SaveSettings()
+    end)
+    yOffset = yOffset - 25
+    
+    -- Prioritize Casters
+    local prioritizeCastersCheckbox = self:CreateCheckBox(scrollChild, "Prioritize Caster Enemies", 
+                                                        "Focus interrupts on caster enemies first", 40, yOffset)
+    prioritizeCastersCheckbox:SetChecked(self.settings.global.interrupts.prioritizeCasters)
+    prioritizeCastersCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.interrupts.prioritizeCasters = btn:GetChecked()
+        self:SaveSettings()
+    end)
+    yOffset = yOffset - 40
+    
+    -- DISPEL SETTINGS
+    local dispelTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    dispelTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    dispelTitle:SetText("Dispel Settings")
+    yOffset = yOffset - 30
+    
+    -- Dispel enable checkbox
+    local dispelEnableCheckbox = self:CreateCheckBox(scrollChild, "Enable Automatic Dispels", 
+                                                   "Enables or disables automatic dispelling of harmful effects", 20, yOffset)
+    dispelEnableCheckbox:SetChecked(self.settings.global.dispels.enabled)
+    dispelEnableCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.dispels.enabled = btn:GetChecked()
+        self:SaveSettings()
+        self:UpdateAllControls(scrollChild)
+    end)
+    yOffset = yOffset - 30
+    
+    -- Dispel timing mode
+    local dispelTimingLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    dispelTimingLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 40, yOffset)
+    dispelTimingLabel:SetText("Timing Mode:")
+    
+    local dispelTimingDropdown = CreateFrame("Frame", "WR_DispelTimingDropdown", scrollChild, "UIDropDownMenuTemplate")
+    dispelTimingDropdown:SetPoint("TOPLEFT", dispelTimingLabel, "TOPRIGHT", 10, 0)
+    
+    local function DispelTimingDropdown_OnClick(self)
+        UIDropDownMenu_SetSelectedValue(dispelTimingDropdown, self.value)
+        AdvancedAbilityControl.settings.global.dispels.timingMode = self.value
+        AdvancedAbilityControl:SaveSettings()
+        AdvancedAbilityControl:UpdateAllControls(scrollChild)
+    end
+    
+    local function DispelTimingDropdown_Initialize(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        info.text = "Instant (0 delay)"
+        info.value = "instant"
+        info.checked = AdvancedAbilityControl.settings.global.dispels.timingMode == "instant"
+        info.func = DispelTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Human-like (randomized middle)"
+        info.value = "human"
+        info.checked = AdvancedAbilityControl.settings.global.dispels.timingMode == "human"
+        info.func = DispelTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Random (fully random)"
+        info.value = "random"
+        info.checked = AdvancedAbilityControl.settings.global.dispels.timingMode == "random"
+        info.func = DispelTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+        
+        info.text = "Variable (based on priority)"
+        info.value = "variable"
+        info.checked = AdvancedAbilityControl.settings.global.dispels.timingMode == "variable"
+        info.func = DispelTimingDropdown_OnClick
+        UIDropDownMenu_AddButton(info, level)
+    end
+    
+    UIDropDownMenu_Initialize(dispelTimingDropdown, DispelTimingDropdown_Initialize)
+    UIDropDownMenu_SetWidth(dispelTimingDropdown, 200)
+    UIDropDownMenu_SetButtonWidth(dispelTimingDropdown, 224)
+    UIDropDownMenu_SetSelectedValue(dispelTimingDropdown, self.settings.global.dispels.timingMode)
+    UIDropDownMenu_JustifyText(dispelTimingDropdown, "LEFT")
+    
+    yOffset = yOffset - 50
+    
+    -- Dispel Min/Max Delay Sliders
+    local dispelDelayContainer = CreateFrame("Frame", nil, scrollChild)
+    dispelDelayContainer:SetSize(scrollChild:GetWidth() - 80, 120)
+    dispelDelayContainer:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 40, yOffset)
+    
+    -- Only show if not using instant mode
+    dispelDelayContainer:SetShown(self.settings.global.dispels.timingMode ~= "instant")
+    
+    -- Min Delay Slider
+    local dispelMinDelaySlider = CreateFrame("Slider", "WR_DispelMinDelaySlider", dispelDelayContainer, "OptionsSliderTemplate")
+    dispelMinDelaySlider:SetPoint("TOPLEFT", dispelDelayContainer, "TOPLEFT", 0, 0)
+    dispelMinDelaySlider:SetWidth(dispelDelayContainer:GetWidth() - 20)
+    dispelMinDelaySlider:SetMinMaxValues(0, 2)
+    dispelMinDelaySlider:SetValueStep(0.05)
+    dispelMinDelaySlider:SetObeyStepOnDrag(true)
+    dispelMinDelaySlider:SetValue(self.settings.global.dispels.minDelay)
+    
+    dispelMinDelaySlider.Low:SetText("0")
+    dispelMinDelaySlider.High:SetText("2")
+    dispelMinDelaySlider.Text:SetText("Minimum Delay: " .. string.format("%.2f", self.settings.global.dispels.minDelay) .. "s")
+    
+    dispelMinDelaySlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value * 100) / 100 -- Round to 2 decimal places
+        self.Text:SetText("Minimum Delay: " .. string.format("%.2f", value) .. "s")
+        AdvancedAbilityControl.settings.global.dispels.minDelay = value
+        
+        -- Ensure max is not less than min
+        if value > AdvancedAbilityControl.settings.global.dispels.maxDelay then
+            AdvancedAbilityControl.settings.global.dispels.maxDelay = value
+            dispelMaxDelaySlider:SetValue(value)
+        end
+        
+        AdvancedAbilityControl:SaveSettings()
+    end)
+    
+    -- Max Delay Slider
+    local dispelMaxDelaySlider = CreateFrame("Slider", "WR_DispelMaxDelaySlider", dispelDelayContainer, "OptionsSliderTemplate")
+    dispelMaxDelaySlider:SetPoint("TOPLEFT", dispelMinDelaySlider, "BOTTOMLEFT", 0, -30)
+    dispelMaxDelaySlider:SetWidth(dispelDelayContainer:GetWidth() - 20)
+    dispelMaxDelaySlider:SetMinMaxValues(0, 3)
+    dispelMaxDelaySlider:SetValueStep(0.05)
+    dispelMaxDelaySlider:SetObeyStepOnDrag(true)
+    dispelMaxDelaySlider:SetValue(self.settings.global.dispels.maxDelay)
+    
+    dispelMaxDelaySlider.Low:SetText("0")
+    dispelMaxDelaySlider.High:SetText("3")
+    dispelMaxDelaySlider.Text:SetText("Maximum Delay: " .. string.format("%.2f", self.settings.global.dispels.maxDelay) .. "s")
+    
+    dispelMaxDelaySlider:SetScript("OnValueChanged", function(self, value)
+        value = floor(value * 100) / 100 -- Round to 2 decimal places
+        self.Text:SetText("Maximum Delay: " .. string.format("%.2f", value) .. "s")
+        AdvancedAbilityControl.settings.global.dispels.maxDelay = value
+        
+        -- Ensure min is not greater than max
+        if value < AdvancedAbilityControl.settings.global.dispels.minDelay then
+            AdvancedAbilityControl.settings.global.dispels.minDelay = value
+            dispelMinDelaySlider:SetValue(value)
+        end
+        
+        AdvancedAbilityControl:SaveSettings()
+    end)
+    
+    yOffset = yOffset - 140 -- Adjusted for the container height
+    
+    -- CROWD CONTROL SETTINGS
+    local ccTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    ccTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    ccTitle:SetText("Crowd Control Settings")
+    yOffset = yOffset - 30
+    
+    -- CC enable checkbox
+    local ccEnableCheckbox = self:CreateCheckBox(scrollChild, "Enable Automatic Crowd Control", 
+                                               "Enables or disables automatic crowd control abilities", 20, yOffset)
+    ccEnableCheckbox:SetChecked(self.settings.global.crowdControl.enabled)
+    ccEnableCheckbox:SetScript("OnClick", function(btn)
+        self.settings.global.crowdControl.enabled = btn:GetChecked()
+        self:SaveSettings()
+        self:UpdateAllControls(scrollChild)
+    end)
+    yOffset = yOffset - 30
+    
+    -- Quick Settings Button Groups
+    local quickSettingsTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    quickSettingsTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    quickSettingsTitle:SetText("Quick Settings")
+    yOffset = yOffset - 30
+    
+    local quickDesc = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    quickDesc:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    quickDesc:SetPoint("RIGHT", scrollChild, "RIGHT", -20, 0)
+    quickDesc:SetJustifyH("LEFT")
+    quickDesc:SetText("Quickly apply preset configurations to all ability types:")
+    yOffset = yOffset - 30
+    
+    -- Create button group for presets
+    local presetContainer = CreateFrame("Frame", nil, scrollChild)
+    presetContainer:SetSize(scrollChild:GetWidth() - 40, 40)
+    presetContainer:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    
+    -- Instant button
+    local instantButton = CreateFrame("Button", nil, presetContainer, "UIPanelButtonTemplate")
+    instantButton:SetSize(100, 30)
+    instantButton:SetPoint("LEFT", presetContainer, "LEFT", 0, 0)
+    instantButton:SetText("Instant")
+    instantButton:SetScript("OnClick", function()
+        -- Set all timing modes to instant
+        self.settings.global.interrupts.timingMode = "instant"
+        self.settings.global.dispels.timingMode = "instant"
+        self.settings.global.crowdControl.timingMode = "instant"
+        
+        -- Save settings
+        self:SaveSettings()
+        
+        -- Update all controls
+        self:UpdateAllControls(scrollChild)
+        
+        -- Notification
+        print("|cFF00FFFF[Advanced Ability Control]|r Applied Instant preset to all ability types")
+    end)
+    
+    -- Quick button (fast human-like)
+    local quickButton = CreateFrame("Button", nil, presetContainer, "UIPanelButtonTemplate")
+    quickButton:SetSize(100, 30)
+    quickButton:SetPoint("LEFT", instantButton, "RIGHT", 10, 0)
+    quickButton:SetText("Quick")
+    quickButton:SetScript("OnClick", function()
+        -- Set all timing modes to human with quick timing
+        self.settings.global.interrupts.timingMode = "human"
+        self.settings.global.interrupts.minDelay = 0.1
+        self.settings.global.interrupts.maxDelay = 0.3
+        
+        self.settings.global.dispels.timingMode = "human"
+        self.settings.global.dispels.minDelay = 0.1
+        self.settings.global.dispels.maxDelay = 0.3
+        
+        self.settings.global.crowdControl.timingMode = "human"
+        self.settings.global.crowdControl.minDelay = 0.1
+        self.settings.global.crowdControl.maxDelay = 0.3
+        
+        -- Save settings
+        self:SaveSettings()
+        
+        -- Update all controls
+        self:UpdateAllControls(scrollChild)
+        
+        -- Notification
+        print("|cFF00FFFF[Advanced Ability Control]|r Applied Quick preset to all ability types")
+    end)
+    
+    -- Human button (natural timing)
+    local humanButton = CreateFrame("Button", nil, presetContainer, "UIPanelButtonTemplate")
+    humanButton:SetSize(100, 30)
+    humanButton:SetPoint("LEFT", quickButton, "RIGHT", 10, 0)
+    humanButton:SetText("Human")
+    humanButton:SetScript("OnClick", function()
+        -- Set all timing modes to human with medium timing
+        self.settings.global.interrupts.timingMode = "human"
+        self.settings.global.interrupts.minDelay = 0.3
+        self.settings.global.interrupts.maxDelay = 0.8
+        
+        self.settings.global.dispels.timingMode = "human"
+        self.settings.global.dispels.minDelay = 0.3
+        self.settings.global.dispels.maxDelay = 0.8
+        
+        self.settings.global.crowdControl.timingMode = "human"
+        self.settings.global.crowdControl.minDelay = 0.3
+        self.settings.global.crowdControl.maxDelay = 0.8
+        
+        -- Save settings
+        self:SaveSettings()
+        
+        -- Update all controls
+        self:UpdateAllControls(scrollChild)
+        
+        -- Notification
+        print("|cFF00FFFF[Advanced Ability Control]|r Applied Human preset to all ability types")
+    end)
+    
+    -- Slow button (delayed timing)
+    local slowButton = CreateFrame("Button", nil, presetContainer, "UIPanelButtonTemplate")
+    slowButton:SetSize(100, 30)
+    slowButton:SetPoint("LEFT", humanButton, "RIGHT", 10, 0)
+    slowButton:SetText("Slow")
+    slowButton:SetScript("OnClick", function()
+        -- Set all timing modes to human with slow timing
+        self.settings.global.interrupts.timingMode = "human"
+        self.settings.global.interrupts.minDelay = 0.5
+        self.settings.global.interrupts.maxDelay = 1.5
+        
+        self.settings.global.dispels.timingMode = "human"
+        self.settings.global.dispels.minDelay = 0.5
+        self.settings.global.dispels.maxDelay = 1.5
+        
+        self.settings.global.crowdControl.timingMode = "human"
+        self.settings.global.crowdControl.minDelay = 0.5
+        self.settings.global.crowdControl.maxDelay = 1.5
+        
+        -- Save settings
+        self:SaveSettings()
+        
+        -- Update all controls
+        self:UpdateAllControls(scrollChild)
+        
+        -- Notification
+        print("|cFF00FFFF[Advanced Ability Control]|r Applied Slow preset to all ability types")
+    end)
+    
+    yOffset = yOffset - 60
+    
+    -- Status Display
+    local statusTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    statusTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    statusTitle:SetText("System Status")
+    yOffset = yOffset - 30
+    
+    local statusText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    statusText:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    statusText:SetPoint("RIGHT", scrollChild, "RIGHT", -20, 0)
+    statusText:SetJustifyH("LEFT")
+    
+    -- Generate status text
+    local status = "Advanced Ability Control System: " .. (self.settings.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+    status = status .. "\nInterrupts: " .. (self.settings.global.interrupts.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+    status = status .. " - Mode: " .. self.settings.global.interrupts.timingMode
+    
+    if self.settings.global.interrupts.timingMode ~= "instant" then
+        status = status .. " (" .. self.settings.global.interrupts.minDelay .. "s - " .. self.settings.global.interrupts.maxDelay .. "s)"
+    end
+    
+    status = status .. "\nDispels: " .. (self.settings.global.dispels.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+    status = status .. " - Mode: " .. self.settings.global.dispels.timingMode
+    
+    if self.settings.global.dispels.timingMode ~= "instant" then
+        status = status .. " (" .. self.settings.global.dispels.minDelay .. "s - " .. self.settings.global.dispels.maxDelay .. "s)"
+    end
+    
+    status = status .. "\nCrowd Control: " .. (self.settings.global.crowdControl.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+    status = status .. " - Mode: " .. self.settings.global.crowdControl.timingMode
+    
+    if self.settings.global.crowdControl.timingMode ~= "instant" then
+        status = status .. " (" .. self.settings.global.crowdControl.minDelay .. "s - " .. self.settings.global.crowdControl.maxDelay .. "s)"
+    end
+    
+    local numInterrupts = #self.abilityRegistry.interrupts or 0
+    local numDispels = #self.abilityRegistry.dispels or 0
+    local numCC = #self.abilityRegistry.crowdControl or 0
+    
+    status = status .. "\n\nAvailable Abilities:"
+    status = status .. "\nInterrupts: " .. numInterrupts
+    status = status .. "\nDispel abilities: " .. numDispels
+    status = status .. "\nCrowd control abilities: " .. numCC
+    
+    statusText:SetText(status)
+    
+    -- Store references for update
+    container.InterruptControls = {
+        TimingDropdown = interruptTimingDropdown,
+        DelayContainer = delayContainer,
+        MinDelaySlider = minDelaySlider,
+        MaxDelaySlider = maxDelaySlider,
+        PercentContainer = percentContainer,
+        PercentSlider = percentSlider
+    }
+    
+    container.DispelControls = {
+        TimingDropdown = dispelTimingDropdown,
+        DelayContainer = dispelDelayContainer,
+        MinDelaySlider = dispelMinDelaySlider,
+        MaxDelaySlider = dispelMaxDelaySlider
+    }
+    
+    container.StatusText = statusText
+    
+    -- Function to update dynamic controls
+    function self:UpdateAllControls(scrollChild)
+        -- Update container visibilities
+        container.InterruptControls.DelayContainer:SetShown(self.settings.global.interrupts.timingMode ~= "instant")
+        container.InterruptControls.PercentContainer:SetShown(self.settings.global.interrupts.timingMode == "percentage")
+        container.DispelControls.DelayContainer:SetShown(self.settings.global.dispels.timingMode ~= "instant")
+        
+        -- Update status text
+        local status = "Advanced Ability Control System: " .. (self.settings.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+        status = status .. "\nInterrupts: " .. (self.settings.global.interrupts.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+        status = status .. " - Mode: " .. self.settings.global.interrupts.timingMode
+        
+        if self.settings.global.interrupts.timingMode ~= "instant" then
+            status = status .. " (" .. self.settings.global.interrupts.minDelay .. "s - " .. self.settings.global.interrupts.maxDelay .. "s)"
+        end
+        
+        status = status .. "\nDispels: " .. (self.settings.global.dispels.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+        status = status .. " - Mode: " .. self.settings.global.dispels.timingMode
+        
+        if self.settings.global.dispels.timingMode ~= "instant" then
+            status = status .. " (" .. self.settings.global.dispels.minDelay .. "s - " .. self.settings.global.dispels.maxDelay .. "s)"
+        end
+        
+        status = status .. "\nCrowd Control: " .. (self.settings.global.crowdControl.enabled and "|cFF00FF00Enabled|r" or "|cFFFF0000Disabled|r")
+        status = status .. " - Mode: " .. self.settings.global.crowdControl.timingMode
+        
+        if self.settings.global.crowdControl.timingMode ~= "instant" then
+            status = status .. " (" .. self.settings.global.crowdControl.minDelay .. "s - " .. self.settings.global.crowdControl.maxDelay .. "s)"
+        end
+        
+        local numInterrupts = #self.abilityRegistry.interrupts or 0
+        local numDispels = #self.abilityRegistry.dispels or 0
+        local numCC = #self.abilityRegistry.crowdControl or 0
+        
+        status = status .. "\n\nAvailable Abilities:"
+        status = status .. "\nInterrupts: " .. numInterrupts
+        status = status .. "\nDispel abilities: " .. numDispels
+        status = status .. "\nCrowd control abilities: " .. numCC
+        
+        container.StatusText:SetText(status)
+    end
+    
+    -- Advanced Settings Section
+    yOffset = yOffset - 150
+    
+    local advancedTitle = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    advancedTitle:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, yOffset)
+    advancedTitle:SetText("Advanced Settings")
+    yOffset = yOffset - 30
+    
+    local advancedDesc = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    advancedDesc:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    advancedDesc:SetPoint("RIGHT", scrollChild, "RIGHT", -20, 0)
+    advancedDesc:SetJustifyH("LEFT")
+    advancedDesc:SetText("For even more detailed configuration, use these commands:")
+    yOffset = yOffset - 30
+    
+    local commandsText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    commandsText:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 40, yOffset)
+    commandsText:SetPoint("RIGHT", scrollChild, "RIGHT", -20, 0)
+    commandsText:SetJustifyH("LEFT")
+    commandsText:SetText("/wr abilitycontrol interrupt <command> - Configure interrupt settings\n" ..
+                        "/wr abilitycontrol dispel <command> - Configure dispel settings\n" ..
+                        "/wr abilitycontrol cc <command> - Configure crowd control settings\n" ..
+                        "/wr abilitycontrol exclude <type> <spellId> - Add spell to exclusion list\n" ..
+                        "/wr abilitycontrol include <type> <spellId> - Add spell to inclusion list\n" ..
+                        "/wr abilitycontrol debug - Toggle debug mode\n" ..
+                        "/wr ac - Shorthand for /wr abilitycontrol")
+    
+    -- Manage Spell Lists Button
+    yOffset = yOffset - 100
+    
+    local spellListsButton = CreateFrame("Button", nil, scrollChild, "UIPanelButtonTemplate")
+    spellListsButton:SetSize(200, 30)
+    spellListsButton:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    spellListsButton:SetText("Manage Spell Lists")
+    spellListsButton:SetScript("OnClick", function()
+        -- Go to Spell Lists tab in settings
+        if WR.UI and WR.UI.AdvancedSettingsUI then
+            WR.UI.AdvancedSettingsUI:SelectPanel("Spell Lists")
+        else
+            print("|cFFFFFF00[Advanced Ability Control]|r Spell Lists panel not available")
+        end
+    end)
+    
+    -- Reset Settings Button
+    local resetButton = CreateFrame("Button", nil, scrollChild, "UIPanelButtonTemplate")
+    resetButton:SetSize(200, 30)
+    resetButton:SetPoint("TOPLEFT", spellListsButton, "TOPRIGHT", 20, 0)
+    resetButton:SetText("Reset All Settings")
+    resetButton:SetScript("OnClick", function()
+        -- Confirm reset
+        StaticPopupDialogs["WR_CONFIRM_RESET_AAC"] = {
+            text = "Are you sure you want to reset all Advanced Ability Control settings to default values? This cannot be undone.",
+            button1 = "Yes",
+            button2 = "No",
+            OnAccept = function()
+                -- Reset to defaults
+                self.settings = self:DeepCopy(self.defaultSettings)
+                self:SaveSettings()
+                
+                -- Update all controls
+                self:UpdateAllControls(scrollChild)
+                
+                -- Notification
+                print("|cFF00FFFF[Advanced Ability Control]|r All settings reset to defaults")
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+        }
+        
+        StaticPopup_Show("WR_CONFIRM_RESET_AAC")
+    end)
+    
+    -- Update the scroll child height
+    scrollChild:SetHeight(math.abs(yOffset) + 100) -- Add some padding
 }
 
 -- Helper function: Ensure all defaults exist
