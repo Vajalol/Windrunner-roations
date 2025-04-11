@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - WindrunnerRotations by VortexQ8</title>
+    <meta name="description" content="Choose the perfect subscription plan for WindrunnerRotations, the ultimate AI-driven combat rotation system for World of Warcraft.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.ico">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/pricing.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="main-nav">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="images/logo.png" alt="WindrunnerRotations Logo">
+                        <span>WindrunnerRotations</span>
+                    </a>
+                </div>
+                
+                <ul class="nav-links">
+                    <li><a href="features.html">Features</a></li>
+                    <li><a href="guides.html">Class Guides</a></li>
+                    <li><a href="pricing.html" class="active">Pricing</a></li>
+                    <li><a href="faq.html">FAQ</a></li>
+                </ul>
+                
+                <div class="nav-buttons">
+                    <a href="login.html" class="btn btn-outline">Login</a>
+                    <a href="pricing.html" class="btn btn-primary">Get Started</a>
+                </div>
+                
+                <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Page Banner -->
+    <section class="page-banner">
+        <div class="container">
+            <h1>Simple, Transparent <span class="highlight">Pricing</span></h1>
+            <p>Choose the plan that fits your needs with no hidden fees</p>
+        </div>
+    </section>
+
+    <!-- Pricing Plans -->
+    <section class="pricing-plans">
+        <div class="container">
+            <div class="billing-toggle">
+                <span class="monthly active">Monthly</span>
+                <label class="toggle">
+                    <input type="checkbox" id="billingToggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="yearly">Yearly <span class="save-badge">Save 20%</span></span>
+            </div>
+            
+            <div class="plan-cards">
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <h3>Bronze</h3>
+                        <div class="plan-price monthly">
+                            <span class="currency">$</span>
+                            <span class="amount">9.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <div class="plan-price yearly">
+                            <span class="currency">$</span>
+                            <span class="amount">95.90</span>
+                            <span class="period">/year</span>
+                            <span class="save">Save $23.98</span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <ul>
+                            <li class="included"><i class="fas fa-check"></i> Core Rotation System</li>
+                            <li class="included"><i class="fas fa-check"></i> Basic Class Support</li>
+                            <li class="included"><i class="fas fa-check"></i> Single Target Optimization</li>
+                            <li class="included"><i class="fas fa-check"></i> Basic Cooldown Management</li>
+                            <li class="included"><i class="fas fa-check"></i> Regular Updates</li>
+                            <li class="excluded"><i class="fas fa-times"></i> Advanced Features</li>
+                            <li class="excluded"><i class="fas fa-times"></i> Machine Learning AI</li>
+                            <li class="excluded"><i class="fas fa-times"></i> Priority Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="plan-cta">
+                        <a href="#" class="btn btn-outline btn-block" onclick="handleSubscription('bronze')">Choose Bronze</a>
+                    </div>
+                </div>
+                
+                <div class="plan-card featured">
+                    <div class="plan-badge">Popular</div>
+                    <div class="plan-header">
+                        <h3>Silver</h3>
+                        <div class="plan-price monthly">
+                            <span class="currency">$</span>
+                            <span class="amount">19.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <div class="plan-price yearly">
+                            <span class="currency">$</span>
+                            <span class="amount">191.90</span>
+                            <span class="period">/year</span>
+                            <span class="save">Save $47.98</span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <ul>
+                            <li class="included"><i class="fas fa-check"></i> Everything in Bronze</li>
+                            <li class="included"><i class="fas fa-check"></i> All Class Support</li>
+                            <li class="included"><i class="fas fa-check"></i> Advanced AoE Optimization</li>
+                            <li class="included"><i class="fas fa-check"></i> Full Cooldown Management</li>
+                            <li class="included"><i class="fas fa-check"></i> PvP Support</li>
+                            <li class="included"><i class="fas fa-check"></i> Party Synergy System</li>
+                            <li class="excluded"><i class="fas fa-times"></i> Machine Learning AI</li>
+                            <li class="excluded"><i class="fas fa-times"></i> Priority Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="plan-cta">
+                        <a href="#" class="btn btn-primary btn-block" onclick="handleSubscription('silver')">Choose Silver</a>
+                    </div>
+                </div>
+                
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <h3>Gold</h3>
+                        <div class="plan-price monthly">
+                            <span class="currency">$</span>
+                            <span class="amount">29.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <div class="plan-price yearly">
+                            <span class="currency">$</span>
+                            <span class="amount">287.90</span>
+                            <span class="period">/year</span>
+                            <span class="save">Save $71.98</span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-features">
+                        <ul>
+                            <li class="included"><i class="fas fa-check"></i> Everything in Silver</li>
+                            <li class="included"><i class="fas fa-check"></i> Machine Learning AI</li>
+                            <li class="included"><i class="fas fa-check"></i> Resource Forecasting</li>
+                            <li class="included"><i class="fas fa-check"></i> External Combat Data</li>
+                            <li class="included"><i class="fas fa-check"></i> Multi-Account Support</li>
+                            <li class="included"><i class="fas fa-check"></i> Early Access to Updates</li>
+                            <li class="included"><i class="fas fa-check"></i> 24/7 Priority Support</li>
+                            <li class="included"><i class="fas fa-check"></i> VIP Discord Access</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="plan-cta">
+                        <a href="#" class="btn btn-outline btn-block" onclick="handleSubscription('gold')">Choose Gold</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="guarantee">
+                <div class="guarantee-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="guarantee-content">
+                    <h3>14-Day Money-Back Guarantee</h3>
+                    <p>If you're not satisfied with WindrunnerRotations for any reason, simply contact our support team within 14 days of your purchase for a full refund.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Comparison -->
+    <section class="feature-comparison">
+        <div class="container">
+            <div class="section-header">
+                <h2>Detailed Feature <span class="highlight">Comparison</span></h2>
+                <p>See exactly what each plan includes</p>
+            </div>
+            
+            <div class="comparison-table-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Bronze</th>
+                            <th>Silver</th>
+                            <th>Gold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="feature">Core Rotation System</td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Basic Class Support</td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">All Class Support</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Single Target Optimization</td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">AoE Optimization</td>
+                            <td><i class="fas fa-check"></i> Basic</td>
+                            <td><i class="fas fa-check"></i> Advanced</td>
+                            <td><i class="fas fa-check"></i> Advanced</td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Cooldown Management</td>
+                            <td><i class="fas fa-check"></i> Basic</td>
+                            <td><i class="fas fa-check"></i> Full</td>
+                            <td><i class="fas fa-check"></i> Full</td>
+                        </tr>
+                        <tr>
+                            <td class="feature">PvP Support</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Party Synergy System</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Machine Learning AI</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Resource Forecasting</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">External Combat Data</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Regular Updates</td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Early Access to Updates</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Multi-Account Support</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Basic Support</td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">Priority Support</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="feature">VIP Discord Access</td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-times"></i></td>
+                            <td><i class="fas fa-check"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Frequently Asked <span class="highlight">Questions</span></h2>
+                <p>Get quick answers to common questions</p>
+            </div>
+            
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How does billing work?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>WindrunnerRotations subscriptions are billed automatically either monthly or yearly, depending on your selected plan. You can cancel at any time from your account dashboard. Yearly subscriptions offer a 20% discount compared to paying monthly.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Can I switch plans later?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! You can upgrade or downgrade your plan at any time. If you upgrade, you'll be billed the prorated difference immediately. If you downgrade, the change will take effect at the end of your current billing period.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How do I get started after subscribing?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>After completing your subscription, you'll receive an email with download instructions and your license key. Simply download the WindrunnerRotations addon, place it in your WoW addons folder, start Tinkr, launch the game, and enter your license key in the settings panel.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What is your refund policy?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer a 14-day money-back guarantee on all subscriptions. If you're not satisfied for any reason, contact our support team within 14 days of your purchase for a full refund, no questions asked.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Is WindrunnerRotations compatible with the latest WoW patch?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! We pride ourselves on rapid updates following any game patches or class changes. Our team typically delivers updates within 24-48 hours of major game updates, ensuring you're never left behind.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How many characters can I use WindrunnerRotations on?</h3>
+                        <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Bronze and Silver subscriptions allow usage on unlimited characters within a single WoW account. Gold subscribers get multi-account support for up to 3 separate WoW accounts under the same license.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="more-questions">
+                <p>Still have questions? <a href="contact.html">Contact our support team</a></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to <span class="highlight">Elevate</span> Your Gameplay?</h2>
+                <p>Join thousands of players who've transformed their performance with WindrunnerRotations</p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary btn-large" onclick="scrollToPricing()">Choose Your Plan</a>
+                    <a href="contact.html" class="btn btn-outline btn-large">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-columns">
+                <div class="footer-column">
+                    <div class="footer-logo">
+                        <img src="images/logo.png" alt="WindrunnerRotations Logo">
+                        <span>WindrunnerRotations</span>
+                    </div>
+                    <p>The ultimate AI-driven rotation optimization system for World of Warcraft.</p>
+                    <div class="social-icons">
+                        <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="#" aria-label="Twitch"><i class="fab fa-twitch"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Product</h3>
+                    <ul>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="pricing.html">Pricing</a></li>
+                        <li><a href="guides.html">Class Guides</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="documentation.html">Documentation</a></li>
+                        <li><a href="support.html">Support</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="community.html">Community</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2023 WindrunnerRotations by VortexQ8. All rights reserved.</p>
+                <p>World of Warcraft and related logos are trademarks of Blizzard Entertainment, Inc.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/pricing.js"></script>
+</body>
+</html>

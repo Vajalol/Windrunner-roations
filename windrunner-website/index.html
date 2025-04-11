@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WindrunnerRotations - Advanced WoW Combat System by VortexQ8</title>
+    <meta name="description" content="The ultimate AI-driven rotation optimization system for World of Warcraft. Elevate your gameplay with WindrunnerRotations by VortexQ8.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.ico">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="main-nav">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="images/logo.png" alt="WindrunnerRotations Logo">
+                        <span>WindrunnerRotations</span>
+                    </a>
+                </div>
+                
+                <ul class="nav-links">
+                    <li><a href="features.html">Features</a></li>
+                    <li><a href="guides.html">Class Guides</a></li>
+                    <li><a href="pricing.html">Pricing</a></li>
+                    <li><a href="faq.html">FAQ</a></li>
+                </ul>
+                
+                <div class="nav-buttons">
+                    <a href="login.html" class="btn btn-outline">Login</a>
+                    <a href="pricing.html" class="btn btn-primary">Get Started</a>
+                </div>
+                
+                <button class="mobile-menu-toggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-background"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1><span class="highlight">Master</span> Your Combat.<br><span class="highlight">Perfect</span> Your Rotation.</h1>
+                <p>The ultimate AI-driven rotation optimization system for World of Warcraft. Elevate your gameplay with WindrunnerRotations by VortexQ8.</p>
+                <div class="hero-buttons">
+                    <a href="pricing.html" class="btn btn-primary btn-large">Get Started</a>
+                    <a href="features.html" class="btn btn-outline btn-large">View Features</a>
+                </div>
+            </div>
+            
+            <div class="hero-model" id="hero-model">
+                <!-- 3D Model will be loaded here with Three.js -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Highlights -->
+    <section class="feature-highlights">
+        <div class="container">
+            <div class="section-header">
+                <h2>Advanced <span class="highlight">Combat AI</span></h2>
+                <p>WindrunnerRotations delivers superior performance through intelligent algorithms and adaptive learning</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Machine Learning</h3>
+                    <p>Adaptive AI that learns from your playstyle and continuously improves rotation efficiency</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Class-Specific Logic</h3>
+                    <p>Specialized rotations for every class and spec, optimized for maximum performance</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Advanced Settings</h3>
+                    <p>Fine-tune every aspect of your rotation with our comprehensive configuration system</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-crosshairs"></i>
+                    </div>
+                    <h3>PvP Support</h3>
+                    <p>Dominate in arenas and battlegrounds with PvP-optimized rotation and targeting</p>
+                </div>
+            </div>
+            
+            <div class="cta-button">
+                <a href="features.html" class="btn btn-secondary">Explore All Features</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Class Showcase -->
+    <section class="class-showcase">
+        <div class="container">
+            <div class="section-header">
+                <h2>Expert Rotations For <span class="highlight">Every Class</span></h2>
+                <p>Specialized optimization for all classes and specializations</p>
+            </div>
+            
+            <div class="class-selector">
+                <div class="class-icons" id="class-icons">
+                    <!-- Class icons will be generated by JavaScript -->
+                </div>
+                
+                <div class="class-display">
+                    <div class="class-model" id="class-model">
+                        <!-- 3D Class Model will be loaded here -->
+                    </div>
+                    
+                    <div class="class-info" id="class-info">
+                        <h3 id="class-name">Mage</h3>
+                        <p id="class-desc">Our Mage rotation module features specialized logic for all specs, including cooldown management, AoE optimization, and encounter-specific adjustments.</p>
+                        
+                        <div class="class-features">
+                            <div class="class-feature">Single Target Excellence</div>
+                            <div class="class-feature">AoE Optimization</div>
+                            <div class="class-feature">Cooldown Management</div>
+                        </div>
+                        
+                        <a href="guides/mage.html" class="btn btn-secondary" id="class-guide-btn">View Mage Guide</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Players Are <span class="highlight">Saying</span></h2>
+                <p>Join thousands of satisfied users who have elevated their gameplay</p>
+            </div>
+            
+            <div class="testimonial-slider" id="testimonial-slider">
+                <div class="testimonial">
+                    <div class="testimonial-header">
+                        <img src="images/testimonials/user1.jpg" alt="User Avatar" class="testimonial-avatar">
+                        <div class="testimonial-meta">
+                            <h4>DarkSlayer</h4>
+                            <p>Frost Death Knight</p>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">"WindrunnerRotations has completely transformed my gameplay. I went from middle of the pack to consistently topping DPS meters in my mythic raid team."</p>
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="testimonial-header">
+                        <img src="images/testimonials/user2.jpg" alt="User Avatar" class="testimonial-avatar">
+                        <div class="testimonial-meta">
+                            <h4>EluneBless</h4>
+                            <p>Restoration Druid</p>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">"The healing optimization is incredible. It helps me focus on mechanics while ensuring nobody dies. The resource forecasting feature is a game-changer for mana management."</p>
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="testimonial-header">
+                        <img src="images/testimonials/user3.jpg" alt="User Avatar" class="testimonial-avatar">
+                        <div class="testimonial-meta">
+                            <h4>VengeanceTank</h4>
+                            <p>Vengeance Demon Hunter</p>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">"The defensive cooldown management is perfect. I've never felt more confident tanking high keys. The threat management and active mitigation timing is spot on."</p>
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-nav">
+                <button class="testimonial-prev" id="testimonial-prev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="testimonial-next" id="testimonial-next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Preview -->
+    <section class="pricing-preview">
+        <div class="container">
+            <div class="section-header">
+                <h2>Simple, Transparent <span class="highlight">Pricing</span></h2>
+                <p>Choose the plan that fits your needs</p>
+            </div>
+            
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Bronze</h3>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">9.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-features">
+                        <ul>
+                            <li><i class="fas fa-check"></i> Core Rotation System</li>
+                            <li><i class="fas fa-check"></i> Basic Class Support</li>
+                            <li><i class="fas fa-check"></i> Single Target Optimization</li>
+                            <li><i class="fas fa-check"></i> Basic Cooldown Management</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Advanced Features</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Machine Learning</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Priority Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pricing-cta">
+                        <a href="pricing.html" class="btn btn-outline">Choose Plan</a>
+                    </div>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">Popular</div>
+                    <div class="pricing-header">
+                        <h3>Silver</h3>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">19.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-features">
+                        <ul>
+                            <li><i class="fas fa-check"></i> Everything in Bronze</li>
+                            <li><i class="fas fa-check"></i> All Class Support</li>
+                            <li><i class="fas fa-check"></i> Advanced AoE Optimization</li>
+                            <li><i class="fas fa-check"></i> Full Cooldown Management</li>
+                            <li><i class="fas fa-check"></i> PvP Support</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Machine Learning</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Priority Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pricing-cta">
+                        <a href="pricing.html" class="btn btn-primary">Choose Plan</a>
+                    </div>
+                </div>
+                
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Gold</h3>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">29.99</span>
+                            <span class="period">/month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-features">
+                        <ul>
+                            <li><i class="fas fa-check"></i> Everything in Silver</li>
+                            <li><i class="fas fa-check"></i> Machine Learning AI</li>
+                            <li><i class="fas fa-check"></i> Resource Forecasting</li>
+                            <li><i class="fas fa-check"></i> Party Synergy System</li>
+                            <li><i class="fas fa-check"></i> External Combat Data</li>
+                            <li><i class="fas fa-check"></i> Early Access to Updates</li>
+                            <li><i class="fas fa-check"></i> 24/7 Priority Support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pricing-cta">
+                        <a href="pricing.html" class="btn btn-outline">Choose Plan</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Ready to <span class="highlight">Dominate</span> Your Combat?</h2>
+                <p>Join thousands of players who've transformed their gameplay with WindrunnerRotations</p>
+                <div class="cta-buttons">
+                    <a href="pricing.html" class="btn btn-primary btn-large">Get Started Now</a>
+                    <a href="contact.html" class="btn btn-outline btn-large">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-columns">
+                <div class="footer-column">
+                    <div class="footer-logo">
+                        <img src="images/logo.png" alt="WindrunnerRotations Logo">
+                        <span>WindrunnerRotations</span>
+                    </div>
+                    <p>The ultimate AI-driven rotation optimization system for World of Warcraft.</p>
+                    <div class="social-icons">
+                        <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="#" aria-label="Twitch"><i class="fab fa-twitch"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Product</h3>
+                    <ul>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="pricing.html">Pricing</a></li>
+                        <li><a href="guides.html">Class Guides</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="documentation.html">Documentation</a></li>
+                        <li><a href="support.html">Support</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="community.html">Community</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2023 WindrunnerRotations by VortexQ8. All rights reserved.</p>
+                <p>World of Warcraft and related logos are trademarks of Blizzard Entertainment, Inc.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/models.js"></script>
+</body>
+</html>
