@@ -1,6 +1,7 @@
 ------------------------------------------
 -- WindrunnerRotations - Balance Druid Module
 -- Author: VortexQ8
+-- The War Within Season 2
 ------------------------------------------
 
 local Balance = {}
@@ -24,59 +25,129 @@ local burstModeActive = false
 local currentAoETargets = 0
 local currentAstralPower = 0
 local maxAstralPower = 100
-local eclipseState = "NONE" -- NONE, SOLAR, LUNAR
-local eclipseTimeRemaining = 0
-local sunfireActive = false
-local sunfireExpiration = 0
-local moonfireActive = false
-local moonfireExpiration = 0
-local stellarFlareActive = false
-local stellarFlareExpiration = 0
-local starfallActive = false
-local starfallTimeRemaining = 0
-local starsurgeStacks = 0
-local onethsActive = false
-local onethsTimeRemaining = 0
-local celestialAlignmentActive = false
-local celestialAlignmentTimeRemaining = 0
+local eclipseActive = false
+local eclipseSolar = false
+local eclipseLunar = false
+local eclipseEndTime = 0
 local incarnationActive = false
-local incarnationTimeRemaining = 0
+local incarnationEndTime = 0
+local celestialAlignmentActive = false
+local celestialAlignmentEndTime = 0
+local starfallActive = false
+local starfallEndTime = 0
+local starlordActive = false
 local starlordStacks = 0
-local starlordTimeRemaining = 0
-local lunarEclipseCounter = 0
-local solarEclipseCounter = 0
+local starlordEndTime = 0
+local onethsActive = false
+local onethsEndTime = 0
+local onethsClearcastingActive = false
+local onethsPercProc = false
+local moonkinFormActive = false
+local sunfireActive = {}
+local sunfireEndTime = {}
+local moonfireActive = {}
+local moonfireEndTime = {}
+local stellarFlareActive = {}
+local stellarFlareEndTime = {}
+local starSurgeCount = 0
+local starsurgeAstralSpender = true
 local furyOfElune = false
-local orbitalStrike = false
-local umbralIntensity = 0
-local primordialArcanicPulsar = 0
-local starweaversWarp = false
-local starweaversWeft = false
-local touchOfEclipse = false
-local ravenousFrenzy = false
-local moonkinForm = false
-local kindredSpiritsActive = false
-local fallenOrderActive = false
-local boatActive = false
-local surgeActive = false
-local wildSurge = false
-local solsticeActive = false
-local balanceOfAllThingsLunar = 0
-local balanceOfAllThingsSolar = 0
+local furyOfEluneActive = false
+local furyOfEluneEndTime = 0
+local convokeCooldown = false
+local fullMoonCount = 0
+local forceOfNature = false
+local treeOfLifeFormActive = false
+local powerInfusionActive = false
+local powerInfusionEndTime = 0
+local shiftPowerActive = false
+local shiftPowerEndTime = 0
+local shiftPowerDuration = 0
+local sunKingBlessingEndTime = 0
+local sunKingBlessingActive = false
+local oneWithNatureActive = false
+local oneWithNatureEndTime = 0
+local oneWithNatureStacks = 0
+local umbralIntensity = false
+local umbralIntensityStacks = 0
+local umbralIntensityEndTime = 0
+local solstice = false
+local solsticeStacks = 0
+local solsticeEndTime = 0
+local touchOfElune = false
+local touchOfEluneStacks = 0
+local touchOfEluneEndTime = 0
+local frenziedRegen = false
+local frenziedRegenActive = false
+local frenziedRegenEndTime = 0
+local inRange = false
+local isMoving = false
+local starsurge = false
+local starfire = false
+local wrath = false
+local sunfire = false
+local moonfire = false
+local stellarFlare = false
+local starfall = false
+local newMoon = false
+local halfMoon = false
+local fullMoon = false
+local shootingStars = false
+local celestialAlignment = false
+local incarnationChosen = false
+local balanceOfAll = false
+local solarbeam = false
+local natures_wrath = false
+local twin_moons = false
+local stellarDrift = false
+local soul_of_the_forest = false
+local starlord = false
+local stellar_inspiration = false
+local natures_balance = false
+local astral_communion = false
+local force_of_nature = false
+local warrior_of_elune = false
+local oneths_clear_vision = false
+local oneths_perception = false
+local power_of_goldrinn = false
+local primordial_arcanic_pulsar = false
+local orbital_strike = false
+local starweavers_weft = false
+local tireless_pursuit = false
+local starfall_eclipse = false
+local convoke_the_spirits = false
+local well_honed_instincts = false
+local killer_instinct = false
+local elunes_guidance = false
+local orbit_breaker = false
+local denizen_of_the_dream = false
+local fury_of_elune = false
+local balance_of_all_things = false
+local radiant_moonlight = false
+local arcanic_pulsar = false
+local solstice_alignment = false
+local touch_the_cosmos = false
+local inMeleeRange = false
+local playerHealth = 100
 
 -- Constants
 local BALANCE_SPEC_ID = 102
 local DEFAULT_AOE_THRESHOLD = 3
-local SUNFIRE_REFRESH_THRESHOLD = 5.4 -- Time (in seconds) to start sunfire refresh
-local MOONFIRE_REFRESH_THRESHOLD = 6.6 -- Time (in seconds) to start moonfire refresh
-local STELLAR_FLARE_REFRESH_THRESHOLD = 5.4 -- Time (in seconds) to start stellar flare refresh
-local ECLIPSE_DURATION = 15
-local CELESTIAL_ALIGNMENT_DURATION = 20
-local INCARNATION_DURATION = 30
-local STARFALL_DURATION = 8
-local STARLORD_DURATION = 15
-local BALANCE_OF_ALL_THINGS_DURATION = 8
-local SOLAR_ECLIPSE_WRATH_COUNT = 3
-local LUNAR_ECLIPSE_STARFIRE_COUNT = 2
+local ECLIPSE_DURATION = 15 -- seconds
+local INCARNATION_DURATION = 30 -- seconds
+local CELESTIAL_ALIGNMENT_DURATION = 20 -- seconds
+local STARFALL_DURATION = 8 -- seconds
+local STARLORD_DURATION = 15 -- seconds (base)
+local ONETHS_DURATION = 12 -- seconds
+local SUNFIRE_DURATION = 18 -- seconds (base)
+local MOONFIRE_DURATION = 22 -- seconds (base)
+local STELLAR_FLARE_DURATION = 24 -- seconds (base)
+local POWER_INFUSION_DURATION = 20 -- seconds
+local FURY_OF_ELUNE_DURATION = 8 -- seconds
+local FRENZIED_REGEN_DURATION = 8 -- seconds
+local MELEE_RANGE = 5 -- yards
+local STARFIRE_RANGE = 40 -- yards
+local MAX_ASTRAL_POWER = 100
 
 -- Initialize the Balance module
 function Balance:Initialize()
@@ -92,89 +163,115 @@ end
 
 -- Register spell IDs
 function Balance:RegisterSpells()
-    -- Main rotational abilities
+    -- Core rotational abilities
     spells.WRATH = 190984
     spells.STARFIRE = 194153
-    spells.STARSURGE = 78674
-    spells.STARFALL = 191034
     spells.MOONFIRE = 8921
     spells.SUNFIRE = 93402
+    spells.STARSURGE = 78674
+    spells.STARFALL = 191034
     spells.STELLAR_FLARE = 202347
-    spells.FURY_OF_ELUNE = 202770
     spells.NEW_MOON = 274281
     spells.HALF_MOON = 274282
     spells.FULL_MOON = 274283
+    spells.FURY_OF_ELUNE = 202770
     spells.FORCE_OF_NATURE = 205636
     spells.CELESTIAL_ALIGNMENT = 194223
     spells.INCARNATION_CHOSEN_OF_ELUNE = 102560
-    spells.ONETH_CLEAR_VISION = 339797
+    spells.WARRIOR_OF_ELUNE = 202425
+    spells.CONVOKE_THE_SPIRITS = 323764
     
-    -- Utility/Defensive
-    spells.MOONKIN_FORM = 197625
-    spells.BARKSKIN = 22812
-    spells.RENEWAL = 108238
+    -- Core utilities
+    spells.MOONKIN_FORM = 24858
+    spells.TRAVEL_FORM = 783
+    spells.CAT_FORM = 768
+    spells.BEAR_FORM = 5487
+    spells.DASH = 1850
+    spells.STAMPEDING_ROAR = 106898
     spells.WILD_CHARGE = 102401
     spells.TYPHOON = 132469
     spells.URSOLS_VORTEX = 102793
     spells.MIGHTY_BASH = 5211
-    spells.MASS_ENTANGLEMENT = 102359
+    spells.ENTANGLING_ROOTS = 339
     spells.HIBERNATE = 2637
-    spells.SOOTHE = 2908
-    spells.REBIRTH = 20484
     spells.CYCLONE = 33786
+    spells.REBIRTH = 20484
+    spells.REMOVE_CORRUPTION = 2782
+    spells.NATURES_CURE = 88423
+    spells.BARKSKIN = 22812
     spells.INNERVATE = 29166
-    spells.CONVOKE_THE_SPIRITS = 323764
-    spells.SOLSTICE = 343648
-    spells.WARRIOR_OF_ELUNE = 202425
-    spells.HEART_OF_THE_WILD = 319454
+    spells.RENEWAL = 108238
+    spells.MASS_ENTANGLEMENT = 102359
+    spells.SOLAR_BEAM = 78675
     
-    -- Talents & Procs
-    spells.TWIN_MOONS = 279620
-    spells.SOUL_OF_THE_FOREST = 114107
-    spells.STARLORD = 202345
-    spells.STELLAR_DRIFT = 202354
-    spells.NATURES_BALANCE = 202430
-    spells.SHOOTING_STARS = 202342
-    spells.BALANCE_OF_ALL_THINGS = 339942
-    spells.PRIMORDIAL_ARCANIC_PULSAR = 338668
-    spells.ORBITAL_STRIKE = 390378
-    spells.UMBRAL_INTENSITY = 383197
-    spells.STARWEAVERS_WARP = 393940
-    spells.STARWEAVERS_WEFT = 393942
-    spells.TOUCH_OF_THE_COSMOS = 394414
-    spells.ASTRAL_COMMUNION = 202359
-    spells.STELLAR_INSPIRATION = 394047
-    spells.CELESTIAL_INFUSION = 387283
-    spells.IMPROVED_STARFALL = 393922
-    spells.IMPROVED_STARSURGE = 393934
-    spells.WILD_SURGES = 405647
+    -- Core defensives and healing
+    spells.REGROWTH = 8936
+    spells.SWIFTMEND = 18562
+    spells.FRENZIED_REGENERATION = 22842
+    spells.NATURE_SPELLS = 16886
     
-    -- Covenant abilities
-    spells.KINDRED_SPIRITS = 326434
-    spells.RAVENOUS_FRENZY = 323546
-    spells.EMPOWER_BOND = 326462
-    
-    -- Buff IDs
+    -- Talents and passives
+    spells.ECLIPSE = 79577
     spells.ECLIPSE_SOLAR = 48517
     spells.ECLIPSE_LUNAR = 48518
-    spells.CELESTIAL_ALIGNMENT_BUFF = 194223
-    spells.INCARNATION_CHOSEN_OF_ELUNE_BUFF = 102560
-    spells.STARLORD_BUFF = 279709
-    spells.ONETHS_CLEAR_VISION_BUFF = 339797
-    spells.ONETHS_PERCEPTION_BUFF = 339800
-    spells.OWLKIN_FRENZY = 157228
-    spells.WARRIOR_OF_ELUNE_BUFF = 202425
-    spells.STARWEAVER_BUFF = 393942
-    spells.TOUCH_OF_THE_COSMOS_BUFF = 394414
-    spells.HEART_OF_THE_WILD_BUFF = 108291
-    spells.MOMENT_OF_CLARITY = 236068
-    spells.BALANCE_OF_ALL_THINGS_ARCANE_BUFF = 339946
-    spells.BALANCE_OF_ALL_THINGS_NATURE_BUFF = 339943
-    spells.STARFALL_BUFF = 191034
+    spells.ASTRAL_COMMUNION = 202359
+    spells.STARLORD = 202345
+    spells.STELLAR_DRIFT = 202354
+    spells.SHOOTING_STARS = 202342
+    spells.SOUL_OF_THE_FOREST = 114107
+    spells.STELLAR_INSPIRATION = 384922
+    spells.NATURES_BALANCE = 202430
+    spells.TWIN_MOONS = 279620
+    spells.BALANCE_OF_ALL_THINGS = 339942
+    spells.ORBITAL_STRIKE = 390378
+    spells.STARWEAVERS_WEFT = 393940
+    spells.TIRELESS_PURSUIT = 377801
+    spells.WELL_HONED_INSTINCTS = 377847
+    spells.KILLER_INSTINCT = 108299
+    spells.ELUNES_GUIDANCE = 393991
+    spells.ORBIT_BREAKER = 383197
+    spells.POWER_OF_GOLDRINN = 394046
+    spells.ONETHS_CLEAR_VISION = 390348
+    spells.ONETHS_PERCEPTION = 394103
+    spells.PRIMORDIAL_ARCANIC_PULSAR = 384276
+    spells.DENIZEN_OF_THE_DREAM = 394048
+    spells.RADIANT_MOONLIGHT = 394121
+    spells.SOLSTICE_ALIGNMENT = 394115
+    spells.TOUCH_THE_COSMOS = 394414
+    
+    -- War Within Season 2 specific
+    spells.IMPROVED_STARFALL = 393944
+    spells.ARCANIC_PULSAR = 393960
+    spells.ASTRAL_SMOLDER = 394058
+    spells.CONVOKING_STARS = 391951
+    spells.COSMIC_RAPIDITY = 395526
+    spells.FUNGAL_GROWTH = 81281
+    spells.GALACTIC_GUARDIAN = 390378
+    spells.GERMINATION = 155675
+    spells.HEART_OF_THE_WILD = 319454
+    spells.IMPROVED_SOLAR_BEAM = 328778
+    spells.INCESSANT_TEMPEST = 387273
+    spells.ONE_WITH_NATURE = 393371
+    spells.PROTECTOR_OF_THE_PACK = 378986
+    spells.UMBRAL_INTENSITY = 383192
+    
+    -- Buff IDs
     spells.MOONKIN_FORM_BUFF = 24858
-    spells.RAVENOUS_FRENZY_BUFF = 323546
-    spells.KINDRED_EMPOWERMENT_BUFF = 327022
+    spells.STARLORD_BUFF = 279709
+    spells.ONETHS_CLEAR_VISION_BUFF = 390354
+    spells.ONETHS_PERCEPTION_BUFF = 394106
+    spells.POWER_OF_GOLDRINN_BUFF = 394049
+    spells.ECLIPSE_SOLAR_BUFF = 48517
+    spells.ECLIPSE_LUNAR_BUFF = 48518
+    spells.INCARNATION_CHOSEN_OF_ELUNE_BUFF = 102560
+    spells.CELESTIAL_ALIGNMENT_BUFF = 194223
+    spells.WARRIOR_OF_ELUNE_BUFF = 202425
+    spells.STARFALL_BUFF = 191034
+    spells.ONE_WITH_NATURE_BUFF = 393372
+    spells.UMBRAL_INTENSITY_BUFF = 393944
     spells.SOLSTICE_BUFF = 343648
+    spells.TOUCH_OF_ELUNE_BUFF = 394414
+    spells.FRENZIED_REGENERATION_BUFF = 22842
     
     -- Debuff IDs
     spells.MOONFIRE_DEBUFF = 164812
@@ -187,26 +284,22 @@ function Balance:RegisterSpells()
     end
     
     -- Define aura tracking
-    buffs.ECLIPSE_SOLAR = spells.ECLIPSE_SOLAR
-    buffs.ECLIPSE_LUNAR = spells.ECLIPSE_LUNAR
-    buffs.CELESTIAL_ALIGNMENT = spells.CELESTIAL_ALIGNMENT_BUFF
-    buffs.INCARNATION = spells.INCARNATION_CHOSEN_OF_ELUNE_BUFF
+    buffs.MOONKIN_FORM = spells.MOONKIN_FORM_BUFF
     buffs.STARLORD = spells.STARLORD_BUFF
     buffs.ONETHS_CLEAR_VISION = spells.ONETHS_CLEAR_VISION_BUFF
     buffs.ONETHS_PERCEPTION = spells.ONETHS_PERCEPTION_BUFF
-    buffs.OWLKIN_FRENZY = spells.OWLKIN_FRENZY
+    buffs.POWER_OF_GOLDRINN = spells.POWER_OF_GOLDRINN_BUFF
+    buffs.ECLIPSE_SOLAR = spells.ECLIPSE_SOLAR_BUFF
+    buffs.ECLIPSE_LUNAR = spells.ECLIPSE_LUNAR_BUFF
+    buffs.INCARNATION_CHOSEN_OF_ELUNE = spells.INCARNATION_CHOSEN_OF_ELUNE_BUFF
+    buffs.CELESTIAL_ALIGNMENT = spells.CELESTIAL_ALIGNMENT_BUFF
     buffs.WARRIOR_OF_ELUNE = spells.WARRIOR_OF_ELUNE_BUFF
-    buffs.STARWEAVER = spells.STARWEAVER_BUFF
-    buffs.TOUCH_OF_THE_COSMOS = spells.TOUCH_OF_THE_COSMOS_BUFF
-    buffs.HEART_OF_THE_WILD = spells.HEART_OF_THE_WILD_BUFF
-    buffs.MOMENT_OF_CLARITY = spells.MOMENT_OF_CLARITY
-    buffs.BALANCE_OF_ALL_THINGS_ARCANE = spells.BALANCE_OF_ALL_THINGS_ARCANE_BUFF
-    buffs.BALANCE_OF_ALL_THINGS_NATURE = spells.BALANCE_OF_ALL_THINGS_NATURE_BUFF
     buffs.STARFALL = spells.STARFALL_BUFF
-    buffs.MOONKIN_FORM = spells.MOONKIN_FORM_BUFF
-    buffs.RAVENOUS_FRENZY = spells.RAVENOUS_FRENZY_BUFF
-    buffs.KINDRED_EMPOWERMENT = spells.KINDRED_EMPOWERMENT_BUFF
+    buffs.ONE_WITH_NATURE = spells.ONE_WITH_NATURE_BUFF
+    buffs.UMBRAL_INTENSITY = spells.UMBRAL_INTENSITY_BUFF
     buffs.SOLSTICE = spells.SOLSTICE_BUFF
+    buffs.TOUCH_OF_ELUNE = spells.TOUCH_OF_ELUNE_BUFF
+    buffs.FRENZIED_REGENERATION = spells.FRENZIED_REGENERATION_BUFF
     
     debuffs.MOONFIRE = spells.MOONFIRE_DEBUFF
     debuffs.SUNFIRE = spells.SUNFIRE_DEBUFF
@@ -218,35 +311,66 @@ end
 -- Register variables to track
 function Balance:RegisterVariables()
     -- Talent tracking
-    talents.hasTwinMoons = false
-    talents.hasSoulOfTheForest = false
+    talents.hasEclipse = false
+    talents.hasAstralCommunion = false
     talents.hasStarlord = false
     talents.hasStellarDrift = false
-    talents.hasNaturesBalance = false
     talents.hasShootingStars = false
-    talents.hasBalanceOfAllThings = false
-    talents.hasPrimordialArcanicPulsar = false
-    talents.hasOrbitalStrike = false
-    talents.hasUmbralIntensity = false
-    talents.hasStarweaversWarp = false
-    talents.hasStarweaversWeft = false
-    talents.hasTouchOfTheCosmos = false
-    talents.hasAstralCommunion = false
+    talents.hasSoulOfTheForest = false
     talents.hasStellarInspiration = false
-    talents.hasCelestialInfusion = false
-    talents.hasImprovedStarfall = false
-    talents.hasImprovedStarsurge = false
-    talents.hasWildSurges = false
-    talents.hasIncarnation = false
-    talents.hasFuryOfElune = false
-    talents.hasNewMoon = false
-    talents.hasForceOfNature = false
-    talents.hasStellarFlare = false
+    talents.hasNaturesBalance = false
+    talents.hasTwinMoons = false
+    talents.hasBalanceOfAllThings = false
+    talents.hasOrbitalStrike = false
+    talents.hasStarweaversWeft = false
+    talents.hasTirelessPursuit = false
+    talents.hasWellHonedInstincts = false
+    talents.hasKillerInstinct = false
+    talents.hasElunesGuidance = false
+    talents.hasOrbitBreaker = false
+    talents.hasPowerOfGoldrinn = false
+    talents.hasOnethsClearVision = false
+    talents.hasOnethsPerception = false
+    talents.hasPrimordialArcanicPulsar = false
+    talents.hasDenizenOfTheDream = false
+    talents.hasRadiantMoonlight = false
+    talents.hasSolsticeAlignment = false
+    talents.hasTouchTheCosmos = false
     talents.hasWarriorOfElune = false
-    talents.hasSolstice = false
+    talents.hasForceOfNature = false
+    talents.hasFuryOfElune = false
+    talents.hasConvokeTheSpirits = false
+    talents.hasIncarnationChosenOfElune = false
+    talents.hasCelestialAlignment = false
+    talents.hasStellarFlare = false
+    talents.hasStarfall = false
     
-    -- Target state tracking
-    self.targetData = {}
+    -- War Within Season 2 talents
+    talents.hasImprovedStarfall = false
+    talents.hasArcanicPulsar = false
+    talents.hasAstralSmolder = false
+    talents.hasConvokingStars = false
+    talents.hasCosmicRapidity = false
+    talents.hasFungalGrowth = false
+    talents.hasGalacticGuardian = false
+    talents.hasGermination = false
+    talents.hasHeartOfTheWild = false
+    talents.hasImprovedSolarBeam = false
+    talents.hasIncessantTempest = false
+    talents.hasOneWithNature = false
+    talents.hasProtectorOfThePack = false
+    talents.hasUmbralIntensity = false
+    
+    -- Initialize resources
+    currentAstralPower = API.GetPlayerPower()
+    
+    -- Initialize DoT tracking
+    sunfireActive = {}
+    sunfireEndTime = {}
+    moonfireActive = {}
+    moonfireEndTime = {}
+    stellarFlareActive = {}
+    stellarFlareEndTime = {}
     
     return true
 end
@@ -275,36 +399,118 @@ function Balance:RegisterSettings()
                 max = 8,
                 default = DEFAULT_AOE_THRESHOLD
             },
+            astralPowerPooling = {
+                displayName = "Astral Power Pooling",
+                description = "Pool Astral Power for important abilities",
+                type = "toggle",
+                default = true
+            },
+            astralPowerPoolingThreshold = {
+                displayName = "Astral Power Pooling Threshold",
+                description = "Minimum Astral Power to maintain",
+                type = "slider",
+                min = 20,
+                max = 70,
+                default = 50
+            },
+            dotRefreshPandemic = {
+                displayName = "DoT Refresh Pandemic Window",
+                description = "Refresh DoTs when time left is below Pandemic window",
+                type = "toggle",
+                default = true
+            },
             useMoonkinForm = {
                 displayName = "Use Moonkin Form",
-                description = "Stay in Moonkin Form during combat",
+                description = "Automatically use Moonkin Form",
                 type = "toggle",
                 default = true
             },
-            maintainMoonfire = {
-                displayName = "Maintain Moonfire",
-                description = "Keep Moonfire active on targets",
-                type = "toggle",
-                default = true
-            },
-            maintainSunfire = {
-                displayName = "Maintain Sunfire",
-                description = "Keep Sunfire active on targets",
-                type = "toggle",
-                default = true
-            },
-            maintainStellarFlare = {
-                displayName = "Maintain Stellar Flare",
-                description = "Keep Stellar Flare active on targets",
-                type = "toggle",
-                default = true
-            },
-            starfallBehavior = {
-                displayName = "Starfall Behavior",
-                description = "When to cast Starfall over Starsurge",
+            eclipseStrategy = {
+                displayName = "Eclipse Strategy",
+                description = "How to optimize Eclipse uptime",
                 type = "dropdown",
-                options = {"Never", "AoE Only", "Always with Stellar Drift", "Always in AoE"},
-                default = "AoE Only"
+                options = {"Maximize Uptime", "Cycle Between Both", "Favor Lunar", "Favor Solar"},
+                default = "Maximize Uptime"
+            },
+            useNewMoon = {
+                displayName = "Use New/Half/Full Moon",
+                description = "Automatically use Moon spells when talented",
+                type = "toggle",
+                default = true
+            },
+            moonUsage = {
+                displayName = "Moon Usage",
+                description = "When to use Moon spells",
+                type = "dropdown",
+                options = {"On Cooldown", "With Eclipse", "AoE Only"},
+                default = "With Eclipse"
+            }
+        },
+        
+        cooldownSettings = {
+            useCelestialAlignment = {
+                displayName = "Use Celestial Alignment",
+                description = "Automatically use Celestial Alignment",
+                type = "toggle",
+                default = true
+            },
+            useIncarnation = {
+                displayName = "Use Incarnation",
+                description = "Automatically use Incarnation when talented",
+                type = "toggle",
+                default = true
+            },
+            celestialUsage = {
+                displayName = "Celestial Alignment Usage",
+                description = "When to use Celestial Alignment",
+                type = "dropdown",
+                options = {"On Cooldown", "With Fury of Elune", "With Convoke", "Burst Only"},
+                default = "On Cooldown"
+            },
+            useFuryOfElune = {
+                displayName = "Use Fury of Elune",
+                description = "Automatically use Fury of Elune when talented",
+                type = "toggle",
+                default = true
+            },
+            furyOfEluneUsage = {
+                displayName = "Fury of Elune Usage",
+                description = "When to use Fury of Elune",
+                type = "dropdown",
+                options = {"On Cooldown", "With Eclipse", "With Celestial Alignment", "AoE Only"},
+                default = "With Eclipse"
+            },
+            useForceOfNature = {
+                displayName = "Use Force of Nature",
+                description = "Automatically use Force of Nature when talented",
+                type = "toggle",
+                default = true
+            },
+            forceOfNatureUsage = {
+                displayName = "Force of Nature Usage",
+                description = "When to use Force of Nature",
+                type = "dropdown",
+                options = {"On Cooldown", "With Eclipse", "AoE Only"},
+                default = "On Cooldown"
+            },
+            useConvoke = {
+                displayName = "Use Convoke the Spirits",
+                description = "Automatically use Convoke the Spirits when talented",
+                type = "toggle",
+                default = true
+            },
+            convokeUsage = {
+                displayName = "Convoke Usage",
+                description = "When to use Convoke the Spirits",
+                type = "dropdown",
+                options = {"With Celestial Alignment", "On Cooldown", "With Eclipse"},
+                default = "With Celestial Alignment"
+            },
+            useWarriorOfElune = {
+                displayName = "Use Warrior of Elune",
+                description = "Automatically use Warrior of Elune when talented",
+                type = "toggle",
+                default = true
             }
         },
         
@@ -323,6 +529,20 @@ function Balance:RegisterSettings()
                 max = 80,
                 default = 60
             },
+            useFrenziedRegeneration = {
+                displayName = "Use Frenzied Regeneration",
+                description = "Automatically use Frenzied Regeneration (Bear)",
+                type = "toggle",
+                default = true
+            },
+            frenziedRegenThreshold = {
+                displayName = "Frenzied Regen Health Threshold",
+                description = "Health percentage to use Frenzied Regeneration",
+                type = "slider",
+                min = 10,
+                max = 60,
+                default = 40
+            },
             useRenewal = {
                 displayName = "Use Renewal",
                 description = "Automatically use Renewal when talented",
@@ -335,150 +555,146 @@ function Balance:RegisterSettings()
                 type = "slider",
                 min = 10,
                 max = 60,
-                default = 40
+                default = 30
             },
-            useBearForm = {
-                displayName = "Use Bear Form",
-                description = "Switch to Bear Form when critical",
+            useRegrowth = {
+                displayName = "Use Regrowth",
+                description = "Automatically use Regrowth for healing",
                 type = "toggle",
                 default = true
             },
-            bearFormThreshold = {
-                displayName = "Bear Form Health Threshold",
-                description = "Health percentage to switch to Bear Form",
+            regrowthThreshold = {
+                displayName = "Regrowth Health Threshold",
+                description = "Health percentage to use Regrowth",
                 type = "slider",
                 min = 10,
-                max = 30,
-                default = 20
+                max = 70,
+                default = 40
             }
         },
         
-        offensiveSettings = {
-            useCelestialAlignment = {
-                displayName = "Use Celestial Alignment",
-                description = "Automatically use Celestial Alignment or Incarnation",
+        utilitySettings = {
+            useSolarBeam = {
+                displayName = "Use Solar Beam",
+                description = "Automatically use Solar Beam for interrupts",
                 type = "toggle",
                 default = true
             },
-            useFuryOfElune = {
-                displayName = "Use Fury of Elune",
-                description = "Automatically use Fury of Elune when talented",
+            useTyphoon = {
+                displayName = "Use Typhoon",
+                description = "Automatically use Typhoon for knockback",
                 type = "toggle",
                 default = true
             },
-            useForceOfNature = {
-                displayName = "Use Force of Nature",
-                description = "Automatically use Force of Nature when talented",
-                type = "toggle",
-                default = true
-            },
-            useWarriorOfElune = {
-                displayName = "Use Warrior of Elune",
-                description = "Automatically use Warrior of Elune when talented",
-                type = "toggle",
-                default = true
-            },
-            useMoonSpells = {
-                displayName = "Use Moon Spells",
-                description = "Automatically use New/Half/Full Moon when talented",
-                type = "toggle",
-                default = true
-            },
-            useSolstice = {
-                displayName = "Use Solstice",
-                description = "Automatically use Solstice when talented",
-                type = "toggle",
-                default = true
-            }
-        },
-        
-        covenantSettings = {
-            useRavenousFrenzy = {
-                displayName = "Use Ravenous Frenzy",
-                description = "Automatically use Ravenous Frenzy (Venthyr)",
-                type = "toggle",
-                default = true
-            },
-            useConvokeTheSpirits = {
-                displayName = "Use Convoke the Spirits",
-                description = "Automatically use Convoke the Spirits (Night Fae)",
-                type = "toggle",
-                default = true
-            },
-            useKindredSpirits = {
-                displayName = "Use Kindred Spirits",
-                description = "Automatically use Kindred Spirits (Kyrian)",
-                type = "toggle",
-                default = true
-            },
-            useEmpowerBond = {
-                displayName = "Use Empower Bond",
-                description = "Automatically use Empower Bond (Kyrian)",
-                type = "toggle",
-                default = true
-            }
-        },
-        
-        advancedSettings = {
-            eclipseStrategy = {
-                displayName = "Eclipse Strategy",
-                description = "How to prioritize Eclipse states",
+            typhoonMode = {
+                displayName = "Typhoon Usage",
+                description = "When to use Typhoon",
                 type = "dropdown",
-                options = {"Balance Both", "Prioritize Lunar", "Prioritize Solar", "Adaptive"},
-                default = "Balance Both"
+                options = {"Defensive Only", "On Cooldown", "Manual Only"},
+                default = "Defensive Only"
             },
-            poolForStarsurge = {
-                displayName = "Pool for Starsurge",
-                description = "Save Astral Power for Starsurge",
+            useUrsol = {
+                displayName = "Use Ursol's Vortex",
+                description = "Automatically use Ursol's Vortex",
                 type = "toggle",
                 default = true
             },
-            astralPowerPoolThreshold = {
-                displayName = "Astral Power Pool Threshold",
-                description = "Astral Power to pool before using Starsurge",
-                type = "slider",
-                min = 30,
-                max = 90,
-                default = 50
-            },
-            dotRefreshThreshold = {
-                displayName = "DoT Refresh Threshold",
-                description = "Seconds remaining to refresh DoTs",
-                type = "slider",
-                min = 3,
-                max = 8,
-                default = 5
-            },
-            useStarlordStacks = {
-                displayName = "Starlord Stack Behavior",
-                description = "How to manage Starlord stacks",
+            ursolsVortexMode = {
+                displayName = "Ursol's Vortex Usage",
+                description = "When to use Ursol's Vortex",
                 type = "dropdown",
-                options = {"Maintain Max Stacks", "Ignore Stacks", "Build During Burst"},
-                default = "Maintain Max Stacks"
+                options = {"AoE Only", "Defensive Only", "Manual Only"},
+                default = "Defensive Only"
+            },
+            useRoots = {
+                displayName = "Use Entangling Roots",
+                description = "Automatically use Entangling Roots",
+                type = "toggle",
+                default = true
+            },
+            useMightyBash = {
+                displayName = "Use Mighty Bash",
+                description = "Automatically use Mighty Bash",
+                type = "toggle",
+                default = true
+            },
+            useMassEntanglement = {
+                displayName = "Use Mass Entanglement",
+                description = "Automatically use Mass Entanglement when talented",
+                type = "toggle",
+                default = true
+            }
+        },
+        
+        dotSettings = {
+            useMoonfire = {
+                displayName = "Use Moonfire",
+                description = "Automatically maintain Moonfire",
+                type = "toggle",
+                default = true
+            },
+            useSunfire = {
+                displayName = "Use Sunfire",
+                description = "Automatically maintain Sunfire",
+                type = "toggle",
+                default = true
+            },
+            useStellarFlare = {
+                displayName = "Use Stellar Flare",
+                description = "Automatically maintain Stellar Flare when talented",
+                type = "toggle",
+                default = true
+            },
+            sunfireAoEThreshold = {
+                displayName = "Sunfire AoE Threshold",
+                description = "Minimum targets to use Sunfire in AoE mode",
+                type = "slider",
+                min = 1,
+                max = 5,
+                default = 2
+            },
+            moonfireAoEThreshold = {
+                displayName = "Moonfire AoE Threshold",
+                description = "Minimum targets to apply Moonfire in AoE mode",
+                type = "slider",
+                min = 1,
+                max = 5,
+                default = 1
+            },
+            stellarFlareAoEThreshold = {
+                displayName = "Stellar Flare AoE Threshold",
+                description = "Minimum targets to apply Stellar Flare in AoE mode",
+                type = "slider",
+                min = 1,
+                max = 5,
+                default = 3
             }
         },
         
         -- Advanced ability control settings
         abilityControls = {
-            -- Celestial Alignment controls
+            -- Celestial Alignment/Incarnation controls
             celestialAlignment = AAC.RegisterAbility(spells.CELESTIAL_ALIGNMENT, {
                 enabled = true,
-                useDuringBurstOnly = true,
-                useWithEclipse = true
+                useDuringBurstOnly = false,
+                requireEclipse = true,
+                useWithFuryOfElune = false
             }),
             
             -- Starfall controls
             starfall = AAC.RegisterAbility(spells.STARFALL, {
                 enabled = true,
-                minEnemies = DEFAULT_AOE_THRESHOLD,
-                replaceStarsurge = true
+                useDuringBurstOnly = false,
+                minTargets = 2,
+                minAstralPower = 50
             }),
             
-            -- Fury of Elune controls
-            furyOfElune = AAC.RegisterAbility(spells.FURY_OF_ELUNE, {
+            -- Starsurge controls
+            starsurge = AAC.RegisterAbility(spells.STARSURGE, {
                 enabled = true,
-                useWithCelestialAlignment = true,
-                minEnemies = 1
+                useDuringBurstOnly = false,
+                useWithEclipseOnly = true,
+                capAtMaxStarlord = true
             })
         }
     })
@@ -500,6 +716,27 @@ function Balance:RegisterEvents()
         end
     end)
     
+    -- Register for health updates
+    API.RegisterEvent("UNIT_HEALTH", function(unit) 
+        if unit == "player" then
+            self:UpdateHealth()
+        end
+    end)
+    
+    -- Register for player movement events
+    API.RegisterEvent("PLAYER_STARTED_MOVING", function() 
+        self:HandleMovementStart()
+    end)
+    
+    API.RegisterEvent("PLAYER_STOPPED_MOVING", function() 
+        self:HandleMovementStop()
+    end)
+    
+    -- Register for form change events
+    API.RegisterEvent("UPDATE_SHAPESHIFT_FORM", function() 
+        self:UpdateShapeshiftForm() 
+    end)
+    
     -- Register for target change events
     API.RegisterEvent("PLAYER_TARGET_CHANGED", function() 
         self:UpdateTargetData() 
@@ -510,15 +747,10 @@ function Balance:RegisterEvents()
         self:UpdateTalentInfo() 
     end)
     
-    -- Register for form change events
-    API.RegisterEvent("UPDATE_SHAPESHIFT_FORM", function() 
-        self:UpdateShapeshiftForm()
-    end)
-    
     -- Initial talent info update
     self:UpdateTalentInfo()
     
-    -- Initial shapeshift form check
+    -- Initial form check
     self:UpdateShapeshiftForm()
     
     return true
@@ -527,32 +759,224 @@ end
 -- Update talent information
 function Balance:UpdateTalentInfo()
     -- Check for important talents
-    talents.hasTwinMoons = API.HasTalent(spells.TWIN_MOONS)
-    talents.hasSoulOfTheForest = API.HasTalent(spells.SOUL_OF_THE_FOREST)
+    talents.hasEclipse = true -- Eclipse is baseline now
+    talents.hasAstralCommunion = API.HasTalent(spells.ASTRAL_COMMUNION)
     talents.hasStarlord = API.HasTalent(spells.STARLORD)
     talents.hasStellarDrift = API.HasTalent(spells.STELLAR_DRIFT)
-    talents.hasNaturesBalance = API.HasTalent(spells.NATURES_BALANCE)
     talents.hasShootingStars = API.HasTalent(spells.SHOOTING_STARS)
-    talents.hasBalanceOfAllThings = API.HasTalent(spells.BALANCE_OF_ALL_THINGS)
-    talents.hasPrimordialArcanicPulsar = API.HasTalent(spells.PRIMORDIAL_ARCANIC_PULSAR)
-    talents.hasOrbitalStrike = API.HasTalent(spells.ORBITAL_STRIKE)
-    talents.hasUmbralIntensity = API.HasTalent(spells.UMBRAL_INTENSITY)
-    talents.hasStarweaversWarp = API.HasTalent(spells.STARWEAVERS_WARP)
-    talents.hasStarweaversWeft = API.HasTalent(spells.STARWEAVERS_WEFT)
-    talents.hasTouchOfTheCosmos = API.HasTalent(spells.TOUCH_OF_THE_COSMOS)
-    talents.hasAstralCommunion = API.HasTalent(spells.ASTRAL_COMMUNION)
+    talents.hasSoulOfTheForest = API.HasTalent(spells.SOUL_OF_THE_FOREST)
     talents.hasStellarInspiration = API.HasTalent(spells.STELLAR_INSPIRATION)
-    talents.hasCelestialInfusion = API.HasTalent(spells.CELESTIAL_INFUSION)
-    talents.hasImprovedStarfall = API.HasTalent(spells.IMPROVED_STARFALL)
-    talents.hasImprovedStarsurge = API.HasTalent(spells.IMPROVED_STARSURGE)
-    talents.hasWildSurges = API.HasTalent(spells.WILD_SURGES)
-    talents.hasIncarnation = API.HasTalent(spells.INCARNATION_CHOSEN_OF_ELUNE)
-    talents.hasFuryOfElune = API.HasTalent(spells.FURY_OF_ELUNE)
-    talents.hasNewMoon = API.HasTalent(spells.NEW_MOON)
-    talents.hasForceOfNature = API.HasTalent(spells.FORCE_OF_NATURE)
-    talents.hasStellarFlare = API.HasTalent(spells.STELLAR_FLARE)
+    talents.hasNaturesBalance = API.HasTalent(spells.NATURES_BALANCE)
+    talents.hasTwinMoons = API.HasTalent(spells.TWIN_MOONS)
+    talents.hasBalanceOfAllThings = API.HasTalent(spells.BALANCE_OF_ALL_THINGS)
+    talents.hasOrbitalStrike = API.HasTalent(spells.ORBITAL_STRIKE)
+    talents.hasStarweaversWeft = API.HasTalent(spells.STARWEAVERS_WEFT)
+    talents.hasTirelessPursuit = API.HasTalent(spells.TIRELESS_PURSUIT)
+    talents.hasWellHonedInstincts = API.HasTalent(spells.WELL_HONED_INSTINCTS)
+    talents.hasKillerInstinct = API.HasTalent(spells.KILLER_INSTINCT)
+    talents.hasElunesGuidance = API.HasTalent(spells.ELUNES_GUIDANCE)
+    talents.hasOrbitBreaker = API.HasTalent(spells.ORBIT_BREAKER)
+    talents.hasPowerOfGoldrinn = API.HasTalent(spells.POWER_OF_GOLDRINN)
+    talents.hasOnethsClearVision = API.HasTalent(spells.ONETHS_CLEAR_VISION)
+    talents.hasOnethsPerception = API.HasTalent(spells.ONETHS_PERCEPTION)
+    talents.hasPrimordialArcanicPulsar = API.HasTalent(spells.PRIMORDIAL_ARCANIC_PULSAR)
+    talents.hasDenizenOfTheDream = API.HasTalent(spells.DENIZEN_OF_THE_DREAM)
+    talents.hasRadiantMoonlight = API.HasTalent(spells.RADIANT_MOONLIGHT)
+    talents.hasSolsticeAlignment = API.HasTalent(spells.SOLSTICE_ALIGNMENT)
+    talents.hasTouchTheCosmos = API.HasTalent(spells.TOUCH_THE_COSMOS)
     talents.hasWarriorOfElune = API.HasTalent(spells.WARRIOR_OF_ELUNE)
-    talents.hasSolstice = API.HasTalent(spells.SOLSTICE)
+    talents.hasForceOfNature = API.HasTalent(spells.FORCE_OF_NATURE)
+    talents.hasFuryOfElune = API.HasTalent(spells.FURY_OF_ELUNE)
+    talents.hasConvokeTheSpirits = API.HasTalent(spells.CONVOKE_THE_SPIRITS)
+    talents.hasIncarnationChosenOfElune = API.HasTalent(spells.INCARNATION_CHOSEN_OF_ELUNE)
+    talents.hasCelestialAlignment = API.HasTalent(spells.CELESTIAL_ALIGNMENT)
+    talents.hasStellarFlare = API.HasTalent(spells.STELLAR_FLARE)
+    talents.hasStarfall = API.HasTalent(spells.STARFALL)
+    
+    -- War Within Season 2 talents
+    talents.hasImprovedStarfall = API.HasTalent(spells.IMPROVED_STARFALL)
+    talents.hasArcanicPulsar = API.HasTalent(spells.ARCANIC_PULSAR)
+    talents.hasAstralSmolder = API.HasTalent(spells.ASTRAL_SMOLDER)
+    talents.hasConvokingStars = API.HasTalent(spells.CONVOKING_STARS)
+    talents.hasCosmicRapidity = API.HasTalent(spells.COSMIC_RAPIDITY)
+    talents.hasFungalGrowth = API.HasTalent(spells.FUNGAL_GROWTH)
+    talents.hasGalacticGuardian = API.HasTalent(spells.GALACTIC_GUARDIAN)
+    talents.hasGermination = API.HasTalent(spells.GERMINATION)
+    talents.hasHeartOfTheWild = API.HasTalent(spells.HEART_OF_THE_WILD)
+    talents.hasImprovedSolarBeam = API.HasTalent(spells.IMPROVED_SOLAR_BEAM)
+    talents.hasIncessantTempest = API.HasTalent(spells.INCESSANT_TEMPEST)
+    talents.hasOneWithNature = API.HasTalent(spells.ONE_WITH_NATURE)
+    talents.hasProtectorOfThePack = API.HasTalent(spells.PROTECTOR_OF_THE_PACK)
+    talents.hasUmbralIntensity = API.HasTalent(spells.UMBRAL_INTENSITY)
+    
+    -- Set specialized variables based on talents
+    if talents.hasShootingStars then
+        shootingStars = true
+    end
+    
+    if talents.hasCelestialAlignment then
+        celestialAlignment = true
+    end
+    
+    if talents.hasIncarnationChosenOfElune then
+        incarnationChosen = true
+    end
+    
+    if talents.hasBalanceOfAllThings then
+        balanceOfAll = true
+    end
+    
+    if API.IsSpellKnown(spells.SOLAR_BEAM) then
+        solarbeam = true
+    end
+    
+    if API.IsSpellKnown(spells.WRATH) then
+        wrath = true
+    end
+    
+    if API.IsSpellKnown(spells.STARFIRE) then
+        starfire = true
+    end
+    
+    if API.IsSpellKnown(spells.STARSURGE) then
+        starsurge = true
+    end
+    
+    if API.IsSpellKnown(spells.MOONFIRE) then
+        moonfire = true
+    end
+    
+    if API.IsSpellKnown(spells.SUNFIRE) then
+        sunfire = true
+    end
+    
+    if talents.hasStellarFlare then
+        stellarFlare = true
+    end
+    
+    if talents.hasStarfall then
+        starfall = true
+    end
+    
+    if talents.hasTwinMoons then
+        twin_moons = true
+    end
+    
+    if talents.hasStellarDrift then
+        stellarDrift = true
+    end
+    
+    if talents.hasSoulOfTheForest then
+        soul_of_the_forest = true
+    end
+    
+    if talents.hasStarlord then
+        starlord = true
+    end
+    
+    if talents.hasStellarInspiration then
+        stellar_inspiration = true
+    end
+    
+    if talents.hasNaturesBalance then
+        natures_balance = true
+    end
+    
+    if talents.hasAstralCommunion then
+        astral_communion = true
+    end
+    
+    if talents.hasForceOfNature then
+        force_of_nature = true
+    end
+    
+    if talents.hasWarriorOfElune then
+        warrior_of_elune = true
+    end
+    
+    if talents.hasOnethsClearVision then
+        oneths_clear_vision = true
+    end
+    
+    if talents.hasOnethsPerception then
+        oneths_perception = true
+    end
+    
+    if talents.hasPowerOfGoldrinn then
+        power_of_goldrinn = true
+    end
+    
+    if talents.hasPrimordialArcanicPulsar then
+        primordial_arcanic_pulsar = true
+    end
+    
+    if talents.hasOrbitalStrike then
+        orbital_strike = true
+    end
+    
+    if talents.hasStarweaversWeft then
+        starweavers_weft = true
+    end
+    
+    if talents.hasTirelessPursuit then
+        tireless_pursuit = true
+    end
+    
+    if talents.hasConvokeTheSpirits then
+        convoke_the_spirits = true
+    end
+    
+    if talents.hasWellHonedInstincts then
+        well_honed_instincts = true
+    end
+    
+    if talents.hasKillerInstinct then
+        killer_instinct = true
+    end
+    
+    if talents.hasElunesGuidance then
+        elunes_guidance = true
+    end
+    
+    if talents.hasOrbitBreaker then
+        orbit_breaker = true
+    end
+    
+    if talents.hasDenizenOfTheDream then
+        denizen_of_the_dream = true
+    end
+    
+    if talents.hasFuryOfElune then
+        fury_of_elune = true
+    end
+    
+    if talents.hasBalanceOfAllThings then
+        balance_of_all_things = true
+    end
+    
+    if talents.hasRadiantMoonlight then
+        radiant_moonlight = true
+    end
+    
+    if talents.hasArcanicPulsar then
+        arcanic_pulsar = true
+    end
+    
+    if talents.hasSolsticeAlignment then
+        solstice_alignment = true
+    end
+    
+    if talents.hasTouchTheCosmos then
+        touch_the_cosmos = true
+    end
+    
+    if talents.hasUmbralIntensity then
+        umbralIntensity = true
+    end
+    
+    if API.IsSpellKnown(spells.FRENZIED_REGENERATION) then
+        frenziedRegen = true
+    end
     
     API.PrintDebug("Balance Druid talents updated")
     
@@ -565,120 +989,96 @@ function Balance:UpdateAstralPower()
     return true
 end
 
--- Update shapeshift form tracking
-function Balance:UpdateShapeshiftForm()
-    moonkinForm = API.PlayerHasBuff(buffs.MOONKIN_FORM)
+-- Update health tracking
+function Balance:UpdateHealth()
+    playerHealth = API.GetPlayerHealthPercent()
     return true
 end
 
--- Update eclipse counters
-function Balance:UpdateEclipseCounters(spell)
-    -- Skip if we're in any Eclipse state or Celestial Alignment/Incarnation
-    if eclipseState ~= "NONE" or celestialAlignmentActive or incarnationActive then
-        return
-    end
+-- Handle player start moving
+function Balance:HandleMovementStart()
+    isMoving = true
+    return true
+end
+
+-- Handle player stop moving
+function Balance:HandleMovementStop()
+    isMoving = false
+    return true
+end
+
+-- Update shapeshift form
+function Balance:UpdateShapeshiftForm()
+    -- Check for Moonkin Form
+    moonkinFormActive = API.GetShapeshiftForm() == 4 -- Moonkin Form is index 4
     
-    if spell == spells.WRATH then
-        solarEclipseCounter = solarEclipseCounter + 1
-        
-        -- Check if we've reached the threshold for Lunar Eclipse
-        if solarEclipseCounter >= SOLAR_ECLIPSE_WRATH_COUNT then
-            eclipseState = "LUNAR"
-            eclipseTimeRemaining = ECLIPSE_DURATION
-            solarEclipseCounter = 0
-            lunarEclipseCounter = 0
-            
-            API.PrintDebug("Entered Lunar Eclipse")
-        end
-    elseif spell == spells.STARFIRE then
-        lunarEclipseCounter = lunarEclipseCounter + 1
-        
-        -- Check if we've reached the threshold for Solar Eclipse
-        if lunarEclipseCounter >= LUNAR_ECLIPSE_STARFIRE_COUNT then
-            eclipseState = "SOLAR"
-            eclipseTimeRemaining = ECLIPSE_DURATION
-            solarEclipseCounter = 0
-            lunarEclipseCounter = 0
-            
-            API.PrintDebug("Entered Solar Eclipse")
-        end
-    end
+    -- Check for Tree of Life Form
+    treeOfLifeFormActive = API.GetShapeshiftForm() == 5 -- Tree of Life is index 5
+    
+    return true
 end
 
 -- Update target data
 function Balance:UpdateTargetData()
+    -- Check if in range for Starfire
+    inRange = API.IsSpellInRange(spells.STARFIRE, "target")
+    
+    -- Check if in melee range
+    inMeleeRange = API.IsUnitInRange("target", MELEE_RANGE)
+    
     -- Get target GUID
     local targetGUID = API.GetTargetGUID()
     
     if targetGUID and targetGUID ~= "" then
-        -- Initialize target data if needed
-        if not self.targetData[targetGUID] then
-            self.targetData[targetGUID] = {
-                moonfire = false,
-                moonfireExpiration = 0,
-                sunfire = false,
-                sunfireExpiration = 0,
-                stellarFlare = false,
-                stellarFlareExpiration = 0
-            }
-        end
-        
         -- Check for Moonfire
-        local name, _, _, _, _, expiration = API.GetDebuffInfo(targetGUID, debuffs.MOONFIRE)
-        if name then
-            self.targetData[targetGUID].moonfire = true
-            self.targetData[targetGUID].moonfireExpiration = expiration
-            moonfireActive = true
-            moonfireExpiration = expiration
+        local moonfireInfo = API.GetDebuffInfo(targetGUID, debuffs.MOONFIRE)
+        if moonfireInfo then
+            moonfireActive[targetGUID] = true
+            moonfireEndTime[targetGUID] = select(6, moonfireInfo)
         else
-            self.targetData[targetGUID].moonfire = false
-            self.targetData[targetGUID].moonfireExpiration = 0
-            moonfireActive = false
-            moonfireExpiration = 0
+            moonfireActive[targetGUID] = false
+            moonfireEndTime[targetGUID] = 0
         end
         
         -- Check for Sunfire
-        local name, _, _, _, _, expiration = API.GetDebuffInfo(targetGUID, debuffs.SUNFIRE)
-        if name then
-            self.targetData[targetGUID].sunfire = true
-            self.targetData[targetGUID].sunfireExpiration = expiration
-            sunfireActive = true
-            sunfireExpiration = expiration
+        local sunfireInfo = API.GetDebuffInfo(targetGUID, debuffs.SUNFIRE)
+        if sunfireInfo then
+            sunfireActive[targetGUID] = true
+            sunfireEndTime[targetGUID] = select(6, sunfireInfo)
         else
-            self.targetData[targetGUID].sunfire = false
-            self.targetData[targetGUID].sunfireExpiration = 0
-            sunfireActive = false
-            sunfireExpiration = 0
+            sunfireActive[targetGUID] = false
+            sunfireEndTime[targetGUID] = 0
         end
         
         -- Check for Stellar Flare
-        if talents.hasStellarFlare then
-            local name, _, _, _, _, expiration = API.GetDebuffInfo(targetGUID, debuffs.STELLAR_FLARE)
-            if name then
-                self.targetData[targetGUID].stellarFlare = true
-                self.targetData[targetGUID].stellarFlareExpiration = expiration
-                stellarFlareActive = true
-                stellarFlareExpiration = expiration
+        if stellarFlare then
+            local stellarFlareInfo = API.GetDebuffInfo(targetGUID, debuffs.STELLAR_FLARE)
+            if stellarFlareInfo then
+                stellarFlareActive[targetGUID] = true
+                stellarFlareEndTime[targetGUID] = select(6, stellarFlareInfo)
             else
-                self.targetData[targetGUID].stellarFlare = false
-                self.targetData[targetGUID].stellarFlareExpiration = 0
-                stellarFlareActive = false
-                stellarFlareExpiration = 0
+                stellarFlareActive[targetGUID] = false
+                stellarFlareEndTime[targetGUID] = 0
             end
         end
     end
     
     -- Update AoE targets count
-    currentAoETargets = API.GetNearbyEnemiesCount(40) -- Balance Druid has long range AoE
+    currentAoETargets = API.GetNearbyEnemiesCount(8) -- Starfall radius
     
     return true
+end
+
+-- Calculate DoT pandemic refresh window
+function Balance:GetPandemicTime(duration)
+    return duration * 0.3 -- 30% of full duration
 end
 
 -- Handle combat log events
 function Balance:HandleCombatLogEvent(...)
     local timestamp, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, _, _, spellID, spellName = CombatLogGetCurrentEventInfo()
     
-    -- Only process events from the player
+    -- Only process events from this player
     if sourceGUID ~= API.GetPlayerGUID() then
         return false
     end
@@ -687,45 +1087,75 @@ function Balance:HandleCombatLogEvent(...)
     if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
         -- Track player buffs
         if destGUID == API.GetPlayerGUID() then
-            -- Track Eclipse states
+            -- Track Eclipse Solar
             if spellID == buffs.ECLIPSE_SOLAR then
-                eclipseState = "SOLAR"
-                eclipseTimeRemaining = ECLIPSE_DURATION
-                API.PrintDebug("Solar Eclipse activated")
-            elseif spellID == buffs.ECLIPSE_LUNAR then
-                eclipseState = "LUNAR"
-                eclipseTimeRemaining = ECLIPSE_DURATION
-                API.PrintDebug("Lunar Eclipse activated")
+                eclipseActive = true
+                eclipseSolar = true
+                eclipseLunar = false
+                eclipseEndTime = GetTime() + ECLIPSE_DURATION
+                API.PrintDebug("Eclipse Solar activated")
+            end
+            
+            -- Track Eclipse Lunar
+            if spellID == buffs.ECLIPSE_LUNAR then
+                eclipseActive = true
+                eclipseSolar = false
+                eclipseLunar = true
+                eclipseEndTime = GetTime() + ECLIPSE_DURATION
+                API.PrintDebug("Eclipse Lunar activated")
+            end
+            
+            -- Track Incarnation: Chosen of Elune
+            if spellID == buffs.INCARNATION_CHOSEN_OF_ELUNE then
+                incarnationActive = true
+                incarnationEndTime = GetTime() + INCARNATION_DURATION
+                -- Incarnation applies Celestial Alignment benefit as well
+                celestialAlignmentActive = true
+                celestialAlignmentEndTime = GetTime() + INCARNATION_DURATION
+                API.PrintDebug("Incarnation: Chosen of Elune activated")
             end
             
             -- Track Celestial Alignment
             if spellID == buffs.CELESTIAL_ALIGNMENT then
                 celestialAlignmentActive = true
-                celestialAlignmentTimeRemaining = CELESTIAL_ALIGNMENT_DURATION
-                eclipseState = "BOTH" -- Both eclipses active during CA
+                celestialAlignmentEndTime = GetTime() + CELESTIAL_ALIGNMENT_DURATION
                 API.PrintDebug("Celestial Alignment activated")
-            end
-            
-            -- Track Incarnation
-            if spellID == buffs.INCARNATION then
-                incarnationActive = true
-                incarnationTimeRemaining = INCARNATION_DURATION
-                eclipseState = "BOTH" -- Both eclipses active during Incarnation
-                API.PrintDebug("Incarnation activated")
             end
             
             -- Track Starlord
             if spellID == buffs.STARLORD then
-                starlordStacks = select(4, API.GetBuffInfo("player", buffs.STARLORD)) or 0
-                starlordTimeRemaining = STARLORD_DURATION
-                API.PrintDebug("Starlord stacks: " .. tostring(starlordStacks))
+                starlordActive = true
+                starlordStacks = select(4, API.GetBuffInfo("player", buffs.STARLORD)) or 1
+                starlordEndTime = select(6, API.GetBuffInfo("player", buffs.STARLORD))
+                API.PrintDebug("Starlord activated: " .. tostring(starlordStacks) .. " stacks")
             end
             
-            -- Track Oneth's Clear Vision (Legendary proc)
+            -- Track Starfall
+            if spellID == buffs.STARFALL then
+                starfallActive = true
+                starfallEndTime = GetTime() + STARFALL_DURATION
+                API.PrintDebug("Starfall activated")
+            end
+            
+            -- Track Oneth's Clear Vision
             if spellID == buffs.ONETHS_CLEAR_VISION then
                 onethsActive = true
-                onethsTimeRemaining = select(6, API.GetBuffInfo("player", buffs.ONETHS_CLEAR_VISION)) - GetTime()
+                onethsClearcastingActive = true
+                onethsEndTime = GetTime() + ONETHS_DURATION
                 API.PrintDebug("Oneth's Clear Vision activated")
+            end
+            
+            -- Track Oneth's Perception
+            if spellID == buffs.ONETHS_PERCEPTION then
+                onethsActive = true
+                onethsPercProc = true
+                onethsEndTime = GetTime() + ONETHS_DURATION
+                API.PrintDebug("Oneth's Perception activated")
+            end
+            
+            -- Track Power of Goldrinn
+            if spellID == buffs.POWER_OF_GOLDRINN then
+                API.PrintDebug("Power of Goldrinn activated")
             end
             
             -- Track Warrior of Elune
@@ -733,238 +1163,254 @@ function Balance:HandleCombatLogEvent(...)
                 API.PrintDebug("Warrior of Elune activated")
             end
             
-            -- Track Starweaver buff
-            if spellID == buffs.STARWEAVER then
-                if talents.hasStarweaversWarp then
-                    starweaversWarp = true
-                    API.PrintDebug("Starweaver's Warp activated")
-                end
-                
-                if talents.hasStarweaversWeft then
-                    starweaversWeft = true
-                    API.PrintDebug("Starweaver's Weft activated")
-                end
+            -- Track One With Nature
+            if spellID == buffs.ONE_WITH_NATURE then
+                oneWithNatureActive = true
+                oneWithNatureStacks = select(4, API.GetBuffInfo("player", buffs.ONE_WITH_NATURE)) or 1
+                oneWithNatureEndTime = select(6, API.GetBuffInfo("player", buffs.ONE_WITH_NATURE))
+                API.PrintDebug("One With Nature activated: " .. tostring(oneWithNatureStacks) .. " stacks")
             end
             
-            -- Track Touch of the Cosmos
-            if spellID == buffs.TOUCH_OF_THE_COSMOS then
-                touchOfEclipse = true
-                API.PrintDebug("Touch of the Cosmos activated")
-            end
-            
-            -- Track Ravenous Frenzy
-            if spellID == buffs.RAVENOUS_FRENZY then
-                ravenousFrenzy = true
-                API.PrintDebug("Ravenous Frenzy activated")
-            end
-            
-            -- Track Moonkin Form
-            if spellID == buffs.MOONKIN_FORM then
-                moonkinForm = true
-                API.PrintDebug("Moonkin Form activated")
-            end
-            
-            -- Track Kindred Empowerment
-            if spellID == buffs.KINDRED_EMPOWERMENT then
-                kindredSpiritsActive = true
-                API.PrintDebug("Kindred Empowerment activated")
-            end
-            
-            -- Track Balance of All Things
-            if spellID == buffs.BALANCE_OF_ALL_THINGS_ARCANE then
-                balanceOfAllThingsLunar = select(4, API.GetBuffInfo("player", buffs.BALANCE_OF_ALL_THINGS_ARCANE)) or 0
-                API.PrintDebug("Balance of All Things (Lunar) stacks: " .. tostring(balanceOfAllThingsLunar))
-            elseif spellID == buffs.BALANCE_OF_ALL_THINGS_NATURE then
-                balanceOfAllThingsSolar = select(4, API.GetBuffInfo("player", buffs.BALANCE_OF_ALL_THINGS_NATURE)) or 0
-                API.PrintDebug("Balance of All Things (Solar) stacks: " .. tostring(balanceOfAllThingsSolar))
-            end
-            
-            -- Track Starfall
-            if spellID == buffs.STARFALL then
-                starfallActive = true
-                starfallTimeRemaining = STARFALL_DURATION
-                API.PrintDebug("Starfall activated")
+            -- Track Umbral Intensity
+            if spellID == buffs.UMBRAL_INTENSITY then
+                umbralIntensity = true
+                umbralIntensityStacks = select(4, API.GetBuffInfo("player", buffs.UMBRAL_INTENSITY)) or 1
+                umbralIntensityEndTime = select(6, API.GetBuffInfo("player", buffs.UMBRAL_INTENSITY))
+                API.PrintDebug("Umbral Intensity activated: " .. tostring(umbralIntensityStacks) .. " stacks")
             end
             
             -- Track Solstice
             if spellID == buffs.SOLSTICE then
-                solsticeActive = true
-                API.PrintDebug("Solstice activated")
+                solstice = true
+                solsticeStacks = select(4, API.GetBuffInfo("player", buffs.SOLSTICE)) or 1
+                solsticeEndTime = select(6, API.GetBuffInfo("player", buffs.SOLSTICE))
+                API.PrintDebug("Solstice activated: " .. tostring(solsticeStacks) .. " stacks")
+            end
+            
+            -- Track Touch of Elune
+            if spellID == buffs.TOUCH_OF_ELUNE then
+                touchOfElune = true
+                touchOfEluneStacks = select(4, API.GetBuffInfo("player", buffs.TOUCH_OF_ELUNE)) or 1
+                touchOfEluneEndTime = select(6, API.GetBuffInfo("player", buffs.TOUCH_OF_ELUNE))
+                API.PrintDebug("Touch of Elune activated: " .. tostring(touchOfEluneStacks) .. " stacks")
+            end
+            
+            -- Track Frenzied Regeneration
+            if spellID == buffs.FRENZIED_REGENERATION then
+                frenziedRegenActive = true
+                frenziedRegenEndTime = GetTime() + FRENZIED_REGEN_DURATION
+                API.PrintDebug("Frenzied Regeneration activated")
             end
         end
         
-        -- Track target debuffs
-        local targetGUID = API.GetTargetGUID()
-        if destGUID == targetGUID then
-            -- Update target data for debuffs
-            self:UpdateTargetData()
+        -- Track DoTs on any target
+        if moonfireActive[destGUID] ~= nil then
+            if spellID == debuffs.MOONFIRE then
+                moonfireActive[destGUID] = true
+                moonfireEndTime[destGUID] = select(6, API.GetDebuffInfo(destName, debuffs.MOONFIRE))
+                API.PrintDebug("Moonfire applied to " .. destName)
+            elseif spellID == debuffs.SUNFIRE then
+                sunfireActive[destGUID] = true
+                sunfireEndTime[destGUID] = select(6, API.GetDebuffInfo(destName, debuffs.SUNFIRE))
+                API.PrintDebug("Sunfire applied to " .. destName)
+            elseif spellID == debuffs.STELLAR_FLARE and stellarFlare then
+                stellarFlareActive[destGUID] = true
+                stellarFlareEndTime[destGUID] = select(6, API.GetDebuffInfo(destName, debuffs.STELLAR_FLARE))
+                API.PrintDebug("Stellar Flare applied to " .. destName)
+            end
         end
     end
     
     -- Track buff removals
     if eventType == "SPELL_AURA_REMOVED" then
-        -- Track player buffs
+        -- Track player buff removals
         if destGUID == API.GetPlayerGUID() then
-            -- Track Eclipse states
-            if spellID == buffs.ECLIPSE_SOLAR or spellID == buffs.ECLIPSE_LUNAR then
-                if not celestialAlignmentActive and not incarnationActive then
-                    eclipseState = "NONE"
-                    eclipseTimeRemaining = 0
-                    API.PrintDebug("Eclipse faded")
-                end
+            -- Track Eclipse Solar
+            if spellID == buffs.ECLIPSE_SOLAR then
+                eclipseActive = false
+                eclipseSolar = false
+                API.PrintDebug("Eclipse Solar faded")
+            end
+            
+            -- Track Eclipse Lunar
+            if spellID == buffs.ECLIPSE_LUNAR then
+                eclipseActive = false
+                eclipseLunar = false
+                API.PrintDebug("Eclipse Lunar faded")
+            end
+            
+            -- Track Incarnation: Chosen of Elune
+            if spellID == buffs.INCARNATION_CHOSEN_OF_ELUNE then
+                incarnationActive = false
+                API.PrintDebug("Incarnation: Chosen of Elune faded")
             end
             
             -- Track Celestial Alignment
             if spellID == buffs.CELESTIAL_ALIGNMENT then
                 celestialAlignmentActive = false
-                celestialAlignmentTimeRemaining = 0
-                
-                -- Check if we should also reset Eclipse state
-                if not incarnationActive then
-                    eclipseState = "NONE"
-                end
-                
                 API.PrintDebug("Celestial Alignment faded")
-            end
-            
-            -- Track Incarnation
-            if spellID == buffs.INCARNATION then
-                incarnationActive = false
-                incarnationTimeRemaining = 0
-                
-                -- Check if we should also reset Eclipse state
-                if not celestialAlignmentActive then
-                    eclipseState = "NONE"
-                end
-                
-                API.PrintDebug("Incarnation faded")
             end
             
             -- Track Starlord
             if spellID == buffs.STARLORD then
+                starlordActive = false
                 starlordStacks = 0
-                starlordTimeRemaining = 0
                 API.PrintDebug("Starlord faded")
-            end
-            
-            -- Track Oneth's Clear Vision
-            if spellID == buffs.ONETHS_CLEAR_VISION then
-                onethsActive = false
-                onethsTimeRemaining = 0
-                API.PrintDebug("Oneth's Clear Vision faded")
-            end
-            
-            -- Track Starweaver buff
-            if spellID == buffs.STARWEAVER then
-                starweaversWarp = false
-                starweaversWeft = false
-                API.PrintDebug("Starweaver's effects faded")
-            end
-            
-            -- Track Touch of the Cosmos
-            if spellID == buffs.TOUCH_OF_THE_COSMOS then
-                touchOfEclipse = false
-                API.PrintDebug("Touch of the Cosmos faded")
-            end
-            
-            -- Track Ravenous Frenzy
-            if spellID == buffs.RAVENOUS_FRENZY then
-                ravenousFrenzy = false
-                API.PrintDebug("Ravenous Frenzy faded")
-            end
-            
-            -- Track Moonkin Form
-            if spellID == buffs.MOONKIN_FORM then
-                moonkinForm = false
-                API.PrintDebug("Moonkin Form faded")
-            end
-            
-            -- Track Kindred Empowerment
-            if spellID == buffs.KINDRED_EMPOWERMENT then
-                kindredSpiritsActive = false
-                API.PrintDebug("Kindred Empowerment faded")
-            end
-            
-            -- Track Balance of All Things
-            if spellID == buffs.BALANCE_OF_ALL_THINGS_ARCANE then
-                balanceOfAllThingsLunar = 0
-                API.PrintDebug("Balance of All Things (Lunar) faded")
-            elseif spellID == buffs.BALANCE_OF_ALL_THINGS_NATURE then
-                balanceOfAllThingsSolar = 0
-                API.PrintDebug("Balance of All Things (Solar) faded")
             end
             
             -- Track Starfall
             if spellID == buffs.STARFALL then
                 starfallActive = false
-                starfallTimeRemaining = 0
                 API.PrintDebug("Starfall faded")
+            end
+            
+            -- Track Oneth's Clear Vision
+            if spellID == buffs.ONETHS_CLEAR_VISION then
+                onethsActive = false
+                onethsClearcastingActive = false
+                API.PrintDebug("Oneth's Clear Vision faded")
+            end
+            
+            -- Track Oneth's Perception
+            if spellID == buffs.ONETHS_PERCEPTION then
+                onethsActive = false
+                onethsPercProc = false
+                API.PrintDebug("Oneth's Perception faded")
+            end
+            
+            -- Track One With Nature
+            if spellID == buffs.ONE_WITH_NATURE then
+                oneWithNatureActive = false
+                oneWithNatureStacks = 0
+                API.PrintDebug("One With Nature faded")
+            end
+            
+            -- Track Umbral Intensity
+            if spellID == buffs.UMBRAL_INTENSITY then
+                umbralIntensity = false
+                umbralIntensityStacks = 0
+                API.PrintDebug("Umbral Intensity faded")
             end
             
             -- Track Solstice
             if spellID == buffs.SOLSTICE then
-                solsticeActive = false
+                solstice = false
+                solsticeStacks = 0
                 API.PrintDebug("Solstice faded")
+            end
+            
+            -- Track Touch of Elune
+            if spellID == buffs.TOUCH_OF_ELUNE then
+                touchOfElune = false
+                touchOfEluneStacks = 0
+                API.PrintDebug("Touch of Elune faded")
+            end
+            
+            -- Track Frenzied Regeneration
+            if spellID == buffs.FRENZIED_REGENERATION then
+                frenziedRegenActive = false
+                API.PrintDebug("Frenzied Regeneration faded")
             end
         end
         
-        -- Track target debuffs
-        local targetGUID = API.GetTargetGUID()
-        if destGUID == targetGUID then
-            -- Update target data for debuffs
-            self:UpdateTargetData()
+        -- Track DoT removals
+        if moonfireActive[destGUID] ~= nil then
+            if spellID == debuffs.MOONFIRE then
+                moonfireActive[destGUID] = false
+                moonfireEndTime[destGUID] = 0
+                API.PrintDebug("Moonfire faded from " .. destName)
+            elseif spellID == debuffs.SUNFIRE then
+                sunfireActive[destGUID] = false
+                sunfireEndTime[destGUID] = 0
+                API.PrintDebug("Sunfire faded from " .. destName)
+            elseif spellID == debuffs.STELLAR_FLARE then
+                stellarFlareActive[destGUID] = false
+                stellarFlareEndTime[destGUID] = 0
+                API.PrintDebug("Stellar Flare faded from " .. destName)
+            end
         end
     end
     
     -- Track Starlord stacks
     if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.STARLORD and destGUID == API.GetPlayerGUID() then
         starlordStacks = select(4, API.GetBuffInfo("player", buffs.STARLORD)) or 0
-        starlordTimeRemaining = STARLORD_DURATION
         API.PrintDebug("Starlord stacks: " .. tostring(starlordStacks))
     end
     
-    -- Track spell casts to update Eclipse
-    if eventType == "SPELL_CAST_SUCCESS" and sourceGUID == API.GetPlayerGUID() then
-        if spellID == spells.WRATH or spellID == spells.STARFIRE then
-            self:UpdateEclipseCounters(spellID)
-        end
-        
-        -- Track important cooldowns
-        if spellID == spells.CELESTIAL_ALIGNMENT then
-            API.PrintDebug("Celestial Alignment used")
-        elseif spellID == spells.INCARNATION_CHOSEN_OF_ELUNE then
-            API.PrintDebug("Incarnation used")
-        elseif spellID == spells.STARFALL then
-            API.PrintDebug("Starfall cast")
-        elseif spellID == spells.STARSURGE then
-            API.PrintDebug("Starsurge cast")
-        elseif spellID == spells.WARRIOR_OF_ELUNE then
-            API.PrintDebug("Warrior of Elune used")
-        elseif spellID == spells.FURY_OF_ELUNE then
-            furyOfElune = true
-            
-            -- Set a timer to track when it ends
-            C_Timer.After(8, function() -- Fury of Elune lasts 8 seconds
-                furyOfElune = false
-                API.PrintDebug("Fury of Elune ended")
-            end)
-            
-            API.PrintDebug("Fury of Elune used")
-        elseif spellID == spells.FORCE_OF_NATURE then
-            API.PrintDebug("Force of Nature used")
-        elseif spellID == spells.CONVOKE_THE_SPIRITS then
-            API.PrintDebug("Convoke the Spirits used")
-        end
+    -- Track One With Nature stacks
+    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.ONE_WITH_NATURE and destGUID == API.GetPlayerGUID() then
+        oneWithNatureStacks = select(4, API.GetBuffInfo("player", buffs.ONE_WITH_NATURE)) or 0
+        API.PrintDebug("One With Nature stacks: " .. tostring(oneWithNatureStacks))
     end
     
-    -- Track Balance of All Things stack applications
-    if eventType == "SPELL_AURA_APPLIED_DOSE" then
-        if spellID == buffs.BALANCE_OF_ALL_THINGS_ARCANE and destGUID == API.GetPlayerGUID() then
-            balanceOfAllThingsLunar = select(4, API.GetBuffInfo("player", buffs.BALANCE_OF_ALL_THINGS_ARCANE)) or 0
-            API.PrintDebug("Balance of All Things (Lunar) stacks: " .. tostring(balanceOfAllThingsLunar))
-        elseif spellID == buffs.BALANCE_OF_ALL_THINGS_NATURE and destGUID == API.GetPlayerGUID() then
-            balanceOfAllThingsSolar = select(4, API.GetBuffInfo("player", buffs.BALANCE_OF_ALL_THINGS_NATURE)) or 0
-            API.PrintDebug("Balance of All Things (Solar) stacks: " .. tostring(balanceOfAllThingsSolar))
+    -- Track Umbral Intensity stacks
+    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.UMBRAL_INTENSITY and destGUID == API.GetPlayerGUID() then
+        umbralIntensityStacks = select(4, API.GetBuffInfo("player", buffs.UMBRAL_INTENSITY)) or 0
+        API.PrintDebug("Umbral Intensity stacks: " .. tostring(umbralIntensityStacks))
+    end
+    
+    -- Track Solstice stacks
+    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.SOLSTICE and destGUID == API.GetPlayerGUID() then
+        solsticeStacks = select(4, API.GetBuffInfo("player", buffs.SOLSTICE)) or 0
+        API.PrintDebug("Solstice stacks: " .. tostring(solsticeStacks))
+    end
+    
+    -- Track Touch of Elune stacks
+    if eventType == "SPELL_AURA_APPLIED_DOSE" and spellID == buffs.TOUCH_OF_ELUNE and destGUID == API.GetPlayerGUID() then
+        touchOfEluneStacks = select(4, API.GetBuffInfo("player", buffs.TOUCH_OF_ELUNE)) or 0
+        API.PrintDebug("Touch of Elune stacks: " .. tostring(touchOfEluneStacks))
+    end
+    
+    -- Track spell casts
+    if eventType == "SPELL_CAST_SUCCESS" then
+        if spellID == spells.WRATH then
+            API.PrintDebug("Wrath cast")
+        elseif spellID == spells.STARFIRE then
+            API.PrintDebug("Starfire cast")
+        elseif spellID == spells.STARSURGE then
+            starSurgeCount = starSurgeCount + 1
+            API.PrintDebug("Starsurge cast, count: " .. tostring(starSurgeCount))
+        elseif spellID == spells.STARFALL then
+            starfallActive = true
+            starfallEndTime = GetTime() + STARFALL_DURATION
+            API.PrintDebug("Starfall cast")
+        elseif spellID == spells.CELESTIAL_ALIGNMENT then
+            celestialAlignmentActive = true
+            celestialAlignmentEndTime = GetTime() + CELESTIAL_ALIGNMENT_DURATION
+            API.PrintDebug("Celestial Alignment cast")
+        elseif spellID == spells.INCARNATION_CHOSEN_OF_ELUNE then
+            incarnationActive = true
+            incarnationEndTime = GetTime() + INCARNATION_DURATION
+            -- Incarnation applies Celestial Alignment benefit as well
+            celestialAlignmentActive = true
+            celestialAlignmentEndTime = GetTime() + INCARNATION_DURATION
+            API.PrintDebug("Incarnation: Chosen of Elune cast")
+        elseif spellID == spells.FURY_OF_ELUNE then
+            furyOfEluneActive = true
+            furyOfEluneEndTime = GetTime() + FURY_OF_ELUNE_DURATION
+            API.PrintDebug("Fury of Elune cast")
+        elseif spellID == spells.CONVOKE_THE_SPIRITS then
+            API.PrintDebug("Convoke the Spirits cast")
+        elseif spellID == spells.FORCE_OF_NATURE then
+            API.PrintDebug("Force of Nature cast")
+        elseif spellID == spells.WARRIOR_OF_ELUNE then
+            API.PrintDebug("Warrior of Elune cast")
+        elseif spellID == spells.NEW_MOON then
+            fullMoonCount = 1 -- Next is Half Moon
+            API.PrintDebug("New Moon cast")
+        elseif spellID == spells.HALF_MOON then
+            fullMoonCount = 2 -- Next is Full Moon
+            API.PrintDebug("Half Moon cast")
+        elseif spellID == spells.FULL_MOON then
+            fullMoonCount = 0 -- Next is New Moon
+            API.PrintDebug("Full Moon cast")
+        elseif spellID == spells.MOONKIN_FORM then
+            moonkinFormActive = true
+            API.PrintDebug("Moonkin Form cast")
+        elseif spellID == spells.FRENZIED_REGENERATION then
+            frenziedRegenActive = true
+            frenziedRegenEndTime = GetTime() + FRENZIED_REGEN_DURATION
+            API.PrintDebug("Frenzied Regeneration cast")
         end
     end
     
@@ -989,6 +1435,7 @@ function Balance:RunRotation()
     -- Update variables
     self:UpdateAstralPower()
     burstModeActive = settings.rotationSettings.burstEnabled and API.ShouldUseBurst()
+    self:UpdateTargetData() -- Makes sure we have current target information
     
     -- Handle next cast override
     if nextCastOverride and API.CanCast(nextCastOverride) then
@@ -998,14 +1445,16 @@ function Balance:RunRotation()
         return true
     end
     
-    -- Enter Moonkin Form if not already in it
-    if settings.rotationSettings.useMoonkinForm and not moonkinForm and API.CanCast(spells.MOONKIN_FORM) then
+    -- Make sure we're in Moonkin Form
+    if settings.rotationSettings.useMoonkinForm and 
+       not moonkinFormActive and 
+       API.CanCast(spells.MOONKIN_FORM) then
         API.CastSpell(spells.MOONKIN_FORM)
         return true
     end
     
     -- Handle interrupts
-    if self:HandleInterrupts() then
+    if self:HandleInterrupts(settings) then
         return true
     end
     
@@ -1014,13 +1463,18 @@ function Balance:RunRotation()
         return true
     end
     
-    -- Handle DoT maintenance
-    if self:HandleDoTMaintenance(settings) then
-        return true
+    -- Skip if not in range
+    if not inRange then
+        return false
     end
     
     -- Handle cooldowns first
     if self:HandleCooldowns(settings) then
+        return true
+    end
+    
+    -- Apply DoTs before anything else
+    if self:HandleDots(settings) then
         return true
     end
     
@@ -1033,9 +1487,12 @@ function Balance:RunRotation()
 end
 
 -- Handle interrupts
-function Balance:HandleInterrupts()
-    -- Use Solar Beam for interrupt
-    if API.CanCast(spells.SOLAR_BEAM) and API.TargetIsSpellCastable() then
+function Balance:HandleInterrupts(settings)
+    -- Only attempt to interrupt if in range and user has enabled
+    if solarbeam and
+       settings.utilitySettings.useSolarBeam and
+       API.CanCast(spells.SOLAR_BEAM) and
+       API.TargetIsSpellCastable() then
         API.CastSpell(spells.SOLAR_BEAM)
         return true
     end
@@ -1045,8 +1502,6 @@ end
 
 -- Handle defensive abilities
 function Balance:HandleDefensives(settings)
-    local playerHealth = API.GetPlayerHealthPercent()
-    
     -- Use Barkskin
     if settings.defensiveSettings.useBarkskin and
        playerHealth <= settings.defensiveSettings.barkskinThreshold and
@@ -1055,52 +1510,82 @@ function Balance:HandleDefensives(settings)
         return true
     end
     
-    -- Use Renewal if talented
-    if talents.hasRenewal and
-       settings.defensiveSettings.useRenewal and
+    -- Use Frenzied Regeneration in Bear Form
+    if frenziedRegen and
+       settings.defensiveSettings.useFrenziedRegeneration and
+       playerHealth <= settings.defensiveSettings.frenziedRegenThreshold and
+       API.GetShapeshiftForm() == 1 and -- Bear Form
+       API.CanCast(spells.FRENZIED_REGENERATION) then
+        API.CastSpell(spells.FRENZIED_REGENERATION)
+        return true
+    end
+    
+    -- Use Renewal
+    if settings.defensiveSettings.useRenewal and
+       API.HasTalent(spells.RENEWAL) and
        playerHealth <= settings.defensiveSettings.renewalThreshold and
        API.CanCast(spells.RENEWAL) then
         API.CastSpell(spells.RENEWAL)
         return true
     end
     
-    -- Use Bear Form when critically low
-    if settings.defensiveSettings.useBearForm and
-       playerHealth <= settings.defensiveSettings.bearFormThreshold and
-       API.CanCast(spells.BEAR_FORM) then
-        API.CastSpell(spells.BEAR_FORM)
+    -- Use Regrowth
+    if settings.defensiveSettings.useRegrowth and
+       playerHealth <= settings.defensiveSettings.regrowthThreshold and
+       API.CanCast(spells.REGROWTH) then
+        API.CastSpellOnUnit(spells.REGROWTH, "player")
         return true
     end
     
     return false
 end
 
--- Handle DoT maintenance
-function Balance:HandleDoTMaintenance(settings)
-    -- Apply/refresh Moonfire
-    if settings.rotationSettings.maintainMoonfire and API.CanCast(spells.MOONFIRE) then
-        if not moonfireActive or (moonfireExpiration - GetTime() < settings.advancedSettings.dotRefreshThreshold) then
-            API.CastSpell(spells.MOONFIRE)
-            return true
-        end
+-- Handle DoTs
+function Balance:HandleDots(settings)
+    -- Get target GUID
+    local targetGUID = API.GetTargetGUID()
+    
+    if not targetGUID or targetGUID == "" then
+        return false
     end
     
-    -- Apply/refresh Sunfire
-    if settings.rotationSettings.maintainSunfire and API.CanCast(spells.SUNFIRE) then
-        if not sunfireActive or (sunfireExpiration - GetTime() < settings.advancedSettings.dotRefreshThreshold) then
-            API.CastSpell(spells.SUNFIRE)
-            return true
-        end
+    -- Calculate pandemic windows
+    local moonfirePandemic = self:GetPandemicTime(MOONFIRE_DURATION)
+    local sunfirePandemic = self:GetPandemicTime(SUNFIRE_DURATION)
+    local stellarFlarePandemic = self:GetPandemicTime(STELLAR_FLARE_DURATION)
+    
+    -- Maintain Moonfire
+    if moonfire and
+       settings.dotSettings.useMoonfire and
+       (not moonfireActive[targetGUID] or 
+        (moonfireActive[targetGUID] and 
+         moonfireEndTime[targetGUID] - GetTime() < moonfirePandemic)) and
+       API.CanCast(spells.MOONFIRE) then
+        API.CastSpell(spells.MOONFIRE)
+        return true
     end
     
-    -- Apply/refresh Stellar Flare if talented
-    if talents.hasStellarFlare and
-       settings.rotationSettings.maintainStellarFlare and
+    -- Maintain Sunfire
+    if sunfire and
+       settings.dotSettings.useSunfire and
+       (not sunfireActive[targetGUID] or 
+        (sunfireActive[targetGUID] and 
+         sunfireEndTime[targetGUID] - GetTime() < sunfirePandemic)) and
+       API.CanCast(spells.SUNFIRE) then
+        API.CastSpell(spells.SUNFIRE)
+        return true
+    end
+    
+    -- Maintain Stellar Flare
+    if stellarFlare and
+       settings.dotSettings.useStellarFlare and
+       (currentAoETargets < settings.dotSettings.stellarFlareAoEThreshold) and
+       (not stellarFlareActive[targetGUID] or 
+        (stellarFlareActive[targetGUID] and 
+         stellarFlareEndTime[targetGUID] - GetTime() < stellarFlarePandemic)) and
        API.CanCast(spells.STELLAR_FLARE) then
-        if not stellarFlareActive or (stellarFlareExpiration - GetTime() < settings.advancedSettings.dotRefreshThreshold) then
-            API.CastSpell(spells.STELLAR_FLARE)
-            return true
-        end
+        API.CastSpell(spells.STELLAR_FLARE)
+        return true
     end
     
     return false
@@ -1108,108 +1593,132 @@ end
 
 -- Handle cooldown abilities
 function Balance:HandleCooldowns(settings)
-    -- Skip if GCD is not ready
-    if not API.IsGCDReady() then
+    -- Skip offensive cooldowns if not in burst mode or not in combat
+    if not API.IsInCombat() then
         return false
     end
     
-    -- Skip offensive cooldowns if not in burst mode
-    if not burstModeActive then
-        return false
-    end
-    
-    -- Use Celestial Alignment / Incarnation
-    if settings.offensiveSettings.useCelestialAlignment and
-       settings.abilityControls.celestialAlignment.enabled and
-       not celestialAlignmentActive and not incarnationActive and
-       eclipseState ~= "NONE" then
+    -- Use Incarnation: Chosen of Elune
+    if incarnationChosen and
+       settings.cooldownSettings.useIncarnation and
+       not incarnationActive and 
+       not celestialAlignmentActive and
+       API.CanCast(spells.INCARNATION_CHOSEN_OF_ELUNE) then
         
-        if talents.hasIncarnation and API.CanCast(spells.INCARNATION_CHOSEN_OF_ELUNE) then
+        local shouldUseIncarnation = false
+        
+        if settings.cooldownSettings.celestialUsage == "On Cooldown" then
+            shouldUseIncarnation = true
+        elseif settings.cooldownSettings.celestialUsage == "With Fury of Elune" and talents.hasFuryOfElune then
+            shouldUseIncarnation = API.GetSpellCooldown(spells.FURY_OF_ELUNE) < 3
+        elseif settings.cooldownSettings.celestialUsage == "With Convoke" and talents.hasConvokeTheSpirits then
+            shouldUseIncarnation = API.GetSpellCooldown(spells.CONVOKE_THE_SPIRITS) < 3
+        elseif settings.cooldownSettings.celestialUsage == "Burst Only" then
+            shouldUseIncarnation = burstModeActive
+        end
+        
+        if shouldUseIncarnation then
             API.CastSpell(spells.INCARNATION_CHOSEN_OF_ELUNE)
             return true
-        elseif API.CanCast(spells.CELESTIAL_ALIGNMENT) then
+        end
+    end
+    
+    -- Use Celestial Alignment
+    if celestialAlignment and
+       settings.cooldownSettings.useCelestialAlignment and
+       not celestialAlignmentActive and 
+       not incarnationActive and
+       API.CanCast(spells.CELESTIAL_ALIGNMENT) then
+        
+        local shouldUseCelestial = false
+        
+        if settings.cooldownSettings.celestialUsage == "On Cooldown" then
+            shouldUseCelestial = true
+        elseif settings.cooldownSettings.celestialUsage == "With Fury of Elune" and talents.hasFuryOfElune then
+            shouldUseCelestial = API.GetSpellCooldown(spells.FURY_OF_ELUNE) < 3
+        elseif settings.cooldownSettings.celestialUsage == "With Convoke" and talents.hasConvokeTheSpirits then
+            shouldUseCelestial = API.GetSpellCooldown(spells.CONVOKE_THE_SPIRITS) < 3
+        elseif settings.cooldownSettings.celestialUsage == "Burst Only" then
+            shouldUseCelestial = burstModeActive
+        end
+        
+        if shouldUseCelestial then
             API.CastSpell(spells.CELESTIAL_ALIGNMENT)
             return true
         end
     end
     
-    -- Use Warrior of Elune
-    if talents.hasWarriorOfElune and
-       settings.offensiveSettings.useWarriorOfElune and
-       API.CanCast(spells.WARRIOR_OF_ELUNE) then
-        API.CastSpell(spells.WARRIOR_OF_ELUNE)
-        return true
-    end
-    
-    -- Use Force of Nature
-    if talents.hasForceOfNature and
-       settings.offensiveSettings.useForceOfNature and
-       API.CanCast(spells.FORCE_OF_NATURE) then
-        API.CastSpell(spells.FORCE_OF_NATURE)
-        return true
-    end
-    
     -- Use Fury of Elune
-    if talents.hasFuryOfElune and
-       settings.offensiveSettings.useFuryOfElune and
-       settings.abilityControls.furyOfElune.enabled and
+    if fury_of_elune and
+       settings.cooldownSettings.useFuryOfElune and
+       not furyOfEluneActive and
        API.CanCast(spells.FURY_OF_ELUNE) then
         
-        -- Check if we want to use with Celestial Alignment
-        if not settings.abilityControls.furyOfElune.useWithCelestialAlignment or 
-           celestialAlignmentActive or incarnationActive then
-            API.CastSpellAtCursor(spells.FURY_OF_ELUNE)
+        local shouldUseFuryOfElune = false
+        
+        if settings.cooldownSettings.furyOfEluneUsage == "On Cooldown" then
+            shouldUseFuryOfElune = true
+        elseif settings.cooldownSettings.furyOfEluneUsage == "With Eclipse" then
+            shouldUseFuryOfElune = eclipseActive
+        elseif settings.cooldownSettings.furyOfEluneUsage == "With Celestial Alignment" then
+            shouldUseFuryOfElune = celestialAlignmentActive or incarnationActive
+        elseif settings.cooldownSettings.furyOfEluneUsage == "AoE Only" then
+            shouldUseFuryOfElune = currentAoETargets >= settings.rotationSettings.aoeThreshold
+        end
+        
+        if shouldUseFuryOfElune then
+            API.CastSpellAtTarget(spells.FURY_OF_ELUNE)
             return true
         end
     end
     
-    -- Use Solstice
-    if talents.hasSolstice and
-       settings.offensiveSettings.useSolstice and
-       not solsticeActive and
-       API.CanCast(spells.SOLSTICE) then
-        API.CastSpell(spells.SOLSTICE)
-        return true
+    -- Use Force of Nature
+    if force_of_nature and
+       settings.cooldownSettings.useForceOfNature and
+       API.CanCast(spells.FORCE_OF_NATURE) then
+        
+        local shouldUseForceOfNature = false
+        
+        if settings.cooldownSettings.forceOfNatureUsage == "On Cooldown" then
+            shouldUseForceOfNature = true
+        elseif settings.cooldownSettings.forceOfNatureUsage == "With Eclipse" then
+            shouldUseForceOfNature = eclipseActive
+        elseif settings.cooldownSettings.forceOfNatureUsage == "AoE Only" then
+            shouldUseForceOfNature = currentAoETargets >= settings.rotationSettings.aoeThreshold
+        end
+        
+        if shouldUseForceOfNature then
+            API.CastSpellAtTarget(spells.FORCE_OF_NATURE)
+            return true
+        end
     end
     
-    -- Use Covenant abilities
-    if self:HandleCovenantAbilities(settings) then
-        return true
-    end
-    
-    return false
-end
-
--- Handle covenant abilities
-function Balance:HandleCovenantAbilities(settings)
-    -- Use Ravenous Frenzy (Venthyr)
-    if settings.covenantSettings.useRavenousFrenzy and
-       API.CanCast(spells.RAVENOUS_FRENZY) then
-        API.CastSpell(spells.RAVENOUS_FRENZY)
-        return true
-    end
-    
-    -- Use Convoke the Spirits (Night Fae)
-    if settings.covenantSettings.useConvokeTheSpirits and
+    -- Use Convoke the Spirits
+    if convoke_the_spirits and
+       settings.cooldownSettings.useConvoke and
        API.CanCast(spells.CONVOKE_THE_SPIRITS) then
-        -- Best used during Eclipse/Celestial Alignment
-        if eclipseState ~= "NONE" or celestialAlignmentActive or incarnationActive then
+        
+        local shouldUseConvoke = false
+        
+        if settings.cooldownSettings.convokeUsage == "With Celestial Alignment" then
+            shouldUseConvoke = celestialAlignmentActive or incarnationActive
+        elseif settings.cooldownSettings.convokeUsage == "On Cooldown" then
+            shouldUseConvoke = true
+        elseif settings.cooldownSettings.convokeUsage == "With Eclipse" then
+            shouldUseConvoke = eclipseActive
+        end
+        
+        if shouldUseConvoke then
             API.CastSpell(spells.CONVOKE_THE_SPIRITS)
             return true
         end
     end
     
-    -- Use Kindred Spirits (Kyrian)
-    if settings.covenantSettings.useKindredSpirits and
-       API.CanCast(spells.KINDRED_SPIRITS) then
-        API.CastSpell(spells.KINDRED_SPIRITS)
-        return true
-    end
-    
-    -- Use Empower Bond (Kyrian)
-    if settings.covenantSettings.useEmpowerBond and
-       API.CanCast(spells.EMPOWER_BOND) then
-        API.CastSpell(spells.EMPOWER_BOND)
+    -- Use Warrior of Elune
+    if warrior_of_elune and
+       settings.cooldownSettings.useWarriorOfElune and
+       API.CanCast(spells.WARRIOR_OF_ELUNE) then
+        API.CastSpell(spells.WARRIOR_OF_ELUNE)
         return true
     end
     
@@ -1218,71 +1727,73 @@ end
 
 -- Handle AoE rotation
 function Balance:HandleAoERotation(settings)
-    -- Handle Starfall
-    local shouldUseStarfall = false
-    
-    if settings.rotationSettings.starfallBehavior == "AoE Only" then
-        shouldUseStarfall = true
-    elseif settings.rotationSettings.starfallBehavior == "Always with Stellar Drift" and talents.hasStellarDrift then
-        shouldUseStarfall = true
-    elseif settings.rotationSettings.starfallBehavior == "Always in AoE" then
-        shouldUseStarfall = true
-    end
-    
-    -- Cast Starfall if conditions are met and not already active
-    if shouldUseStarfall and
+    -- Use Starfall
+    if starfall and
+       settings.abilityControls.starfall.enabled and
        not starfallActive and
-       currentAstralPower >= 50 and
-       API.CanCast(spells.STARFALL) then
-        API.CastSpellAtCursor(spells.STARFALL)
+       currentAstralPower >= settings.abilityControls.starfall.minAstralPower and
+       currentAoETargets >= settings.abilityControls.starfall.minTargets and
+       API.CanCast(spells.STARFALL) and
+       (not settings.abilityControls.starfall.useDuringBurstOnly or burstModeActive) then
+        API.CastSpell(spells.STARFALL)
         return true
     end
     
-    -- Use New Moon / Half Moon / Full Moon if talented
-    if talents.hasNewMoon and
-       settings.offensiveSettings.useMoonSpells and
-       API.CanCast(spells.NEW_MOON) then
-        API.CastSpellAtCursor(spells.NEW_MOON)
-        return true
-    elseif talents.hasNewMoon and
-           settings.offensiveSettings.useMoonSpells and
-           API.CanCast(spells.HALF_MOON) then
-        API.CastSpellAtCursor(spells.HALF_MOON)
-        return true
-    elseif talents.hasNewMoon and
-           settings.offensiveSettings.useMoonSpells and
-           API.CanCast(spells.FULL_MOON) then
-        API.CastSpellAtCursor(spells.FULL_MOON)
-        return true
+    -- Check for Moon spell rotation if talented and enabled
+    if talents.hasRadiantMoonlight and
+       settings.rotationSettings.useNewMoon and
+       (settings.rotationSettings.moonUsage == "AoE Only" or 
+        settings.rotationSettings.moonUsage == "On Cooldown" or 
+        (settings.rotationSettings.moonUsage == "With Eclipse" and eclipseActive)) then
+        
+        if fullMoonCount == 0 and API.CanCast(spells.NEW_MOON) then
+            API.CastSpellOnTarget(spells.NEW_MOON)
+            return true
+        elseif fullMoonCount == 1 and API.CanCast(spells.HALF_MOON) then
+            API.CastSpellOnTarget(spells.HALF_MOON)
+            return true
+        elseif fullMoonCount == 2 and API.CanCast(spells.FULL_MOON) then
+            API.CastSpellOnTarget(spells.FULL_MOON)
+            return true
+        end
     end
     
-    -- Use Starsurge if we have Oneth's Clear Vision proc
-    if onethsActive and API.CanCast(spells.STARSURGE) then
+    -- Utilize Oneth's procs if available
+    if onethsClearcastingActive and API.CanCast(spells.STARFALL) then
+        API.CastSpell(spells.STARFALL)
+        return true
+    elseif onethsPercProc and API.CanCast(spells.STARSURGE) then
         API.CastSpell(spells.STARSURGE)
         return true
     end
     
-    -- Use Starfire in Lunar Eclipse or Celestial Alignment/Incarnation
-    if (eclipseState == "LUNAR" or eclipseState == "BOTH") and API.CanCast(spells.STARFIRE) then
+    -- Use Starsurge if enough AP and in Eclipse for ST damage
+    if starsurge and
+       settings.abilityControls.starsurge.enabled and
+       currentAstralPower >= 40 and
+       API.CanCast(spells.STARSURGE) and 
+       (not settings.abilityControls.starsurge.useWithEclipseOnly or eclipseActive) and
+       (not settings.abilityControls.starsurge.capAtMaxStarlord or starlordStacks < 3) then
+        API.CastSpell(spells.STARSURGE)
+        return true
+    end
+    
+    -- Use Starfire during Eclipse Lunar or if we have no Eclipse in AoE
+    if starfire and
+       (eclipseLunar or celestialAlignmentActive or incarnationActive or not eclipseActive) and
+       API.CanCast(spells.STARFIRE) then
         API.CastSpell(spells.STARFIRE)
         return true
     end
     
-    -- Use Wrath in Solar Eclipse
-    if eclipseState == "SOLAR" and API.CanCast(spells.WRATH) then
+    -- Use Wrath during Eclipse Solar if we're not using Starfire
+    if wrath and
+       eclipseSolar and
+       not eclipseLunar and
+       not celestialAlignmentActive and
+       not incarnationActive and
+       API.CanCast(spells.WRATH) then
         API.CastSpell(spells.WRATH)
-        return true
-    end
-    
-    -- If no Eclipse is active, cast Wrath to work toward Lunar Eclipse
-    if eclipseState == "NONE" and API.CanCast(spells.WRATH) then
-        API.CastSpell(spells.WRATH)
-        return true
-    end
-    
-    -- Use Starsurge as a filler
-    if currentAstralPower >= 40 and API.CanCast(spells.STARSURGE) then
-        API.CastSpell(spells.STARSURGE)
         return true
     end
     
@@ -1291,95 +1802,63 @@ end
 
 -- Handle Single Target rotation
 function Balance:HandleSingleTargetRotation(settings)
-    -- Use Starsurge to spend Astral Power
-    if (currentAstralPower >= settings.advancedSettings.astralPowerPoolThreshold or currentAstralPower >= 90) and
-       API.CanCast(spells.STARSURGE) then
+    -- Utilize Oneth's procs if available
+    if onethsClearcastingActive and API.CanCast(spells.STARFALL) then
+        API.CastSpell(spells.STARFALL)
+        return true
+    elseif onethsPercProc and API.CanCast(spells.STARSURGE) then
+        API.CastSpell(spells.STARSURGE)
+        return true
+    end
+    
+    -- Use Starsurge if enough AP and in Eclipse
+    if starsurge and
+       settings.abilityControls.starsurge.enabled and
+       currentAstralPower >= 40 and 
+       (not settings.astralPowerPooling || 
+        currentAstralPower > settings.astralPowerPoolingThreshold) and
+       API.CanCast(spells.STARSURGE) and 
+       (not settings.abilityControls.starsurge.useWithEclipseOnly or eclipseActive) and
+       (not settings.abilityControls.starsurge.capAtMaxStarlord or starlordStacks < 3) then
+        API.CastSpell(spells.STARSURGE)
+        return true
+    end
+    
+    -- Check for Moon spell rotation if talented and enabled
+    if talents.hasRadiantMoonlight and
+       settings.rotationSettings.useNewMoon and
+       (settings.rotationSettings.moonUsage == "On Cooldown" or 
+        (settings.rotationSettings.moonUsage == "With Eclipse" and eclipseActive)) then
         
-        -- Check Starlord management if talented
-        if talents.hasStarlord and settings.advancedSettings.useStarlordStacks == "Maintain Max Stacks" then
-            -- If stacks are about to fall off, or we're not at max stacks, use Starsurge
-            if starlordTimeRemaining < 3 or starlordStacks < 3 then
-                API.CastSpell(spells.STARSURGE)
-                return true
-            end
-        else
-            -- No Starlord, or we're ignoring stack management
-            API.CastSpell(spells.STARSURGE)
+        if fullMoonCount == 0 and API.CanCast(spells.NEW_MOON) then
+            API.CastSpellOnTarget(spells.NEW_MOON)
+            return true
+        elseif fullMoonCount == 1 and API.CanCast(spells.HALF_MOON) then
+            API.CastSpellOnTarget(spells.HALF_MOON)
+            return true
+        elseif fullMoonCount == 2 and API.CanCast(spells.FULL_MOON) then
+            API.CastSpellOnTarget(spells.FULL_MOON)
             return true
         end
     end
     
-    -- Use New Moon / Half Moon / Full Moon if talented
-    if talents.hasNewMoon and
-       settings.offensiveSettings.useMoonSpells and
-       API.CanCast(spells.NEW_MOON) then
-        API.CastSpell(spells.NEW_MOON)
-        return true
-    elseif talents.hasNewMoon and
-           settings.offensiveSettings.useMoonSpells and
-           API.CanCast(spells.HALF_MOON) then
-        API.CastSpell(spells.HALF_MOON)
-        return true
-    elseif talents.hasNewMoon and
-           settings.offensiveSettings.useMoonSpells and
-           API.CanCast(spells.FULL_MOON) then
-        API.CastSpell(spells.FULL_MOON)
-        return true
-    end
-    
-    -- Use Starfire in Lunar Eclipse or Celestial Alignment/Incarnation
-    if (eclipseState == "LUNAR" or eclipseState == "BOTH") and API.CanCast(spells.STARFIRE) then
+    -- Use Starfire during Eclipse Lunar, if moving with Stellar Drift, or with Warrior of Elune
+    if starfire and
+       (eclipseLunar or celestialAlignmentActive or incarnationActive or 
+       (isMoving and talents.hasStellarDrift and starfallActive) or 
+       API.PlayerHasBuff(buffs.WARRIOR_OF_ELUNE)) and
+       API.CanCast(spells.STARFIRE) then
         API.CastSpell(spells.STARFIRE)
         return true
     end
     
-    -- Use Wrath in Solar Eclipse
-    if eclipseState == "SOLAR" and API.CanCast(spells.WRATH) then
-        API.CastSpell(spells.WRATH)
-        return true
-    end
-    
-    -- If no Eclipse is active, use spells to trigger Eclipse based on strategy
-    if eclipseState == "NONE" then
-        if settings.advancedSettings.eclipseStrategy == "Prioritize Lunar" then
-            -- Cast Wrath to get Lunar Eclipse
-            if API.CanCast(spells.WRATH) then
-                API.CastSpell(spells.WRATH)
-                return true
-            end
-        elseif settings.advancedSettings.eclipseStrategy == "Prioritize Solar" then
-            -- Cast Starfire to get Solar Eclipse
-            if API.CanCast(spells.STARFIRE) then
-                API.CastSpell(spells.STARFIRE)
-                return true
-            end
-        elseif settings.advancedSettings.eclipseStrategy == "Adaptive" then
-            -- Choose based on encounter (single target = Lunar, multi-target = Solar)
-            if currentAoETargets > 1 then
-                if API.CanCast(spells.STARFIRE) then
-                    API.CastSpell(spells.STARFIRE)
-                    return true
-                end
-            else
-                if API.CanCast(spells.WRATH) then
-                    API.CastSpell(spells.WRATH)
-                    return true
-                end
-            end
-        else -- Balance Both
-            -- Alternate between both Eclipses
-            if solarEclipseCounter < SOLAR_ECLIPSE_WRATH_COUNT and API.CanCast(spells.WRATH) then
-                API.CastSpell(spells.WRATH)
-                return true
-            elseif API.CanCast(spells.STARFIRE) then
-                API.CastSpell(spells.STARFIRE)
-                return true
-            end
-        end
-    end
-    
-    -- Default to Wrath if nothing else to cast
-    if API.CanCast(spells.WRATH) then
+    -- Use Wrath during Eclipse Solar or if we're not in any Eclipse
+    if wrath and
+       (eclipseSolar or not eclipseActive) and
+       not eclipseLunar and
+       not celestialAlignmentActive and
+       not incarnationActive and
+       API.CanCast(spells.WRATH) then
         API.CastSpell(spells.WRATH)
         return true
     end
@@ -1395,46 +1874,113 @@ function Balance:OnSpecializationChanged()
     -- Reset state variables
     nextCastOverride = nil
     burstModeActive = false
-    currentAstralPower = API.GetPlayerPower()
+    currentAoETargets = 0
+    currentAstralPower = 0
     maxAstralPower = 100
-    eclipseState = "NONE"
-    eclipseTimeRemaining = 0
-    sunfireActive = false
-    sunfireExpiration = 0
-    moonfireActive = false
-    moonfireExpiration = 0
-    stellarFlareActive = false
-    stellarFlareExpiration = 0
-    starfallActive = false
-    starfallTimeRemaining = 0
-    starsurgeStacks = 0
-    onethsActive = false
-    onethsTimeRemaining = 0
-    celestialAlignmentActive = false
-    celestialAlignmentTimeRemaining = 0
+    eclipseActive = false
+    eclipseSolar = false
+    eclipseLunar = false
+    eclipseEndTime = 0
     incarnationActive = false
-    incarnationTimeRemaining = 0
+    incarnationEndTime = 0
+    celestialAlignmentActive = false
+    celestialAlignmentEndTime = 0
+    starfallActive = false
+    starfallEndTime = 0
+    starlordActive = false
     starlordStacks = 0
-    starlordTimeRemaining = 0
-    lunarEclipseCounter = 0
-    solarEclipseCounter = 0
+    starlordEndTime = 0
+    onethsActive = false
+    onethsEndTime = 0
+    onethsClearcastingActive = false
+    onethsPercProc = false
+    moonkinFormActive = false
+    sunfireActive = {}
+    sunfireEndTime = {}
+    moonfireActive = {}
+    moonfireEndTime = {}
+    stellarFlareActive = {}
+    stellarFlareEndTime = {}
+    starSurgeCount = 0
+    starsurgeAstralSpender = true
     furyOfElune = false
-    orbitalStrike = false
-    umbralIntensity = 0
-    primordialArcanicPulsar = 0
-    starweaversWarp = false
-    starweaversWeft = false
-    touchOfEclipse = false
-    ravenousFrenzy = false
-    moonkinForm = API.PlayerHasBuff(buffs.MOONKIN_FORM)
-    kindredSpiritsActive = false
-    fallenOrderActive = false
-    boatActive = false
-    surgeActive = false
-    wildSurge = false
-    solsticeActive = false
-    balanceOfAllThingsLunar = 0
-    balanceOfAllThingsSolar = 0
+    furyOfEluneActive = false
+    furyOfEluneEndTime = 0
+    convokeCooldown = false
+    fullMoonCount = 0
+    forceOfNature = false
+    treeOfLifeFormActive = false
+    powerInfusionActive = false
+    powerInfusionEndTime = 0
+    shiftPowerActive = false
+    shiftPowerEndTime = 0
+    shiftPowerDuration = 0
+    sunKingBlessingEndTime = 0
+    sunKingBlessingActive = false
+    oneWithNatureActive = false
+    oneWithNatureEndTime = 0
+    oneWithNatureStacks = 0
+    umbralIntensity = false
+    umbralIntensityStacks = 0
+    umbralIntensityEndTime = 0
+    solstice = false
+    solsticeStacks = 0
+    solsticeEndTime = 0
+    touchOfElune = false
+    touchOfEluneStacks = 0
+    touchOfEluneEndTime = 0
+    frenziedRegen = false
+    frenziedRegenActive = false
+    frenziedRegenEndTime = 0
+    inRange = false
+    isMoving = false
+    starsurge = false
+    starfire = false
+    wrath = false
+    sunfire = false
+    moonfire = false
+    stellarFlare = false
+    starfall = false
+    newMoon = false
+    halfMoon = false
+    fullMoon = false
+    shootingStars = false
+    celestialAlignment = false
+    incarnationChosen = false
+    balanceOfAll = false
+    solarbeam = false
+    natures_wrath = false
+    twin_moons = false
+    stellarDrift = false
+    soul_of_the_forest = false
+    starlord = false
+    stellar_inspiration = false
+    natures_balance = false
+    astral_communion = false
+    force_of_nature = false
+    warrior_of_elune = false
+    oneths_clear_vision = false
+    oneths_perception = false
+    power_of_goldrinn = false
+    primordial_arcanic_pulsar = false
+    orbital_strike = false
+    starweavers_weft = false
+    tireless_pursuit = false
+    starfall_eclipse = false
+    convoke_the_spirits = false
+    well_honed_instincts = false
+    killer_instinct = false
+    elunes_guidance = false
+    orbit_breaker = false
+    denizen_of_the_dream = false
+    fury_of_elune = false
+    balance_of_all_things = false
+    radiant_moonlight = false
+    arcanic_pulsar = false
+    solstice_alignment = false
+    touch_the_cosmos = false
+    inMeleeRange = false
+    playerHealth = 100
     
     API.PrintDebug("Balance Druid state reset on spec change")
     
