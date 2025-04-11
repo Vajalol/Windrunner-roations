@@ -49,6 +49,7 @@ Core\MachineLearning.lua
 Core\PvPSystem.lua
 Core\PartySynergy.lua
 Core\ExternalDataIntegration.lua
+Core\AdvancedAbilityControl.lua
 
 # Data
 Data\Classes.lua
@@ -72,6 +73,7 @@ UI\ResourceForecast.lua
 UI\AdvancedSettingsUI.lua
 UI\VisualEditMode.lua
 UI\GuidedLearning.lua
+UI\AdvancedAbilityControlUI.lua
 
 # Classes
 Classes\Base.lua

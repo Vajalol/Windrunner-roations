@@ -50,7 +50,12 @@ WR = {
     
     -- Advanced Rotation Optimization (Phase 9)
     MachineLearning = {},
-    PvPSystem = {}
+    PvPSystem = {},
+    PartySynergy = {},
+    ExternalDataIntegration = {},
+    
+    -- Advanced Ability Control (Phase 10)
+    AdvancedAbilityControl = {}
 }
 
 -- Verify Tinkr API exists - for demonstration we'll mock Tinkr
@@ -164,6 +169,10 @@ function WR:OnInitialize()
     if self.UI and self.UI.AdvancedSettingsUI and self.UI.AdvancedSettingsUI.Initialize then self.UI.AdvancedSettingsUI:Initialize() end
     if self.UI and self.UI.VisualEditMode and self.UI.VisualEditMode.Initialize then self.UI.VisualEditMode:Initialize() end
     if self.UI and self.UI.GuidedLearning and self.UI.GuidedLearning.Initialize then self.UI.GuidedLearning:Initialize() end
+    
+    -- Advanced Ability Control (Phase 10)
+    if self.AdvancedAbilityControl and self.AdvancedAbilityControl.Initialize then self.AdvancedAbilityControl:Initialize() end
+    if self.UI and self.UI.AdvancedAbilityControlUI and self.UI.AdvancedAbilityControlUI.Initialize then self.UI.AdvancedAbilityControlUI:Initialize() end
     
     -- Register for events
     self:RegisterEvents()
@@ -489,6 +498,29 @@ function WR:HandleSlashCommand(msg)
             end
         else
             print("|cFFFFFF00[Windrunner Rotations]|r ExternalDataIntegration module not available")
+        end
+    elseif msg == "abilitycontrol" or msg == "ac" or msg:match("^abilitycontrol") or msg:match("^ac") then
+        -- Advanced Ability Control
+        if self.AdvancedAbilityControl then
+            local subCommand = ""
+            if msg:match("^abilitycontrol%s+(.+)") then
+                subCommand = msg:match("^abilitycontrol%s+(.+)")
+            elseif msg:match("^ac%s+(.+)") then
+                subCommand = msg:match("^ac%s+(.+)")
+            end
+            
+            if subCommand == "" then
+                -- Toggle settings panel
+                if self.UI and self.UI.AdvancedSettingsUI then
+                    self.UI.AdvancedSettingsUI:SelectPanel("Ability Control")
+                else
+                    self.AdvancedAbilityControl:HandleSlashCommand(subCommand)
+                end
+            else
+                self.AdvancedAbilityControl:HandleSlashCommand(subCommand)
+            end
+        else
+            print("|cFFFFFF00[Windrunner Rotations]|r AdvancedAbilityControl module not available")
         end
     end
 end
