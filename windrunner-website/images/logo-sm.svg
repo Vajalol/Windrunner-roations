@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <!-- Compact Bow Logo for WindrunnerRotations -->
+  
+  <!-- Filters for glowing effects -->
+  <defs>
+    <linearGradient id="bowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9900ff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7c0aff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00bfff;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#9900ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00bfff;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <filter id="arrowGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Main bow shape -->
+  <g transform="translate(20, 20)" filter="url(#glow)">
+    <!-- Curved bow -->
+    <path d="M-15,12 C-11,4 -11,-4 -15,-12 C-9,-16 0,-8 0,0 C0,8 -9,16 -15,12 Z" 
+          fill="none" stroke="url(#bowGradient)" stroke-width="2.5" />
+    
+    <!-- Bowstring -->
+    <line x1="-13" y1="-11" x2="-13" y2="11" stroke="#00bfff" stroke-width="1.5" opacity="0.9" />
+    
+    <!-- Decorative elements on bow -->
+    <circle cx="-15" cy="-12" r="2" fill="#9900ff" />
+    <circle cx="-15" cy="12" r="2" fill="#9900ff" />
+    
+    <!-- Magical rune on bow center -->
+    <circle cx="-11" cy="0" r="2.5" fill="#00bfff" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;0.4;0.8" dur="3s" repeatCount="indefinite" />
+    </circle>
+    
+    <!-- Arrow -->
+    <g filter="url(#arrowGlow)">
+      <line x1="-10" y1="0" x2="12" y2="0" stroke="url(#arrowGradient)" stroke-width="1.5" />
+      <polygon points="12,0 8,-3 8,3" fill="#00bfff" />
+    </g>
+    
+    <!-- Particle effects -->
+    <g opacity="0.7">
+      <circle cx="-7" cy="-2" r="1" fill="#9900ff">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="-3" cy="2" r="0.8" fill="#00bfff">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="3" cy="-2" r="0.7" fill="#9900ff">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="7" cy="1" r="1" fill="#00bfff">
+        <animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.2s" repeatCount="indefinite" />
+      </circle>
+    </g>
+  </g>
+  
+  <!-- Animated glow effect -->
+  <rect width="40" height="40" fill="none" opacity="0.5">
+    <animate attributeName="opacity" values="0.3;0.1;0.3" dur="4s" repeatCount="indefinite" />
+  </rect>
+</svg>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer circle with glow -->
+  <circle cx="200" cy="200" r="190" stroke="#9900ff" stroke-width="2" fill="none" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="4s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- Inner circle with glow -->
+  <circle cx="200" cy="200" r="170" stroke="#00bfff" stroke-width="1" fill="none" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="5s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- Rotating runic circle -->
+  <g opacity="0.7">
+    <animateTransform attributeName="transform" type="rotate" from="0 200 200" to="360 200 200" dur="30s" repeatCount="indefinite" />
+    
+    <!-- Runic symbols placed evenly around the circle -->
+    <g fill="none" stroke="#9900ff" stroke-width="2">
+      <!-- Rune 1 - top -->
+      <path d="M200,30 L210,50 L190,50 Z" />
+      <path d="M200,40 L200,60" />
+      
+      <!-- Rune 2 - right -->
+      <path d="M370,200 L350,210 L350,190 Z" />
+      <path d="M360,200 L340,200" />
+      
+      <!-- Rune 3 - bottom -->
+      <path d="M200,370 L190,350 L210,350 Z" />
+      <path d="M200,360 L200,340" />
+      
+      <!-- Rune 4 - left -->
+      <path d="M30,200 L50,190 L50,210 Z" />
+      <path d="M40,200 L60,200" />
+      
+      <!-- Diagonal runes -->
+      <path d="M130,80 L110,100" stroke="#00bfff" />
+      <path d="M100,110 L120,90" stroke="#00bfff" />
+      <circle cx="115" cy="95" r="15" stroke="#00bfff" />
+      
+      <path d="M320,80 L300,100" stroke="#00bfff" />
+      <path d="M290,110 L310,90" stroke="#00bfff" />
+      <circle cx="305" cy="95" r="15" stroke="#00bfff" />
+      
+      <path d="M130,320 L110,300" stroke="#00bfff" />
+      <path d="M100,290 L120,310" stroke="#00bfff" />
+      <circle cx="115" cy="305" r="15" stroke="#00bfff" />
+      
+      <path d="M320,320 L300,300" stroke="#00bfff" />
+      <path d="M290,290 L310,310" stroke="#00bfff" />
+      <circle cx="305" cy="305" r="15" stroke="#00bfff" />
+    </g>
+    
+    <!-- Connecting lines -->
+    <path d="M200,30 L370,200 L200,370 L30,200 Z" stroke="#9900ff" stroke-width="1" opacity="0.3" />
+    <path d="M115,95 L305,95 L305,305 L115,305 Z" stroke="#00bfff" stroke-width="1" opacity="0.3" />
+  </g>
+  
+  <!-- Pulsing center symbol -->
+  <g opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.4;0.9" dur="3s" repeatCount="indefinite" />
+    
+    <!-- Center diamond -->
+    <path d="M200,165 L235,200 L200,235 L165,200 Z" fill="none" stroke="#9900ff" stroke-width="2" />
+    
+    <!-- Inner cross -->
+    <path d="M200,175 L200,225" stroke="#00bfff" stroke-width="2" />
+    <path d="M175,200 L225,200" stroke="#00bfff" stroke-width="2" />
+    
+    <!-- Center circle -->
+    <circle cx="200" cy="200" r="8" fill="#9900ff">
+      <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <!-- Outer glow effect -->
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="10" result="blur" />
+    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+  </filter>
+  
+  <!-- Apply glow to the entire SVG -->
+  <rect x="0" y="0" width="400" height="400" fill="none" filter="url(#glow)" />
+</svg>

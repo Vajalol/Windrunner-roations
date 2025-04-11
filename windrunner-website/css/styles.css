@@ -4,28 +4,76 @@
  */
 
 /* ===== Base Styles ===== */
+/* Import fantasy fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&display=swap');
+
+/* Define custom WoW-inspired font */
+@font-face {
+    font-family: 'LifeCraft';
+    src: url('../fonts/LifeCraft_Font.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
-    /* Color Variables */
-    --primary-dark: #1a3263;
-    --primary: #2f4b8a;
-    --primary-light: #3a5ca8;
-    --secondary: #7b4397;
-    --accent: #ffd700;
-    --bg-dark: #0a121f;
-    --bg-medium: #131c2f;
-    --bg-light: #1e2940;
+    /* Color Variables - Sylvanas Shadow Theme */
+    --primary-dark: #0a060f;
+    --primary: #0f0919;
+    --primary-light: #1a1028;
+    --secondary: #380d45;
+    --secondary-dark: #25072e;
+    
+    /* Sylvanas Color Palette */
+    --sylvanas-purple: #7c0aff;
+    --sylvanas-dark-purple: #4b0082;
+    --sylvanas-blue: #00bfff;
+    --sylvanas-dark-blue: #0057b7;
+    --sylvanas-shadow: #1e0030;
+    --accent: #9f00ff;
+    --accent-secondary: #2c86ff;
+    --accent-tertiary: #ff3db4;
+    
+    /* Background and effects */
+    --bg-darkest: #05030a;
+    --bg-dark: #080613;
+    --bg-medium: #0e0a1d;
+    --bg-light: #1a1532;
+    --shadow-glow: rgba(153, 0, 255, 0.6);
+    --ghost-glow: rgba(41, 173, 255, 0.5);
+    --evil-glow: rgba(255, 0, 89, 0.4);
+    
+    /* WoW faction colors */
+    --alliance-blue: #0078ff;
+    --horde-red: #b30000;
+    --undead-green: #2cbe4e;
+    --undead-purple: #9b30ff;
+    
+    /* Text colors */
     --text-light: #ffffff;
+    --text-blue: #b8f4ff;
+    --text-purple: #e0b8ff;
     --text-muted: rgba(255, 255, 255, 0.7);
-    --text-dark: #222222;
+    --text-dark: #0d0d14;
     
     /* Font Variables */
-    --font-primary: 'Poppins', sans-serif;
+    --font-fantasy: 'LifeCraft', 'Cinzel Decorative', serif;
+    --font-primary: 'Cinzel Decorative', serif;
     --font-secondary: 'Poppins', sans-serif;
     
     /* Other Variables */
     --border-radius: 8px;
-    --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    --transition: all 0.3s ease;
+    --border-radius-lg: 12px;
+    --box-shadow: 0 5px 25px rgba(153, 0, 255, 0.25);
+    --glow-shadow: 0 0 20px rgba(153, 0, 255, 0.4);
+    --blue-glow: 0 0 15px rgba(0, 191, 255, 0.5);
+    --evil-shadow: 0 5px 20px rgba(255, 0, 106, 0.3);
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --magical-transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    
+    /* Animation Variables */
+    --hover-float: translateY(-5px);
+    --hover-scale: scale(1.05);
 }
 
 * {

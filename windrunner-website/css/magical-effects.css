@@ -1,0 +1,431 @@
+/* 
+ * WindrunnerRotations - Magical Effects
+ * Sylvanas Windrunner & WoW-themed special effects
+ */
+
+/* ===== Glowing Elements ===== */
+.sylvanas-glow {
+  position: relative;
+}
+
+.sylvanas-glow::before, 
+.sylvanas-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.sylvanas-glow::before {
+  background: var(--sylvanas-purple);
+  opacity: 0.2;
+  filter: blur(15px);
+  transform: scale(0.9);
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.sylvanas-glow::after {
+  background: var(--sylvanas-blue);
+  opacity: 0.15;
+  filter: blur(10px);
+  transform: scale(1.1);
+  animation: pulseGlow 4s ease-in-out infinite 1s;
+}
+
+/* ===== Magical Bow Effects ===== */
+.bow-container {
+  position: relative;
+  overflow: visible;
+}
+
+.bow-string {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--sylvanas-blue), var(--sylvanas-purple), var(--sylvanas-blue), transparent);
+  transform: translate(-50%, -50%);
+  animation: bowDraw 2s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--ghost-glow);
+  z-index: 1;
+}
+
+.bow-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150px;
+  height: 4px;
+  background: linear-gradient(to right, var(--sylvanas-purple), var(--sylvanas-blue), transparent);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px var(--ghost-glow);
+  opacity: 0;
+  z-index: 2;
+}
+
+.bow-arrow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 15px;
+  height: 15px;
+  background: var(--sylvanas-blue);
+  transform: translate(0%, -50%) rotate(45deg);
+  box-shadow: 0 0 10px var(--ghost-glow);
+}
+
+.bow-container:hover .bow-arrow {
+  animation: arrowShot 1s ease-out forwards;
+}
+
+.bow-particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sylvanas-purple);
+  opacity: 0;
+  box-shadow: 0 0 5px var(--ghost-glow);
+}
+
+.bow-container:hover .bow-particle {
+  animation: bansheeWail 2s ease-out;
+}
+
+.bow-container:hover .bow-particle:nth-child(1) {
+  top: 30%;
+  left: 60%;
+  animation-delay: 0.1s;
+}
+
+.bow-container:hover .bow-particle:nth-child(2) {
+  top: 70%;
+  left: 60%;
+  animation-delay: 0.2s;
+}
+
+.bow-container:hover .bow-particle:nth-child(3) {
+  top: 40%;
+  left: 70%;
+  animation-delay: 0.3s;
+}
+
+.bow-container:hover .bow-particle:nth-child(4) {
+  top: 60%;
+  left: 70%;
+  animation-delay: 0.4s;
+}
+
+.bow-container:hover .bow-particle:nth-child(5) {
+  top: 50%;
+  left: 80%;
+  animation-delay: 0.5s;
+}
+
+/* ===== Shadow Trails ===== */
+.shadow-trail {
+  position: relative;
+}
+
+.shadow-trail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  z-index: -1;
+  opacity: 0;
+  transform: translateX(0);
+  filter: blur(5px);
+}
+
+.shadow-trail:hover::before {
+  animation: ghostTrail 1.5s ease-out;
+  opacity: 0.3;
+}
+
+/* ===== Banshee Effects ===== */
+.banshee-aura {
+  position: relative;
+}
+
+.banshee-aura::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: radial-gradient(
+    ellipse at center,
+    var(--sylvanas-purple) 0%,
+    rgba(153, 0, 255, 0.3) 40%,
+    rgba(153, 0, 255, 0) 70%
+  );
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  border-radius: inherit;
+}
+
+.banshee-aura:hover::before {
+  opacity: 0.3;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ===== Magical Border Effects ===== */
+.magical-border {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.magical-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, var(--sylvanas-purple), var(--sylvanas-blue), var(--sylvanas-purple));
+  background-size: 200% 200%;
+  animation: gradientFlow 6s ease infinite;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+/* ===== Rune Circle ===== */
+.rune-circle {
+  position: relative;
+}
+
+.rune-circle::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: calc(100% + 60px);
+  height: calc(100% + 60px);
+  background-image: url('../images/rune-circle.svg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 1.5s ease;
+  z-index: -1;
+  transform: rotate(0deg);
+}
+
+.rune-circle:hover::before {
+  opacity: 0.7;
+  transform: rotate(180deg);
+}
+
+/* ===== Sylvanas Multi-Shot Effect ===== */
+.multi-shot-effect {
+  position: relative;
+  overflow: visible;
+}
+
+.arrow-shot {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(to right, var(--sylvanas-purple), var(--sylvanas-blue), transparent);
+  opacity: 0;
+  transform-origin: left center;
+}
+
+.multi-shot-effect:hover .arrow-shot {
+  animation: arrowShot 0.8s ease-out forwards;
+}
+
+.multi-shot-effect:hover .arrow-shot:nth-child(1) {
+  top: 40%;
+  left: 50%;
+  width: 120px;
+  transform: rotate(-15deg);
+  animation-delay: 0.1s;
+}
+
+.multi-shot-effect:hover .arrow-shot:nth-child(2) {
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  transform: rotate(0deg);
+  animation-delay: 0.2s;
+}
+
+.multi-shot-effect:hover .arrow-shot:nth-child(3) {
+  top: 60%;
+  left: 50%;
+  width: 120px;
+  transform: rotate(15deg);
+  animation-delay: 0.3s;
+}
+
+/* ===== Magical Button Effect ===== */
+.magical-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: var(--magical-transition);
+}
+
+.magical-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, var(--sylvanas-dark-purple), var(--sylvanas-dark-blue));
+  z-index: -2;
+}
+
+.magical-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, var(--sylvanas-blue), var(--sylvanas-purple));
+  transition: var(--magical-transition);
+  z-index: -1;
+}
+
+.magical-btn:hover {
+  color: white;
+  box-shadow: 0 0 20px var(--shadow-glow);
+  transform: translateY(-3px);
+}
+
+.magical-btn:hover::after {
+  left: 0;
+}
+
+/* ===== World of Warcraft Logo Glow ===== */
+.wow-logo {
+  position: relative;
+}
+
+.wow-logo::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: calc(100% + 20px);
+  height: calc(100% + 20px);
+  background: radial-gradient(
+    ellipse at center,
+    var(--sylvanas-blue) 0%,
+    rgba(0, 191, 255, 0) 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+}
+
+.wow-logo:hover::after {
+  opacity: 0.5;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* ===== Class Icon Magical Effect ===== */
+.class-icon-magical {
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.class-icon-magical::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    var(--sylvanas-blue),
+    var(--sylvanas-purple),
+    transparent
+  );
+  opacity: 0;
+  transform: rotate(0deg);
+  transition: opacity 0.5s ease, transform 2s ease;
+  z-index: -1;
+}
+
+.class-icon-magical:hover::before {
+  opacity: 0.7;
+  transform: rotate(360deg);
+}
+
+/* ===== Banshee Flying Effect ===== */
+.banshee-fly {
+  position: absolute;
+  width: 50px;
+  height: 80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: blur(1px);
+  opacity: 0;
+}
+
+.banshee-container:hover .banshee-fly {
+  animation: flyingBanshee 5s ease-in-out;
+}
+
+/* ===== Text Enchantment Effects ===== */
+.enchanted-text {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    to right,
+    var(--sylvanas-purple),
+    var(--sylvanas-blue),
+    var(--sylvanas-purple)
+  );
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: gradientFlow 6s linear infinite;
+  text-shadow: 0 0 5px rgba(153, 0, 255, 0.3);
+}
+
+.frost-text {
+  color: var(--sylvanas-blue);
+  text-shadow: 0 0 5px var(--ghost-glow);
+}
+
+.shadow-text {
+  color: var(--sylvanas-purple);
+  text-shadow: 0 0 5px var(--shadow-glow);
+}
+
+/* ===== 3D Hover Effects ===== */
+.card-3d {
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: translateY(-10px) rotateX(5deg) rotateY(5deg);
+  box-shadow: 
+    15px 15px 20px rgba(0, 0, 0, 0.3),
+    -15px -15px 20px rgba(255, 255, 255, 0.05),
+    0 0 20px var(--shadow-glow);
+}

@@ -1,0 +1,345 @@
+/* 
+ * WindrunnerRotations - Custom Animations
+ * Sylvanas Windrunner & Shadow Theme Animations 
+ */
+
+/* ===== Keyframe Animations ===== */
+
+/* Floating Effect */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Pulse Glow Effect */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 5px var(--shadow-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--shadow-glow), 0 0 30px var(--shadow-glow);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--shadow-glow);
+  }
+}
+
+/* Flowing Background Gradient */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Magical Text Glow */
+@keyframes textGlow {
+  0% {
+    text-shadow: 0 0 5px var(--sylvanas-purple), 0 0 10px var(--sylvanas-blue);
+  }
+  50% {
+    text-shadow: 0 0 10px var(--sylvanas-purple), 0 0 20px var(--sylvanas-blue), 0 0 30px var(--sylvanas-purple);
+  }
+  100% {
+    text-shadow: 0 0 5px var(--sylvanas-purple), 0 0 10px var(--sylvanas-blue);
+  }
+}
+
+/* Sylvanas Arrow Charge */
+@keyframes arrowCharge {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(153, 0, 255, 0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px 3px rgba(153, 0, 255, 0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 15px 5px rgba(46, 196, 255, 0.7), 0 0 30px 10px rgba(153, 0, 255, 0.3);
+  }
+}
+
+/* Banshee Wail */
+@keyframes bansheeWail {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(5px);
+    filter: blur(2px);
+  }
+  20% {
+    opacity: 0.8;
+    transform: scale(1.02) translateY(-2px);
+    filter: blur(0px);
+  }
+  40% {
+    opacity: 0.6;
+    transform: scale(1) translateY(0px);
+    filter: blur(1px);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1.02) translateY(-2px);
+    filter: blur(0px);
+  }
+  80% {
+    opacity: 0.7;
+    transform: scale(0.98) translateY(1px);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(5px);
+    filter: blur(2px);
+  }
+}
+
+/* Bow Drawing Animation */
+@keyframes bowDraw {
+  0% {
+    transform: scaleX(0.8);
+    opacity: 0.7;
+  }
+  30% {
+    transform: scaleX(1.05);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scaleX(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Border Glow Pulse */
+@keyframes borderGlow {
+  0% {
+    border-color: var(--sylvanas-purple);
+    box-shadow: 0 0 5px var(--sylvanas-purple);
+  }
+  50% {
+    border-color: var(--sylvanas-blue);
+    box-shadow: 0 0 15px var(--sylvanas-blue);
+  }
+  100% {
+    border-color: var(--sylvanas-purple);
+    box-shadow: 0 0 5px var(--sylvanas-purple);
+  }
+}
+
+/* Magic Rune Rotation */
+@keyframes runeRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+/* Ghost Trail */
+@keyframes ghostTrail {
+  0% {
+    opacity: 0.7;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px) translateY(-10px) scale(0.9);
+  }
+}
+
+/* Shadow Pulse for Dark Mode Elements */
+@keyframes shadowPulse {
+  0% {
+    box-shadow: 0 0 5px rgba(153, 0, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(153, 0, 255, 0.7), 0 0 30px rgba(0, 191, 255, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(153, 0, 255, 0.3);
+  }
+}
+
+/* Fade Up In Animation */
+@keyframes fadeUpIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sylvanas Arrow Shot */
+@keyframes arrowShot {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+  90% {
+    transform: translateX(500px) translateY(-50px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(1000px) translateY(-100px);
+    opacity: 0;
+  }
+}
+
+/* Flying Banshee */
+@keyframes flyingBanshee {
+  0% {
+    transform: translateX(-100px) translateY(20px) scale(0.5);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  20% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0.8;
+    filter: blur(0px);
+  }
+  80% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0.8;
+    filter: blur(0px);
+  }
+  100% {
+    transform: translateX(100px) translateY(-20px) scale(0.5);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/* ===== Animation Utility Classes ===== */
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.gradient-flow {
+  background-size: 200% 200%;
+  animation: gradientFlow 10s ease infinite;
+}
+
+.magical-text {
+  animation: textGlow 3s ease-in-out infinite;
+}
+
+.sylvanas-arrow {
+  animation: arrowCharge 1.5s ease-out forwards;
+}
+
+.banshee-effect {
+  animation: bansheeWail 8s ease-in-out infinite;
+}
+
+.bow-draw {
+  animation: bowDraw 1.2s ease-out forwards;
+}
+
+.border-glow {
+  animation: borderGlow 4s ease-in-out infinite;
+}
+
+.rotating-rune {
+  animation: runeRotate 12s linear infinite;
+}
+
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 3s linear infinite;
+}
+
+.ghost-trail {
+  position: relative;
+}
+
+.ghost-trail::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  animation: ghostTrail 2s ease-out infinite;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+.shadow-pulse {
+  animation: shadowPulse 4s ease-in-out infinite;
+}
+
+.fade-up-in {
+  animation: fadeUpIn 1s ease-out forwards;
+}
+
+.staggered-fade-in > * {
+  opacity: 0;
+  animation: fadeUpIn 0.5s ease-out forwards;
+}
+
+.staggered-fade-in > *:nth-child(1) { animation-delay: 0.1s; }
+.staggered-fade-in > *:nth-child(2) { animation-delay: 0.2s; }
+.staggered-fade-in > *:nth-child(3) { animation-delay: 0.3s; }
+.staggered-fade-in > *:nth-child(4) { animation-delay: 0.4s; }
+.staggered-fade-in > *:nth-child(5) { animation-delay: 0.5s; }
+.staggered-fade-in > *:nth-child(6) { animation-delay: 0.6s; }
+.staggered-fade-in > *:nth-child(7) { animation-delay: 0.7s; }
+.staggered-fade-in > *:nth-child(8) { animation-delay: 0.8s; }
