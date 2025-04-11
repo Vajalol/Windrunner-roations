@@ -1,0 +1,847 @@
+/* 
+ * WindrunnerRotations - Shadow UI Elements
+ * Author: VortexQ8
+ * 
+ * Advanced shadow-themed UI elements with glowing effects and 3D shadows
+ */
+
+/* ===== Shadow Containers ===== */
+.shadow-container {
+  position: relative;
+  border-radius: var(--border-radius-lg);
+  background: linear-gradient(135deg, 
+    var(--bg-medium) 0%, 
+    var(--bg-light) 50%,
+    var(--bg-medium) 100%
+  );
+  padding: 2rem;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 
+    0 5px 20px rgba(0, 0, 0, 0.5),
+    0 15px 40px rgba(153, 0, 255, 0.15);
+}
+
+.shadow-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    rgba(153, 0, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(0, 191, 255, 0.05) 100%
+  );
+  z-index: -1;
+}
+
+.shadow-container::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg,
+    var(--sylvanas-purple) 0%,
+    transparent 50%,
+    var(--sylvanas-blue) 100%
+  );
+  z-index: -2;
+  border-radius: var(--border-radius-lg);
+  opacity: 0.5;
+  filter: blur(3px);
+}
+
+/* Hoverable shadow container with enhanced effects */
+.shadow-container.hoverable {
+  transition: var(--magical-transition);
+}
+
+.shadow-container.hoverable:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 20px 60px rgba(153, 0, 255, 0.25);
+}
+
+.shadow-container.hoverable:hover::after {
+  opacity: 0.8;
+  filter: blur(5px);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Dark variant */
+.shadow-container.dark {
+  background: linear-gradient(135deg, 
+    var(--bg-darkest) 0%, 
+    var(--bg-dark) 50%,
+    var(--bg-darkest) 100%
+  );
+}
+
+/* ===== Shadow Cards ===== */
+.shadow-card {
+  position: relative;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  background-color: rgba(14, 10, 29, 0.5);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  z-index: 1;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.shadow-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom right,
+    rgba(10, 6, 15, 0.7) 0%,
+    rgba(26, 16, 50, 0.7) 100%
+  );
+  opacity: 0.8;
+  z-index: -1;
+}
+
+.shadow-card::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(135deg,
+    var(--sylvanas-purple) 0%,
+    transparent 50%,
+    var(--sylvanas-blue) 100%
+  );
+  z-index: -2;
+  border-radius: var(--border-radius);
+  opacity: 0.5;
+  transform: translateZ(-10px);
+}
+
+.shadow-card:hover {
+  transform: translateY(-5px) rotateX(5deg) rotateY(5deg);
+  box-shadow: 
+    15px 15px 20px rgba(0, 0, 0, 0.3),
+    -15px -15px 20px rgba(255, 255, 255, 0.05),
+    0 0 20px var(--shadow-glow);
+}
+
+.shadow-card:hover::after {
+  opacity: 0.7;
+  filter: blur(2px);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Featured variant */
+.shadow-card.featured {
+  background-color: rgba(20, 12, 40, 0.7);
+  box-shadow: 0 0 30px rgba(153, 0, 255, 0.2);
+  border: 1px solid rgba(153, 0, 255, 0.1);
+}
+
+.shadow-card.featured::after {
+  opacity: 0.7;
+  filter: blur(3px);
+}
+
+/* ===== Advanced Buttons ===== */
+.shadow-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, 
+    var(--sylvanas-dark-purple) 0%, 
+    var(--sylvanas-purple) 100%
+  );
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--border-radius);
+  font-family: var(--font-fantasy);
+  font-size: 1rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 1;
+  transition: var(--magical-transition);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 5px 15px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(153, 0, 255, 0.3);
+}
+
+.shadow-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  z-index: -1;
+  transition: var(--magical-transition);
+}
+
+.shadow-btn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    var(--sylvanas-blue) 0%,
+    var(--sylvanas-purple) 100%
+  );
+  transform: translateY(3px);
+  transition: var(--magical-transition);
+}
+
+.shadow-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(153, 0, 255, 0.5);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.shadow-btn:hover::before {
+  left: 100%;
+}
+
+.shadow-btn:hover::after {
+  transform: translateY(0);
+  box-shadow: 0 0 8px rgba(153, 0, 255, 0.8);
+}
+
+.shadow-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 2px 10px rgba(0, 0, 0, 0.3),
+    0 0 5px rgba(153, 0, 255, 0.3);
+}
+
+/* Blue variant */
+.shadow-btn.blue {
+  background: linear-gradient(135deg, 
+    var(--sylvanas-dark-blue) 0%, 
+    var(--sylvanas-blue) 100%
+  );
+}
+
+.shadow-btn.blue::after {
+  background: linear-gradient(90deg,
+    var(--sylvanas-purple) 0%,
+    var(--sylvanas-blue) 100%
+  );
+}
+
+/* Ghost variant */
+.shadow-btn.ghost {
+  background: transparent;
+  border: 2px solid var(--sylvanas-purple);
+  box-shadow: 
+    0 5px 15px rgba(0, 0, 0, 0.2),
+    0 0 10px rgba(153, 0, 255, 0.2);
+}
+
+.shadow-btn.ghost::after {
+  height: 2px;
+  background: var(--sylvanas-blue);
+  opacity: 0.7;
+}
+
+.shadow-btn.ghost:hover {
+  background: rgba(153, 0, 255, 0.1);
+}
+
+/* Large variant */
+.shadow-btn.large {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+}
+
+/* ===== Shadow Form Elements ===== */
+.shadow-input {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.shadow-input input,
+.shadow-input textarea,
+.shadow-input select {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: rgba(10, 6, 20, 0.5);
+  border: 1px solid rgba(153, 0, 255, 0.2);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-family: var(--font-secondary);
+  font-size: 1rem;
+  transition: var(--transition);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.shadow-input input:focus,
+.shadow-input textarea:focus,
+.shadow-input select:focus {
+  outline: none;
+  border-color: var(--sylvanas-purple);
+  box-shadow: 
+    inset 0 2px 5px rgba(0, 0, 0, 0.2),
+    0 0 10px rgba(153, 0, 255, 0.3);
+}
+
+.shadow-input label {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: var(--bg-medium);
+  padding: 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--sylvanas-blue);
+  transition: var(--transition);
+}
+
+.shadow-input input:focus ~ label,
+.shadow-input textarea:focus ~ label,
+.shadow-input select:focus ~ label {
+  color: var(--sylvanas-purple);
+  text-shadow: 0 0 5px rgba(153, 0, 255, 0.5);
+}
+
+/* Glowing border variant */
+.shadow-input.glow input,
+.shadow-input.glow textarea,
+.shadow-input.glow select {
+  border: none;
+  background: rgba(14, 10, 29, 0.7);
+}
+
+.shadow-input.glow::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(135deg,
+    var(--sylvanas-purple) 0%,
+    transparent 50%,
+    var(--sylvanas-blue) 100%
+  );
+  border-radius: var(--border-radius);
+  z-index: -1;
+  opacity: 0.5;
+}
+
+.shadow-input.glow:focus-within::after {
+  opacity: 0.8;
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* ===== Focus-within for mouse tracking glow effects ===== */
+.shadow-focus {
+  position: relative;
+  overflow: hidden;
+}
+
+.shadow-focus::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: -50%;
+  left: -50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(153, 0, 255, 0.3) 0%,
+    rgba(0, 191, 255, 0.2) 30%,
+    transparent 70%
+  );
+  transform: scale(0);
+  transition: var(--magical-transition);
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shadow-focus:hover::before {
+  transform: scale(2);
+  opacity: 1;
+}
+
+/* ===== Dark Scrollbar ===== */
+.shadow-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sylvanas-purple) var(--bg-dark);
+}
+
+.shadow-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.shadow-scroll::-webkit-scrollbar-track {
+  background-color: var(--bg-dark);
+  border-radius: 4px;
+}
+
+.shadow-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom,
+    var(--sylvanas-purple),
+    var(--sylvanas-blue)
+  );
+  border-radius: 4px;
+}
+
+.shadow-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom,
+    var(--sylvanas-blue),
+    var(--sylvanas-purple)
+  );
+}
+
+/* ===== Shadow Dividers ===== */
+.shadow-divider {
+  position: relative;
+  height: 1px;
+  margin: 3rem 0;
+  background: linear-gradient(to right,
+    transparent 0%,
+    var(--sylvanas-purple) 20%,
+    var(--sylvanas-blue) 50%,
+    var(--sylvanas-purple) 80%,
+    transparent 100%
+  );
+}
+
+.shadow-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  background-color: var(--sylvanas-purple);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--shadow-glow);
+}
+
+/* Stylized divider with runes */
+.shadow-divider.runic {
+  height: 20px;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shadow-divider.runic::before,
+.shadow-divider.runic::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent,
+    var(--sylvanas-purple) 50%,
+    var(--sylvanas-blue)
+  );
+}
+
+.shadow-divider.runic::after {
+  background: linear-gradient(to left,
+    transparent,
+    var(--sylvanas-blue) 50%,
+    var(--sylvanas-purple)
+  );
+}
+
+.shadow-divider.runic span {
+  padding: 0 1rem;
+  font-family: var(--font-fantasy);
+  color: var(--sylvanas-purple);
+  text-shadow: 0 0 5px var(--shadow-glow);
+}
+
+/* ===== Shadow Tooltip ===== */
+.shadow-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.shadow-tooltip .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: rgba(14, 10, 29, 0.9);
+  color: var(--text-light);
+  text-align: center;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 
+    0 5px 15px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(153, 0, 255, 0.3);
+  border: 1px solid rgba(153, 0, 255, 0.2);
+  pointer-events: none;
+}
+
+.shadow-tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(14, 10, 29, 0.9) transparent transparent transparent;
+}
+
+.shadow-tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ===== Custom Checkbox ===== */
+.shadow-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.shadow-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.shadow-checkbox .checkmark {
+  position: relative;
+  height: 24px;
+  width: 24px;
+  background-color: rgba(14, 10, 29, 0.7);
+  border: 1px solid rgba(153, 0, 255, 0.3);
+  border-radius: 4px;
+  margin-right: 0.75rem;
+  transition: var(--transition);
+}
+
+.shadow-checkbox:hover .checkmark {
+  background-color: rgba(20, 12, 40, 0.8);
+  box-shadow: 0 0 8px rgba(153, 0, 255, 0.3);
+}
+
+.shadow-checkbox input:checked ~ .checkmark {
+  background-color: var(--sylvanas-purple);
+  border-color: transparent;
+}
+
+.shadow-checkbox .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.shadow-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* ===== Shadow Box ===== */
+.shadow-box {
+  position: relative;
+  background-color: rgba(14, 10, 29, 0.7);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 
+    0 10px 20px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(153, 0, 255, 0.2);
+}
+
+.shadow-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    rgba(153, 0, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(0, 191, 255, 0.1) 100%
+  );
+  z-index: -1;
+}
+
+.shadow-box-header {
+  position: relative;
+  margin: -2rem -2rem 2rem;
+  padding: 1.5rem 2rem;
+  background-color: rgba(10, 6, 20, 0.8);
+  border-bottom: 1px solid rgba(153, 0, 255, 0.2);
+}
+
+.shadow-box-header h3 {
+  margin-bottom: 0;
+  color: var(--text-light);
+  font-family: var(--font-fantasy);
+  letter-spacing: 1px;
+}
+
+/* With magical border */
+.shadow-box.magical-border {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.shadow-box.magical-border::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(135deg,
+    var(--sylvanas-purple) 0%,
+    transparent 50%,
+    var(--sylvanas-blue) 100%
+  );
+  border-radius: var(--border-radius);
+  z-index: -1;
+  opacity: 0.5;
+}
+
+.shadow-box.magical-border:hover::before {
+  opacity: 0.8;
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Dark variant */
+.shadow-box.dark {
+  background-color: rgba(10, 6, 15, 0.9);
+  border: 1px solid rgba(153, 0, 255, 0.1);
+}
+
+.shadow-box.dark .shadow-box-header {
+  background-color: rgba(7, 4, 12, 0.9);
+}
+
+/* ===== Shadow Tabs ===== */
+.shadow-tabs {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.shadow-tabs .tab-nav {
+  display: flex;
+  border-bottom: 1px solid rgba(153, 0, 255, 0.2);
+  margin-bottom: 2rem;
+}
+
+.shadow-tabs .tab-nav-item {
+  padding: 1rem 1.5rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: none;
+  font-family: var(--font-fantasy);
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.shadow-tabs .tab-nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(to right,
+    var(--sylvanas-purple),
+    var(--sylvanas-blue)
+  );
+  transition: var(--transition);
+}
+
+.shadow-tabs .tab-nav-item:hover {
+  color: var(--text-light);
+}
+
+.shadow-tabs .tab-nav-item:hover::after {
+  width: 100%;
+}
+
+.shadow-tabs .tab-nav-item.active {
+  color: var(--sylvanas-purple);
+  text-shadow: 0 0 5px rgba(153, 0, 255, 0.3);
+}
+
+.shadow-tabs .tab-nav-item.active::after {
+  width: 100%;
+  height: 3px;
+  box-shadow: 0 0 8px rgba(153, 0, 255, 0.5);
+}
+
+.shadow-tabs .tab-content {
+  display: none;
+  animation: fadeIn 0.5s ease;
+}
+
+.shadow-tabs .tab-content.active {
+  display: block;
+}
+
+/* ===== Shadow Badge ===== */
+.shadow-badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  background: linear-gradient(135deg,
+    var(--sylvanas-dark-purple) 0%,
+    var(--sylvanas-purple) 100%
+  );
+  color: var(--text-light);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  box-shadow: 0 0 8px rgba(153, 0, 255, 0.3);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.shadow-badge.blue {
+  background: linear-gradient(135deg,
+    var(--sylvanas-dark-blue) 0%,
+    var(--sylvanas-blue) 100%
+  );
+  box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);
+}
+
+.shadow-badge.outline {
+  background: transparent;
+  border: 1px solid var(--sylvanas-purple);
+  box-shadow: none;
+}
+
+/* ===== Magic Glass Panel ===== */
+.magic-glass {
+  position: relative;
+  background: rgba(14, 10, 29, 0.3);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  overflow: hidden;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.2),
+    0 0 15px rgba(153, 0, 255, 0.1);
+  border: 1px solid rgba(153, 0, 255, 0.1);
+}
+
+.magic-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    rgba(153, 0, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(0, 191, 255, 0.05) 100%
+  );
+  z-index: -1;
+}
+
+.magic-glass::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(153, 0, 255, 0.05) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: var(--magical-transition);
+}
+
+.magic-glass:hover::after {
+  opacity: 1;
+  transform: scale(0.8);
+}
+
+/* With floating elements */
+.magic-glass.floating-elements::before {
+  background: none;
+}
+
+.magic-glass.floating-elements .floating-element {
+  position: absolute;
+  background: rgba(153, 0, 255, 0.2);
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.5;
+  z-index: -1;
+}
+
+.magic-glass.floating-elements .floating-element:nth-child(1) {
+  width: 50px;
+  height: 50px;
+  top: 20%;
+  left: 10%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.magic-glass.floating-elements .floating-element:nth-child(2) {
+  width: 30px;
+  height: 30px;
+  top: 60%;
+  left: 80%;
+  background: rgba(0, 191, 255, 0.2);
+  animation: float 6s ease-in-out infinite reverse;
+}
+
+.magic-glass.floating-elements .floating-element:nth-child(3) {
+  width: 20px;
+  height: 20px;
+  top: 80%;
+  left: 20%;
+  background: rgba(255, 61, 180, 0.2);
+  animation: float 10s ease-in-out infinite;
+}

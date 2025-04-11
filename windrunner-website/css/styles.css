@@ -355,6 +355,17 @@ ul {
     z-index: -1;
 }
 
+.hero-portal {
+    position: absolute;
+    right: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 400px;
+    height: 400px;
+    z-index: -1;
+    pointer-events: none;
+}
+
 /* ===== Feature Highlights ===== */
 .feature-highlights {
     padding: 5rem 0;
