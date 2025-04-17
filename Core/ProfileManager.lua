@@ -1,842 +1,1183 @@
-local addonName, WR = ...
+------------------------------------------
+-- WindrunnerRotations - Profile Manager
+-- Author: VortexQ8
+-- The War Within Season 2
+------------------------------------------
 
--- ProfileManager module to handle player profiles and settings
+local addonName, WR = ...
 local ProfileManager = {}
 WR.ProfileManager = ProfileManager
 
--- Default profile template
-local DEFAULT_PROFILE = {
-    version = 1,
-    created = time(),
-    lastModified = time(),
-    name = "Default",
-    settings = {
-        general = {
-            enabled = true,
-            autoSwapInCombat = true,
-            autoEnableInDungeons = true,
-            autoEnableInRaids = true,
-            showMinimap = true,
-            debugMode = false,
-            useSmartTargeting = true,
-            throttleRate = 0.1,
-            combatOnly = true
-        },
-        rotation = {
-            useAOERotation = true,
-            aoeThreshold = 3,
-            interrupt = {
-                enabled = true,
-                priorityOnly = false,
-                delay = 0.3,
-                randomDelay = true,
-                minDelay = 0.1,
-                maxDelay = 0.5
-            },
-            defensives = {
-                enabled = true,
-                autoUseHealthstone = true,
-                healthstoneThreshold = 30,
-                autoCancelChanneling = true
-            },
-            bursting = {
-                enabled = true,
-                useTrinkets = true,
-                useRacials = true,
-                saveForBosses = false
-            }
-        },
-        class = {}, -- Class-specific settings populated per class
-        dungeons = {
-            useDungeonIntelligence = true,
-            priorityInterrupts = true,
-            autoTargetPriority = true,
-            optimizePulls = true,
-            adaptToAffixes = true
-        },
-        ui = {
-            scale = 1.0,
-            opacity = 0.9,
-            position = {
-                x = 0,
-                y = 0,
-                point = "CENTER",
-                relativeTo = "UIParent",
-                relativePoint = "CENTER"
-            },
-            locked = false,
-            showAllModes = false,
-            textColor = {r = 1, g = 1, b = 1, a = 1},
-            backgroundColor = {r = 0, g = 0, b = 0, a = 0.7},
-            borderColor = {r = 0.5, g = 0.5, b = 0.5, a = 1}
-        }
-    },
-    classProfiles = {} -- Populated with class-specific profiles at runtime
+-- Dependencies
+local API = WR.API
+local ConfigRegistry = WR.ConfigRegistry
+local ModuleManager = WR.ModuleManager
+
+-- Data storage
+local currentProfile = nil
+local profiles = {}
+local DEFAULT_PROFILE_NAME = "Default"
+local PROFILE_VERSION = 1
+local COMPRESSION_ENABLED = true
+local PROFILE_DB_VERSION = 1
+local profileChangeListeners = {}
+local exportFrame = nil
+local importFrame = nil
+local profileListFrame = nil
+local playerInfo = {
+    class = nil,
+    spec = nil
 }
 
--- Storage for loaded profiles
-ProfileManager.profiles = {}
-ProfileManager.currentProfile = nil
-ProfileManager.activeProfile = nil
-
--- Initialize the module
+-- Initialize the Profile Manager
 function ProfileManager:Initialize()
-    -- Create and initialize DB if not exists
-    self:InitializeDB()
+    -- Register settings
+    self:RegisterSettings()
     
-    -- Load the default profile for the current class if available
-    self:LoadDefaultProfileForClass()
+    -- Initialize player info
+    self:UpdatePlayerInfo()
     
-    WR:Debug("ProfileManager module initialized")
+    -- Register for events
+    self:RegisterEvents()
+    
+    -- Load profiles from saved variables
+    self:LoadProfiles()
+    
+    -- Create UI frames
+    self:CreateUI()
+    
+    API.PrintDebug("Profile Manager initialized")
+    return true
 end
 
--- Initialize the database and create default profiles if needed
-function ProfileManager:InitializeDB()
-    -- Ensure the SavedVariables table exists
-    WindrunnerRotationsDB = WindrunnerRotationsDB or {}
-    WindrunnerRotationsDB.profiles = WindrunnerRotationsDB.profiles or {}
-    WindrunnerRotationsDB.characterProfiles = WindrunnerRotationsDB.characterProfiles or {}
+-- Register settings
+function ProfileManager:RegisterSettings()
+    ConfigRegistry:RegisterSettings("ProfileManager", {
+        generalSettings = {
+            currentProfile = {
+                displayName = "Current Profile",
+                description = "The currently active profile",
+                type = "text",
+                default = DEFAULT_PROFILE_NAME
+            },
+            autoSwitchProfiles = {
+                displayName = "Auto-Switch Profiles",
+                description = "Automatically switch profiles based on spec",
+                type = "toggle",
+                default = true
+            },
+            defaultProfilesPerSpec = {
+                displayName = "Default Profile Per Spec",
+                description = "Set a default profile for each specialization",
+                type = "array",
+                default = {}
+            }
+        },
+        sharingSettings = {
+            includePersonalNotes = {
+                displayName = "Include Personal Notes",
+                description = "Include personal notes when sharing profiles",
+                type = "toggle",
+                default = true
+            },
+            compressProfiles = {
+                displayName = "Compress Profiles",
+                description = "Compress profiles when exporting to reduce string length",
+                type = "toggle",
+                default = true
+            },
+            includeSpecInfo = {
+                displayName = "Include Spec Information",
+                description = "Include class and spec information when sharing profiles",
+                type = "toggle",
+                default = true
+            }
+        },
+        advancedSettings = {
+            backupProfiles = {
+                displayName = "Backup Profiles",
+                description = "Create automatic backups of profiles when changed",
+                type = "toggle",
+                default = true
+            },
+            maxBackups = {
+                displayName = "Maximum Backups",
+                description = "Maximum number of backups to keep per profile",
+                type = "slider",
+                min = 1,
+                max = 10,
+                step = 1,
+                default = 3
+            },
+            profileVersioning = {
+                displayName = "Profile Versioning",
+                description = "Enable versioning for profiles",
+                type = "toggle",
+                default = true
+            }
+        }
+    })
+end
+
+-- Register for events
+function ProfileManager:RegisterEvents()
+    -- Register for player specialization change
+    API.RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function(unit)
+        if unit == "player" then
+            self:OnSpecializationChanged()
+        end
+    end)
     
-    local playerName = UnitName("player")
-    local realm = GetRealmName()
-    local fullName = playerName .. "-" .. realm
+    -- Register for addon loaded event
+    API.RegisterEvent("ADDON_LOADED", function(addon)
+        if addon == addonName then
+            self:OnAddonLoaded()
+        end
+    end)
     
-    -- Create character entry if needed
-    WindrunnerRotationsDB.characterProfiles[fullName] = WindrunnerRotationsDB.characterProfiles[fullName] or {}
+    -- Register for player logout
+    API.RegisterEvent("PLAYER_LOGOUT", function()
+        self:SaveProfiles()
+    end)
+}
+
+-- Update player info
+function ProfileManager:UpdatePlayerInfo()
+    -- Get player class
+    local _, class = UnitClass("player")
+    playerInfo.class = class
     
-    -- Create default profile if none exists
-    if not next(WindrunnerRotationsDB.profiles) then
-        self:CreateDefaultProfiles()
+    -- Get player spec
+    local specID = API.GetActiveSpecID()
+    playerInfo.spec = specID
+}
+
+-- Load profiles from saved variables
+function ProfileManager:LoadProfiles()
+    -- This would load from SavedVariables in a real addon
+    -- For implementation simplicity, we'll initialize with defaults
+    
+    -- Initialize default profiles for each class/spec
+    self:InitializeDefaultProfiles()
+    
+    -- Set current profile based on settings
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    currentProfile = settings.generalSettings.currentProfile
+    
+    -- If the current profile doesn't exist, create it
+    if not profiles[currentProfile] then
+        self:CreateProfile(currentProfile)
     end
-    
-    -- Store reference to profiles
-    self.profiles = WindrunnerRotationsDB.profiles
-end
+}
 
--- Create default profiles for all classes
-function ProfileManager:CreateDefaultProfiles()
-    local defaultClasses = {
-        "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", 
-        "DEATHKNIGHT", "SHAMAN", "MAGE", "WARLOCK", "MONK", 
+-- Save profiles to saved variables
+function ProfileManager:SaveProfiles()
+    -- This would save to SavedVariables in a real addon
+    -- For implementation simplicity, we'll just print a debug message
+    API.PrintDebug("Saving profiles to database")
+    
+    -- Update current profile in settings
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    settings.generalSettings.currentProfile = currentProfile
+}
+
+-- Initialize default profiles
+function ProfileManager:InitializeDefaultProfiles()
+    -- Create default profile
+    self:CreateProfile(DEFAULT_PROFILE_NAME)
+    
+    -- Initialize each class with default profiles
+    local classes = {
+        "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
+        "DEATHKNIGHT", "SHAMAN", "MAGE", "WARLOCK", "MONK",
         "DRUID", "DEMONHUNTER", "EVOKER"
     }
     
-    -- Create a global Default profile
-    local defaultProfile = self:CloneTable(DEFAULT_PROFILE)
-    defaultProfile.id = "default"
-    WindrunnerRotationsDB.profiles["default"] = defaultProfile
-    
-    -- Create default profile for each class
-    for _, class in ipairs(defaultClasses) do
-        local classProfile = self:CloneTable(DEFAULT_PROFILE)
-        classProfile.id = "default_" .. class
-        classProfile.name = "Default " .. class
-        classProfile.class = class
-        
-        -- Add class-specific settings
-        self:AddClassSpecificSettings(classProfile, class)
-        
-        -- Add spec profiles for the class
-        self:AddSpecProfiles(classProfile, class)
-        
-        -- Save the profile
-        WindrunnerRotationsDB.profiles["default_" .. class] = classProfile
+    for _, class in ipairs(classes) do
+        -- Create class-specific default profile
+        local profileName = class .. " Default"
+        self:CreateProfile(profileName, class)
     end
     
-    WR:Debug("Created default profiles for all classes")
-end
-
--- Add class-specific settings to a profile
-function ProfileManager:AddClassSpecificSettings(profile, class)
-    -- Initialize class settings
-    profile.settings.class = {}
-    
-    -- Add general class settings
-    if class == "WARRIOR" then
-        profile.settings.class.useCharge = true
-        profile.settings.class.useHeroicLeap = true
-        profile.settings.class.prioritizeRage = true
-    elseif class == "PALADIN" then
-        profile.settings.class.useBlessing = true
-        profile.settings.class.prioritizeHolyPower = true
-        profile.settings.class.useLayOnHands = true
-    elseif class == "HUNTER" then
-        profile.settings.class.autoPetSummon = true
-        profile.settings.class.autoPetMend = true
-        profile.settings.class.useMisdirection = true
-    elseif class == "ROGUE" then
-        profile.settings.class.usePoisons = true
-        profile.settings.class.useVanish = true
-        profile.settings.class.useTricksOfTrade = true
-    elseif class == "PRIEST" then
-        profile.settings.class.useDesperatePrayer = true
-        profile.settings.class.useFade = true
-        profile.settings.class.useLeapOfFaith = false
-    elseif class == "DEATHKNIGHT" then
-        profile.settings.class.useDeathGrip = true
-        profile.settings.class.useRaiseAlly = true
-        profile.settings.class.prioritizeRunicPower = true
-    elseif class == "SHAMAN" then
-        profile.settings.class.useEarthShield = true
-        profile.settings.class.useElementals = true
-        profile.settings.class.prioritizeManaTotems = true
-    elseif class == "MAGE" then
-        profile.settings.class.useIceBlock = true
-        profile.settings.class.useColdSnap = true
-        profile.settings.class.prioritizeProcs = true
-    elseif class == "WARLOCK" then
-        profile.settings.class.autoPetSummon = true
-        profile.settings.class.useHealthFunnel = true
-        profile.settings.class.useSoulstone = true
-    elseif class == "MONK" then
-        profile.settings.class.useTouchOfKarma = true
-        profile.settings.class.useZen = true
-        profile.settings.class.prioritizeChi = true
-    elseif class == "DRUID" then
-        profile.settings.class.useShapeshiftTravel = true
-        profile.settings.class.useRebirth = true
-        profile.settings.class.prioritizeEclipse = true
-    elseif class == "DEMONHUNTER" then
-        profile.settings.class.useChaosNova = true
-        profile.settings.class.useGlide = true
-        profile.settings.class.prioritizeFury = true
-    elseif class == "EVOKER" then
-        profile.settings.class.useHover = true
-        profile.settings.class.useCauterizingFlame = true
-        profile.settings.class.prioritizeEssence = true
-    end
-    
-    -- Add more complex class settings based on advanced mechanics
-    self:AddAdvancedClassSettings(profile, class)
-end
-
--- Add advanced class settings
-function ProfileManager:AddAdvancedClassSettings(profile, class)
-    -- Add settings for advanced class mechanics
-    if class == "WARRIOR" then
-        profile.settings.class.advanced = {
-            useVictoryRush = true,
-            rageDumpThreshold = 80,
-            enrageUptime = true,
-            shieldBlockUptime = true
-        }
-    elseif class == "PALADIN" then
-        profile.settings.class.advanced = {
-            adaptAuraMastery = true,
-            divineShieldCancel = true,
-            consecrationUptime = true,
-            avengingWrathOptimal = true
-        }
-    elseif class == "HUNTER" then
-        profile.settings.class.advanced = {
-            aspectOfTheWild = true,
-            killCommandPriority = true,
-            barbedShotUptime = true,
-            wildMarksOptimal = true
-        }
-    elseif class == "ROGUE" then
-        profile.settings.class.advanced = {
-            sliceAndDiceUptime = true,
-            rollTheBonesOptimal = true,
-            shadowDanceOptimal = true,
-            ruptureUptime = true
-        }
-    elseif class == "PRIEST" then
-        profile.settings.class.advanced = {
-            powerWordShieldRotation = true,
-            mindBlastOnCD = true,
-            voidformOptimal = true,
-            spiritShellOptimal = true
-        }
-    elseif class == "DEATHKNIGHT" then
-        profile.settings.class.advanced = {
-            runeEfficiency = true,
-            diseaseUptime = true,
-            breathOptimal = true,
-            armyOptimal = true
-        }
-    elseif class == "SHAMAN" then
-        profile.settings.class.advanced = {
-            flameShockUptime = true,
-            lavaBurstOptimal = true,
-            maelstromEfficiency = true,
-            ascendanceOptimal = true
-        }
-    elseif class == "MAGE" then
-        profile.settings.class.advanced = {
-            arcaneChargesBalance = true,
-            hotStreakOptimal = true,
-            iciclesOptimal = true,
-            manaGemEfficiency = true
-        }
-    elseif class == "WARLOCK" then
-        profile.settings.class.advanced = {
-            dotUptime = true,
-            shardEfficiency = true,
-            darkglareOptimal = true,
-            tyrantOptimal = true
-        }
-    elseif class == "MONK" then
-        profile.settings.class.advanced = {
-            blackoutComboOptimal = true,
-            tigerPalmEfficiency = true,
-            celestialAlignmentOptimal = true,
-            risingSunKickOptimal = true
-        }
-    elseif class == "DRUID" then
-        profile.settings.class.advanced = {
-            eclipseOptimal = true,
-            ironfurUptime = true,
-            savageRoarUptime = true,
-            lifebloomUptime = true
-        }
-    elseif class == "DEMONHUNTER" then
-        profile.settings.class.advanced = {
-            eyeBeamEfficiency = true,
-            metamorphosisOptimal = true,
-            demonSpikeUptime = true,
-            soulFragmentsTracker = true
-        }
-    elseif class == "EVOKER" then
-        profile.settings.class.advanced = {
-            empowerManagement = true,
-            dragonrageOptimal = true,
-            livingFlameEfficiency = true,
-            essenceManagement = true
-        }
-    end
-end
-
--- Add spec profiles for a class
-function ProfileManager:AddSpecProfiles(profile, class)
-    profile.classProfiles = {}
-    
-    -- Get the specs for this class
-    local specs = self:GetSpecsForClass(class)
-    
-    -- Create a profile for each spec
-    for specID, specName in pairs(specs) do
-        local specProfile = {
-            name = specName,
-            specID = specID,
-            enabled = true,
-            settings = {
-                general = {
-                    priorityTargeting = true,
-                    aoeThreshold = 3,
-                    burstMode = "auto" -- auto, manual, boss, encounter
-                },
-                rotationSettings = {}, -- Populated with spec-specific rotation settings
-                talents = {} -- Populated with talent build recommendations if enabled
-            }
-        }
-        
-        -- Add spec-specific rotation settings
-        self:AddSpecRotationSettings(specProfile, class, specID)
-        
-        -- Add the spec profile
-        profile.classProfiles[specID] = specProfile
-    end
-end
-
--- Get the specs for a class
-function ProfileManager:GetSpecsForClass(class)
-    local specs = {}
-    
-    if class == "WARRIOR" then
-        specs[71] = "Arms"
-        specs[72] = "Fury"
-        specs[73] = "Protection"
-    elseif class == "PALADIN" then
-        specs[65] = "Holy"
-        specs[66] = "Protection"
-        specs[70] = "Retribution"
-    elseif class == "HUNTER" then
-        specs[253] = "Beast Mastery"
-        specs[254] = "Marksmanship"
-        specs[255] = "Survival"
-    elseif class == "ROGUE" then
-        specs[259] = "Assassination"
-        specs[260] = "Outlaw"
-        specs[261] = "Subtlety"
-    elseif class == "PRIEST" then
-        specs[256] = "Discipline"
-        specs[257] = "Holy"
-        specs[258] = "Shadow"
-    elseif class == "DEATHKNIGHT" then
-        specs[250] = "Blood"
-        specs[251] = "Frost"
-        specs[252] = "Unholy"
-    elseif class == "SHAMAN" then
-        specs[262] = "Elemental"
-        specs[263] = "Enhancement"
-        specs[264] = "Restoration"
-    elseif class == "MAGE" then
-        specs[62] = "Arcane"
-        specs[63] = "Fire"
-        specs[64] = "Frost"
-    elseif class == "WARLOCK" then
-        specs[265] = "Affliction"
-        specs[266] = "Demonology"
-        specs[267] = "Destruction"
-    elseif class == "MONK" then
-        specs[268] = "Brewmaster"
-        specs[269] = "Windwalker"
-        specs[270] = "Mistweaver"
-    elseif class == "DRUID" then
-        specs[102] = "Balance"
-        specs[103] = "Feral"
-        specs[104] = "Guardian"
-        specs[105] = "Restoration"
-    elseif class == "DEMONHUNTER" then
-        specs[577] = "Havoc"
-        specs[581] = "Vengeance"
-    elseif class == "EVOKER" then
-        specs[1467] = "Devastation"
-        specs[1468] = "Preservation"
-        specs[1473] = "Augmentation"
-    end
-    
-    return specs
-end
-
--- Add spec-specific rotation settings
-function ProfileManager:AddSpecRotationSettings(specProfile, class, specID)
-    -- Initialize rotation settings
-    specProfile.settings.rotationSettings = {
-        prioritizeDefensives = false,
-        prioritizeMovement = false,
-        prioritizeInterrupts = true,
-        useDefaultRotation = true,
-        customRotation = false,
-        customRotationRules = {},
-        optimizeSingleTarget = true,
-        optimizeAoE = true,
-        optimizeCleave = true,
-        adaptToEncounter = true
-    }
-    
-    -- Add spec-specific settings based on role
-    local role = self:GetRoleForSpec(class, specID)
-    
-    if role == "TANK" then
-        specProfile.settings.rotationSettings.prioritizeDefensives = true
-        specProfile.settings.rotationSettings.threatGeneration = true
-        specProfile.settings.rotationSettings.activeMitigation = true
-        specProfile.settings.rotationSettings.defensiveCooldowns = "intelligent" -- intelligent, manual, automatic
-    elseif role == "HEALER" then
-        specProfile.settings.rotationSettings.healingMode = "intelligent" -- intelligent, efficiency, throughput
-        specProfile.settings.rotationSettings.prioritizeDispels = true
-        specProfile.settings.rotationSettings.manaEfficiency = true
-        specProfile.settings.rotationSettings.damageWhenHealing = false
-    elseif role == "DAMAGER" then
-        specProfile.settings.rotationSettings.damagePriority = "single" -- single, cleave, aoe
-        specProfile.settings.rotationSettings.resourceEfficiency = true
-        specProfile.settings.rotationSettings.cooldownUsage = "intelligent" -- intelligent, manual, on cooldown
-        specProfile.settings.rotationSettings.adaptToPhases = true
-    end
-    
-    -- Add further spec-specific settings
-    if class == "WARRIOR" then
-        if specID == 71 then -- Arms
-            specProfile.settings.rotationSettings.mortalStrikePriority = true
-            specProfile.settings.rotationSettings.executePhase = true
-            specProfile.settings.rotationSettings.colossusSmashWindow = true
-        elseif specID == 72 then -- Fury
-            specProfile.settings.rotationSettings.enrageUptime = true
-            specProfile.settings.rotationSettings.rampagePriority = true
-            specProfile.settings.rotationSettings.executePhase = true
-        elseif specID == 73 then -- Protection
-            specProfile.settings.rotationSettings.shieldBlockUptime = true
-            specProfile.settings.rotationSettings.ignorePainEfficiency = true
-            specProfile.settings.rotationSettings.revengeOptimization = true
-        end
-    elseif class == "PALADIN" then
-        if specID == 65 then -- Holy
-            specProfile.settings.rotationSettings.holyShockPriority = true
-            specProfile.settings.rotationSettings.lightOfDawnOptimal = true
-            specProfile.settings.rotationSettings.beaconUptime = true
-        elseif specID == 66 then -- Protection
-            specProfile.settings.rotationSettings.shieldOfRighteousUptime = true
-            specProfile.settings.rotationSettings.consecrationUptime = true
-            specProfile.settings.rotationSettings.hammerOfWrath = true
-        elseif specID == 70 then -- Retribution
-            specProfile.settings.rotationSettings.judgmentWindow = true
-            specProfile.settings.rotationSettings.divineStormPriority = true
-            specProfile.settings.rotationSettings.executionesSentence = true
-        end
-    elseif class == "HUNTER" then
-        if specID == 253 then -- Beast Mastery
-            specProfile.settings.rotationSettings.barbedShotUptime = true
-            specProfile.settings.rotationSettings.beastCleavePriority = true
-            specProfile.settings.rotationSettings.aspectOfTheWild = true
-        elseif specID == 254 then -- Marksmanship
-            specProfile.settings.rotationSettings.aimedShotPriority = true
-            specProfile.settings.rotationSettings.preciseShots = true
-            specProfile.settings.rotationSettings.trickShotsWindow = true
-        elseif specID == 255 then -- Survival
-            specProfile.settings.rotationSettings.wildfirebombPriority = true
-            specProfile.settings.rotationSettings.coordinatedAssault = true
-            specProfile.settings.rotationSettings.mongooseBite = true
-        end
-    end
-    
-    -- Continue for other classes and their specs...
-    -- For brevity, only warrior, paladin, and hunter examples are shown
-    
-    -- Additional optimization settings can be added as needed for each spec
-end
-
--- Get the role for a spec
-function ProfileManager:GetRoleForSpec(class, specID)
-    -- Tank specs
-    if (class == "WARRIOR" and specID == 73) or
-       (class == "PALADIN" and specID == 66) or
-       (class == "DEATHKNIGHT" and specID == 250) or
-       (class == "MONK" and specID == 268) or
-       (class == "DRUID" and specID == 104) or
-       (class == "DEMONHUNTER" and specID == 581) then
-        return "TANK"
-    -- Healer specs
-    elseif (class == "PALADIN" and specID == 65) or
-           (class == "PRIEST" and (specID == 256 or specID == 257)) or
-           (class == "SHAMAN" and specID == 264) or
-           (class == "MONK" and specID == 270) or
-           (class == "DRUID" and specID == 105) or
-           (class == "EVOKER" and specID == 1468) then
-        return "HEALER"
-    -- All other specs are DPS
-    else
-        return "DAMAGER"
-    end
-end
-
--- Load the default profile for the current player's class
-function ProfileManager:LoadDefaultProfileForClass()
-    local _, class = UnitClass("player")
-    local profileKey = "default_" .. class
-    
-    if self.profiles[profileKey] then
-        self.currentProfile = profileKey
-        self.activeProfile = self:CloneTable(self.profiles[profileKey])
-        WR:Debug("Loaded default profile for", class)
-    else
-        -- Fallback to global default
-        self.currentProfile = "default"
-        self.activeProfile = self:CloneTable(self.profiles["default"])
-        WR:Debug("Loaded global default profile")
-    end
-    
-    -- Apply the profile
-    self:ApplyProfile(self.activeProfile)
-end
-
--- Apply a profile's settings to the addon
-function ProfileManager:ApplyProfile(profile)
-    if not profile then return end
-    
-    -- Apply general settings
-    WR.Settings = WR.Settings or {}
-    WR.Settings.general = self:CloneTable(profile.settings.general)
-    WR.Settings.rotation = self:CloneTable(profile.settings.rotation)
-    WR.Settings.class = self:CloneTable(profile.settings.class)
-    WR.Settings.dungeons = self:CloneTable(profile.settings.dungeons)
-    WR.Settings.ui = self:CloneTable(profile.settings.ui)
-    
-    -- Apply class/spec specific settings if available
-    local _, class = UnitClass("player")
-    if class == profile.class then
-        local specID = GetSpecialization() and GetSpecializationInfo(GetSpecialization()) or nil
-        
-        if specID and profile.classProfiles and profile.classProfiles[specID] then
-            WR.Settings.spec = self:CloneTable(profile.classProfiles[specID].settings)
-            WR:Debug("Applied spec-specific settings for", profile.classProfiles[specID].name)
-        else
-            WR.Settings.spec = {}
-            WR:Debug("No spec-specific settings found")
-        end
-    else
-        WR.Settings.spec = {}
-        WR:Debug("Profile is for a different class")
-    end
-    
-    -- Signal that settings have changed
-    self:TriggerSettingsChanged()
-end
+    -- Initialize specific class-spec profiles (just a few examples)
+    self:CreateProfile("Fire Mage Mythic+", "MAGE", 2)
+    self:CreateProfile("Frost Mage Raid", "MAGE", 3)
+    self:CreateProfile("Affliction Warlock Mythic+", "WARLOCK", 1)
+    self:CreateProfile("Affliction Warlock Raid", "WARLOCK", 1)
+}
 
 -- Create a new profile
-function ProfileManager:CreateProfile(name, copyFrom)
-    if not name or name == "" then
-        name = "New Profile " .. os.date("%Y-%m-%d %H:%M:%S")
-    end
-    
-    local sourceProfile
-    if copyFrom and self.profiles[copyFrom] then
-        sourceProfile = self.profiles[copyFrom]
-    else
-        -- Use current active profile as source
-        sourceProfile = self.activeProfile
-    end
-    
-    -- Create new profile
-    local newProfile = self:CloneTable(sourceProfile)
-    newProfile.id = "profile_" .. time() .. "_" .. math.random(1000, 9999)
-    newProfile.name = name
-    newProfile.created = time()
-    newProfile.lastModified = time()
-    
-    -- Save to DB
-    self.profiles[newProfile.id] = newProfile
-    WindrunnerRotationsDB.profiles[newProfile.id] = newProfile
-    
-    WR:Debug("Created new profile:", name)
-    return newProfile.id
-end
-
--- Delete a profile
-function ProfileManager:DeleteProfile(profileID)
-    if not profileID or not self.profiles[profileID] then return false end
-    
-    -- Don't allow deleting default profiles
-    if profileID == "default" or profileID:match("^default_") then
-        WR:Debug("Cannot delete default profiles")
+function ProfileManager:CreateProfile(name, class, spec)
+    -- Skip if profile already exists
+    if profiles[name] then
         return false
     end
     
-    -- Remove from DB
-    self.profiles[profileID] = nil
-    WindrunnerRotationsDB.profiles[profileID] = nil
+    -- Create new profile
+    profiles[name] = {
+        name = name,
+        class = class,
+        spec = spec,
+        version = PROFILE_VERSION,
+        created = time(),
+        lastModified = time(),
+        settings = {},
+        notes = "",
+        author = UnitName("player"),
+        realm = GetRealmName(),
+        backups = {}
+    }
     
-    -- If this was the active profile, load the default
-    if self.currentProfile == profileID then
-        self:LoadDefaultProfileForClass()
+    -- Initialize settings with defaults
+    if class and spec then
+        -- Copy default settings for this class/spec
+        profiles[name].settings = self:GetDefaultSettingsForClassSpec(class, spec)
+    else
+        -- Generic default settings
+        profiles[name].settings = self:GetDefaultSettings()
     end
     
-    WR:Debug("Deleted profile:", profileID)
+    API.PrintDebug("Created profile: " .. name)
     return true
 end
 
--- Switch to a different profile
-function ProfileManager:SwitchProfile(profileID)
-    if not profileID or not self.profiles[profileID] then return false end
+-- Delete a profile
+function ProfileManager:DeleteProfile(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
+    end
     
-    -- Load the profile
-    self.currentProfile = profileID
-    self.activeProfile = self:CloneTable(self.profiles[profileID])
+    -- Skip if it's the current profile
+    if name == currentProfile then
+        API.PrintError("Cannot delete the current profile")
+        return false
+    end
     
-    -- Apply the profile
-    self:ApplyProfile(self.activeProfile)
+    -- Delete the profile
+    profiles[name] = nil
     
-    -- Update character's saved profile
-    local playerName = UnitName("player")
-    local realm = GetRealmName()
-    local fullName = playerName .. "-" .. realm
-    
-    WindrunnerRotationsDB.characterProfiles[fullName].profile = profileID
-    
-    WR:Debug("Switched to profile:", self.profiles[profileID].name)
+    API.PrintDebug("Deleted profile: " .. name)
     return true
 end
 
--- Save current profile changes
-function ProfileManager:SaveProfile()
-    if not self.currentProfile or not self.activeProfile then return false end
+-- Rename a profile
+function ProfileManager:RenameProfile(oldName, newName)
+    -- Skip if old profile doesn't exist
+    if not profiles[oldName] then
+        return false
+    end
+    
+    -- Skip if new name already exists
+    if profiles[newName] then
+        API.PrintError("Profile with name '" .. newName .. "' already exists")
+        return false
+    end
+    
+    -- Copy the profile
+    profiles[newName] = table.copy(profiles[oldName])
+    profiles[newName].name = newName
+    
+    -- Update current profile if needed
+    if oldName == currentProfile then
+        currentProfile = newName
+    end
+    
+    -- Delete old profile
+    profiles[oldName] = nil
+    
+    API.PrintDebug("Renamed profile: " .. oldName .. " to " .. newName)
+    return true
+end
+
+-- Copy a profile
+function ProfileManager:CopyProfile(sourceName, destName)
+    -- Skip if source profile doesn't exist
+    if not profiles[sourceName] then
+        return false
+    end
+    
+    -- Skip if destination profile already exists
+    if profiles[destName] then
+        API.PrintError("Profile with name '" .. destName .. "' already exists")
+        return false
+    end
+    
+    -- Copy the profile
+    profiles[destName] = table.copy(profiles[sourceName])
+    profiles[destName].name = destName
+    profiles[destName].created = time()
+    profiles[destName].lastModified = time()
+    
+    API.PrintDebug("Copied profile: " .. sourceName .. " to " .. destName)
+    return true
+end
+
+-- Reset a profile to defaults
+function ProfileManager:ResetProfile(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
+    end
+    
+    -- Backup current settings
+    if profiles[name].settings then
+        -- Create backup
+        self:CreateProfileBackup(name)
+    end
+    
+    -- Reset to defaults
+    if profiles[name].class and profiles[name].spec then
+        -- Reset to class/spec defaults
+        profiles[name].settings = self:GetDefaultSettingsForClassSpec(profiles[name].class, profiles[name].spec)
+    else
+        -- Reset to generic defaults
+        profiles[name].settings = self:GetDefaultSettings()
+    end
     
     -- Update last modified
-    self.activeProfile.lastModified = time()
+    profiles[name].lastModified = time()
     
-    -- Save to DB
-    self.profiles[self.currentProfile] = self:CloneTable(self.activeProfile)
-    WindrunnerRotationsDB.profiles[self.currentProfile] = self:CloneTable(self.activeProfile)
+    -- Notify listeners
+    self:NotifyProfileChanged(name)
     
-    WR:Debug("Saved profile changes:", self.activeProfile.name)
+    API.PrintDebug("Reset profile: " .. name)
     return true
 end
 
--- Export a profile to string
-function ProfileManager:ExportProfile(profileID)
-    if not profileID then profileID = self.currentProfile end
-    if not profileID or not self.profiles[profileID] then return nil end
-    
-    -- Clone the profile to remove any functions or other non-serializable data
-    local exportProfile = self:CloneTable(self.profiles[profileID])
-    
-    -- Add export metadata
-    exportProfile.exportVersion = 1
-    exportProfile.exportDate = time()
-    
-    -- Convert to string (using LibSerialize or similar would be ideal)
-    local serialized = self:Serialize(exportProfile)
-    -- Compress and encode for sharing
-    local encoded = self:EncodeForExport(serialized)
-    
-    WR:Debug("Exported profile:", exportProfile.name)
-    return encoded
-end
-
--- Import a profile from string
-function ProfileManager:ImportProfile(importString)
-    if not importString or importString == "" then return false, "Empty import string" end
-    
-    -- Decode and decompress
-    local serialized = self:DecodeFromImport(importString)
-    if not serialized then return false, "Invalid import format" end
-    
-    -- Deserialize
-    local success, importProfile = self:Deserialize(serialized)
-    if not success or not importProfile then return false, "Failed to deserialize profile" end
-    
-    -- Validate the imported profile
-    if not importProfile.name or not importProfile.settings then
-        return false, "Invalid profile structure"
+-- Create a backup of a profile
+function ProfileManager:CreateProfileBackup(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
     end
     
-    -- Create a new unique ID for the imported profile
-    importProfile.id = "imported_" .. time() .. "_" .. math.random(1000, 9999)
-    importProfile.name = importProfile.name .. " (Imported)"
-    importProfile.imported = time()
-    
-    -- Save to DB
-    self.profiles[importProfile.id] = importProfile
-    WindrunnerRotationsDB.profiles[importProfile.id] = importProfile
-    
-    WR:Debug("Imported profile:", importProfile.name)
-    return true, importProfile.id
-end
-
--- Very simple serialization for demonstration
--- In a real addon, use a proper serialization library like LibSerialize
-function ProfileManager:Serialize(data)
-    -- Simple approach for demo: convert to a string representation
-    -- This is not a proper implementation - just a placeholder
-    return table.concat({"WR_PROFILE", self:TableToString(data)}, ":")
-end
-
--- Very simple deserialization for demonstration
-function ProfileManager:Deserialize(serialized)
-    -- Simple approach for demo: parse string representation back to table
-    -- This is not a proper implementation - just a placeholder
-    local prefix, dataString = strsplit(":", serialized, 2)
-    if prefix ~= "WR_PROFILE" then
-        return false, nil
+    -- Skip if backups are disabled
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    if not settings.advancedSettings.backupProfiles then
+        return false
     end
     
-    return true, self:StringToTable(dataString)
+    -- Create backup
+    local backup = {
+        timestamp = time(),
+        settings = table.copy(profiles[name].settings)
+    }
+    
+    -- Add to backups
+    if not profiles[name].backups then
+        profiles[name].backups = {}
+    end
+    
+    table.insert(profiles[name].backups, backup)
+    
+    -- Trim backups if needed
+    local maxBackups = settings.advancedSettings.maxBackups
+    while #profiles[name].backups > maxBackups do
+        table.remove(profiles[name].backups, 1)
+    end
+    
+    API.PrintDebug("Created backup for profile: " .. name)
+    return true
 end
 
--- Encode for export (compression + Base64 encoding)
-function ProfileManager:EncodeForExport(serialized)
-    -- Placeholder for proper implementation
-    -- In a real addon, compress with LibDeflate and encode with Base64 or similar
-    return serialized -- Just return as-is for demonstration
+-- Restore a profile from backup
+function ProfileManager:RestoreProfileBackup(name, index)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
+    end
+    
+    -- Skip if backup doesn't exist
+    if not profiles[name].backups or not profiles[name].backups[index] then
+        return false
+    end
+    
+    -- Create a backup of current settings first
+    self:CreateProfileBackup(name)
+    
+    -- Restore from backup
+    profiles[name].settings = table.copy(profiles[name].backups[index].settings)
+    profiles[name].lastModified = time()
+    
+    -- Notify listeners
+    self:NotifyProfileChanged(name)
+    
+    API.PrintDebug("Restored profile: " .. name .. " from backup " .. index)
+    return true
 end
 
--- Decode from import string
-function ProfileManager:DecodeFromImport(importString)
-    -- Placeholder for proper implementation
-    -- In a real addon, decode from Base64 and decompress
-    return importString -- Just return as-is for demonstration
-end
+-- Switch to a profile
+function ProfileManager:SwitchProfile(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
+    end
+    
+    -- Skip if it's already the current profile
+    if name == currentProfile then
+        return true
+    end
+    
+    -- Switch profile
+    currentProfile = name
+    
+    -- Apply settings from the profile
+    self:ApplyProfileSettings(name)
+    
+    -- Notify listeners
+    self:NotifyProfileChanged(name)
+    
+    API.PrintDebug("Switched to profile: " .. name)
+    return true
+}
 
--- Very simple table to string conversion
-function ProfileManager:TableToString(tbl)
-    -- This is an extremely simplified placeholder for demonstration purposes
-    -- In a real addon, use a proper serialization library
-    return tostring(tbl)
-end
+-- Apply settings from a profile
+function ProfileManager:ApplyProfileSettings(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return false
+    end
+    
+    -- Apply settings
+    -- This would apply all settings from the profile
+    -- For implementation simplicity, we'll just print a debug message
+    API.PrintDebug("Applying settings from profile: " .. name)
+    
+    -- This would iterate through all settings categories and apply them
+    for category, settings in pairs(profiles[name].settings) do
+        API.PrintDebug("Applying settings for category: " .. category)
+        
+        -- Apply settings to ConfigRegistry
+        -- ConfigRegistry:ApplySettings(category, settings)
+    end
+    
+    return true
+}
 
--- Very simple string to table conversion
-function ProfileManager:StringToTable(str)
-    -- This is an extremely simplified placeholder for demonstration purposes
-    -- In a real addon, use a proper serialization library
+-- Get default settings
+function ProfileManager:GetDefaultSettings()
+    -- This would return default settings for all categories
+    -- For implementation simplicity, we'll return an empty table
     return {}
-end
+}
 
--- Get a list of all profiles
-function ProfileManager:GetProfileList()
-    local list = {}
-    
-    for id, profile in pairs(self.profiles) do
-        table.insert(list, {
-            id = id,
-            name = profile.name,
-            class = profile.class,
-            created = profile.created,
-            lastModified = profile.lastModified
-        })
+-- Get default settings for a class/spec
+function ProfileManager:GetDefaultSettingsForClassSpec(class, spec)
+    -- This would return default settings for the specified class/spec
+    -- For implementation simplicity, we'll return an empty table
+    return {}
+}
+
+-- Export a profile
+function ProfileManager:ExportProfile(name)
+    -- Skip if profile doesn't exist
+    if not profiles[name] then
+        return nil
     end
     
-    return list
-end
-
--- Get a specific profile by ID
-function ProfileManager:GetProfile(profileID)
-    if not profileID then return nil end
-    return self.profiles[profileID]
-end
-
--- Get the current active profile
-function ProfileManager:GetActiveProfile()
-    return self.activeProfile
-end
-
--- Update a setting in the active profile
-function ProfileManager:UpdateSetting(path, value)
-    if not path or not self.activeProfile then return false end
+    -- Prepare export data
+    local exportData = {
+        name = profiles[name].name,
+        version = PROFILE_VERSION,
+        dbVersion = PROFILE_DB_VERSION,
+        settings = profiles[name].settings,
+        notes = profiles[name].notes,
+        author = profiles[name].author,
+        realm = profiles[name].realm,
+        created = profiles[name].created
+    }
     
-    -- Parse the path into components
-    local components = {}
-    for component in string.gmatch(path, "([^%.]+)") do
-        table.insert(components, component)
+    -- Include class/spec info if enabled
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    if settings.sharingSettings.includeSpecInfo then
+        exportData.class = profiles[name].class
+        exportData.spec = profiles[name].spec
     end
     
-    -- Navigate to the target setting
-    local current = self.activeProfile.settings
-    for i = 1, #components - 1 do
-        local component = components[i]
-        if not current[component] then
-            current[component] = {}
-        end
-        current = current[component]
+    -- Include personal notes if enabled
+    if not settings.sharingSettings.includePersonalNotes then
+        exportData.notes = nil
     end
     
-    -- Update the value
-    current[components[#components]] = value
+    -- Serialize the data
+    local serialized = self:SerializeData(exportData)
     
-    -- Update last modified
-    self.activeProfile.lastModified = time()
+    -- Compress if enabled
+    if settings.sharingSettings.compressProfiles then
+        serialized = self:CompressData(serialized)
+    end
     
-    -- Apply the change
-    self:ApplyProfile(self.activeProfile)
+    -- Encode for sharing
+    local encoded = self:EncodeForSharing(serialized)
+    
+    return encoded
+}
+
+-- Import a profile
+function ProfileManager:ImportProfile(encoded)
+    -- Decode the shared string
+    local serialized = self:DecodeFromSharing(encoded)
+    if not serialized then
+        API.PrintError("Invalid profile string")
+        return false
+    end
+    
+    -- Decompress if needed
+    if self:IsCompressedData(serialized) then
+        serialized = self:DecompressData(serialized)
+    end
+    
+    -- Deserialize the data
+    local importData = self:DeserializeData(serialized)
+    if not importData then
+        API.PrintError("Failed to deserialize profile data")
+        return false
+    end
+    
+    -- Validate the imported data
+    if not self:ValidateImportData(importData) then
+        API.PrintError("Invalid profile data")
+        return false
+    end
+    
+    -- Check if profile already exists
+    local profileName = importData.name
+    local counter = 1
+    
+    while profiles[profileName] do
+        profileName = importData.name .. " (" .. counter .. ")"
+        counter = counter + 1
+    end
+    
+    -- Create new profile
+    profiles[profileName] = {
+        name = profileName,
+        class = importData.class,
+        spec = importData.spec,
+        version = importData.version or PROFILE_VERSION,
+        created = time(),
+        lastModified = time(),
+        settings = importData.settings or {},
+        notes = importData.notes or "",
+        author = importData.author or "Unknown",
+        realm = importData.realm or "Unknown",
+        imported = true,
+        importedFrom = {
+            author = importData.author,
+            realm = importData.realm,
+            created = importData.created
+        },
+        backups = {}
+    }
+    
+    API.PrintDebug("Imported profile: " .. profileName)
+    return profileName
+}
+
+-- Validate import data
+function ProfileManager:ValidateImportData(data)
+    -- Check required fields
+    if not data.name or not data.settings or not data.version then
+        return false
+    end
+    
+    -- Check version compatibility
+    if data.dbVersion and data.dbVersion > PROFILE_DB_VERSION then
+        return false
+    end
     
     return true
-end
+}
 
--- Trigger an event notifying that settings have changed
-function ProfileManager:TriggerSettingsChanged()
-    -- Signal to other modules that settings have changed
-    if WR.Events then
-        WR.Events:TriggerEvent("SETTINGS_CHANGED")
-    end
-end
+-- Serialize data
+function ProfileManager:SerializeData(data)
+    -- In a real addon, this would use proper serialization
+    -- For implementation simplicity, we'll just convert to JSON
+    return JSON.stringify(data)
+}
 
--- Clone a table deeply
-function ProfileManager:CloneTable(src)
-    if type(src) ~= "table" then return src end
+-- Deserialize data
+function ProfileManager:DeserializeData(serialized)
+    -- In a real addon, this would use proper deserialization
+    -- For implementation simplicity, we'll just parse JSON
+    return JSON.parse(serialized)
+}
+
+-- Compress data
+function ProfileManager:CompressData(data)
+    -- In a real addon, this would use proper compression
+    -- For implementation simplicity, we'll just mark it as compressed
+    return "COMPRESSED:" .. data
+}
+
+-- Decompress data
+function ProfileManager:DecompressData(data)
+    -- In a real addon, this would use proper decompression
+    -- For implementation simplicity, we'll just remove the marker
+    return string.sub(data, 12)
+}
+
+-- Check if data is compressed
+function ProfileManager:IsCompressedData(data)
+    -- Check if data starts with compression marker
+    return string.sub(data, 1, 11) == "COMPRESSED:"
+}
+
+-- Encode for sharing
+function ProfileManager:EncodeForSharing(data)
+    -- In a real addon, this would use proper encoding (base64, etc)
+    -- For implementation simplicity, we'll just add a prefix
+    return "WR:" .. data
+}
+
+-- Decode from sharing
+function ProfileManager:DecodeFromSharing(encoded)
+    -- In a real addon, this would use proper decoding
+    -- For implementation simplicity, we'll just remove the prefix
     
-    local dest = {}
-    for k, v in pairs(src) do
-        if type(v) == "table" then
-            dest[k] = self:CloneTable(v)
+    -- Check if it's a valid WindrunnerRotations profile
+    if string.sub(encoded, 1, 3) ~= "WR:" then
+        return nil
+    end
+    
+    return string.sub(encoded, 4)
+}
+
+-- Register profile change listener
+function ProfileManager:RegisterProfileChangeListener(callback)
+    table.insert(profileChangeListeners, callback)
+}
+
+-- Notify profile changed
+function ProfileManager:NotifyProfileChanged(name)
+    for _, callback in ipairs(profileChangeListeners) do
+        callback(name)
+    end
+}
+
+-- On specialization changed
+function ProfileManager:OnSpecializationChanged()
+    -- Update player info
+    self:UpdatePlayerInfo()
+    
+    -- Check if we should auto-switch profiles
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    if settings.generalSettings.autoSwitchProfiles then
+        -- Get default profile for this spec
+        local defaultProfiles = settings.generalSettings.defaultProfilesPerSpec
+        local specKey = playerInfo.class .. "-" .. playerInfo.spec
+        
+        if defaultProfiles[specKey] and profiles[defaultProfiles[specKey]] then
+            -- Switch to the default profile for this spec
+            self:SwitchProfile(defaultProfiles[specKey])
+        end
+    end
+}
+
+-- On addon loaded
+function ProfileManager:OnAddonLoaded()
+    -- This would load profiles from saved variables
+    -- For implementation simplicity, we'll just initialize with defaults
+    self:LoadProfiles()
+}
+
+-- Create UI
+function ProfileManager:CreateUI()
+    -- Create export frame
+    exportFrame = self:CreateExportFrame()
+    exportFrame:Hide()
+    
+    -- Create import frame
+    importFrame = self:CreateImportFrame()
+    importFrame:Hide()
+    
+    -- Create profile list frame
+    profileListFrame = self:CreateProfileListFrame()
+    profileListFrame:Hide()
+}
+
+-- Create export frame
+function ProfileManager:CreateExportFrame()
+    -- Create a frame for exporting profiles
+    local frame = CreateFrame("Frame", "WindrunnerProfileExportFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(500, 300)
+    frame:SetPoint("CENTER", 0, 0)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    frame:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
+    frame:SetBackdropBorderColor(0.4, 0.6, 0.9, 0.8)
+    frame:SetFrameStrata("DIALOG")
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    
+    -- Add title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", 0, -10)
+    title:SetText("Export Profile")
+    
+    -- Add profile dropdown
+    local profileDropdown = CreateFrame("Frame", "WindrunnerProfileExportDropdown", frame, "UIDropDownMenuTemplate")
+    profileDropdown:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    
+    -- Add export box
+    local exportBox = CreateFrame("EditBox", "WindrunnerProfileExportBox", frame, "InputBoxTemplate")
+    exportBox:SetSize(460, 180)
+    exportBox:SetPoint("TOP", profileDropdown, "BOTTOM", 0, -20)
+    exportBox:SetAutoFocus(false)
+    exportBox:SetMultiLine(true)
+    exportBox:SetMaxLetters(9999999)
+    exportBox:SetFontObject("GameFontHighlight")
+    exportBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    
+    -- Add export button
+    local exportButton = CreateFrame("Button", "WindrunnerProfileExportButton", frame, "UIPanelButtonTemplate")
+    exportButton:SetSize(100, 25)
+    exportButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    exportButton:SetText("Export")
+    exportButton:SetScript("OnClick", function()
+        -- Get selected profile
+        local selectedProfile = UIDropDownMenu_GetSelectedValue(profileDropdown)
+        
+        -- Export profile
+        local exportString = self:ExportProfile(selectedProfile)
+        
+        -- Set export box text
+        exportBox:SetText(exportString)
+        exportBox:HighlightText()
+        exportBox:SetFocus()
+    end)
+    
+    -- Add close button
+    local closeButton = CreateFrame("Button", "WindrunnerProfileExportCloseButton", frame, "UIPanelButtonTemplate")
+    closeButton:SetSize(100, 25)
+    closeButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 10)
+    closeButton:SetText("Close")
+    closeButton:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+    
+    -- Initialize dropdown
+    UIDropDownMenu_Initialize(profileDropdown, function(self, level)
+        local info = UIDropDownMenu_CreateInfo()
+        
+        for name, _ in pairs(profiles) do
+            info.text = name
+            info.value = name
+            info.func = function(self)
+                UIDropDownMenu_SetSelectedValue(profileDropdown, self.value)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    
+    -- Set initial value
+    UIDropDownMenu_SetSelectedValue(profileDropdown, currentProfile)
+    UIDropDownMenu_SetWidth(profileDropdown, 200)
+    
+    -- Store references
+    frame.exportBox = exportBox
+    frame.exportButton = exportButton
+    frame.profileDropdown = profileDropdown
+    
+    return frame
+}
+
+-- Create import frame
+function ProfileManager:CreateImportFrame()
+    -- Create a frame for importing profiles
+    local frame = CreateFrame("Frame", "WindrunnerProfileImportFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(500, 300)
+    frame:SetPoint("CENTER", 0, 0)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    frame:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
+    frame:SetBackdropBorderColor(0.4, 0.6, 0.9, 0.8)
+    frame:SetFrameStrata("DIALOG")
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    
+    -- Add title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", 0, -10)
+    title:SetText("Import Profile")
+    
+    -- Add import box
+    local importBox = CreateFrame("EditBox", "WindrunnerProfileImportBox", frame, "InputBoxTemplate")
+    importBox:SetSize(460, 180)
+    importBox:SetPoint("TOP", title, "BOTTOM", 0, -30)
+    importBox:SetAutoFocus(false)
+    importBox:SetMultiLine(true)
+    importBox:SetMaxLetters(9999999)
+    importBox:SetFontObject("GameFontHighlight")
+    importBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    
+    -- Add import button
+    local importButton = CreateFrame("Button", "WindrunnerProfileImportButton", frame, "UIPanelButtonTemplate")
+    importButton:SetSize(100, 25)
+    importButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    importButton:SetText("Import")
+    importButton:SetScript("OnClick", function()
+        -- Get import string
+        local importString = importBox:GetText()
+        
+        -- Import profile
+        local profileName = self:ImportProfile(importString)
+        
+        if profileName then
+            -- Show success message
+            local resultText = frame.resultText
+            resultText:SetText("Successfully imported profile: " .. profileName)
+            resultText:SetTextColor(0, 1, 0, 1)
+            
+            -- Clear import box
+            importBox:SetText("")
         else
-            dest[k] = v
+            -- Show error message
+            local resultText = frame.resultText
+            resultText:SetText("Failed to import profile. Invalid profile string.")
+            resultText:SetTextColor(1, 0, 0, 1)
+        end
+    end)
+    
+    -- Add close button
+    local closeButton = CreateFrame("Button", "WindrunnerProfileImportCloseButton", frame, "UIPanelButtonTemplate")
+    closeButton:SetSize(100, 25)
+    closeButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 10)
+    closeButton:SetText("Close")
+    closeButton:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+    
+    -- Add result text
+    local resultText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    resultText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 40)
+    resultText:SetText("")
+    
+    -- Store references
+    frame.importBox = importBox
+    frame.importButton = importButton
+    frame.resultText = resultText
+    
+    return frame
+}
+
+-- Create profile list frame
+function ProfileManager:CreateProfileListFrame()
+    -- Create a frame for listing profiles
+    local frame = CreateFrame("Frame", "WindrunnerProfileListFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(500, 400)
+    frame:SetPoint("CENTER", 0, 0)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    })
+    frame:SetBackdropColor(0.1, 0.1, 0.1, 0.9)
+    frame:SetBackdropBorderColor(0.4, 0.6, 0.9, 0.8)
+    frame:SetFrameStrata("DIALOG")
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    
+    -- Add title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", 0, -10)
+    title:SetText("Profiles")
+    
+    -- Add scroll frame
+    local scrollFrame = CreateFrame("ScrollFrame", "WindrunnerProfileListScrollFrame", frame, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 10, -30)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -30, 40)
+    
+    -- Add content frame
+    local contentFrame = CreateFrame("Frame", "WindrunnerProfileListContentFrame", scrollFrame)
+    contentFrame:SetSize(scrollFrame:GetWidth(), 1000) -- Height will be set dynamically
+    scrollFrame:SetScrollChild(contentFrame)
+    
+    -- Add buttons
+    local newButton = CreateFrame("Button", "WindrunnerProfileNewButton", frame, "UIPanelButtonTemplate")
+    newButton:SetSize(80, 25)
+    newButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 10)
+    newButton:SetText("New")
+    newButton:SetScript("OnClick", function()
+        -- Show new profile dialog
+        self:ShowNewProfileDialog()
+    end)
+    
+    local importButton = CreateFrame("Button", "WindrunnerProfileImportButton", frame, "UIPanelButtonTemplate")
+    importButton:SetSize(80, 25)
+    importButton:SetPoint("LEFT", newButton, "RIGHT", 5, 0)
+    importButton:SetText("Import")
+    importButton:SetScript("OnClick", function()
+        -- Show import frame
+        importFrame:Show()
+    end)
+    
+    local closeButton = CreateFrame("Button", "WindrunnerProfileListCloseButton", frame, "UIPanelButtonTemplate")
+    closeButton:SetSize(80, 25)
+    closeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    closeButton:SetText("Close")
+    closeButton:SetScript("OnClick", function()
+        frame:Hide()
+    end)
+    
+    -- Store references
+    frame.scrollFrame = scrollFrame
+    frame.contentFrame = contentFrame
+    frame.newButton = newButton
+    frame.importButton = importButton
+    frame.profileButtons = {}
+    
+    -- Add refresh function
+    frame.Refresh = function()
+        self:RefreshProfileList(frame)
+    end
+    
+    return frame
+}
+
+-- Show export frame
+function ProfileManager:ShowExportFrame(profileName)
+    -- Set selected profile
+    UIDropDownMenu_SetSelectedValue(exportFrame.profileDropdown, profileName or currentProfile)
+    
+    -- Set export box text
+    local exportString = self:ExportProfile(profileName or currentProfile)
+    exportFrame.exportBox:SetText(exportString)
+    exportFrame.exportBox:HighlightText()
+    
+    -- Show frame
+    exportFrame:Show()
+    exportFrame.exportBox:SetFocus()
+}
+
+-- Show import frame
+function ProfileManager:ShowImportFrame()
+    -- Clear import box
+    importFrame.importBox:SetText("")
+    importFrame.resultText:SetText("")
+    
+    -- Show frame
+    importFrame:Show()
+    importFrame.importBox:SetFocus()
+}
+
+-- Show profile list
+function ProfileManager:ShowProfileList()
+    -- Refresh profile list
+    profileListFrame.Refresh()
+    
+    -- Show frame
+    profileListFrame:Show()
+}
+
+-- Refresh profile list
+function ProfileManager:RefreshProfileList(frame)
+    -- Clear existing buttons
+    for _, button in ipairs(frame.profileButtons) do
+        button:Hide()
+    end
+    frame.profileButtons = {}
+    
+    -- Add profile buttons
+    local yOffset = 0
+    local buttonHeight = 30
+    
+    for name, profile in pairs(profiles) do
+        -- Create button
+        local button = CreateFrame("Button", nil, frame.contentFrame, "BackdropTemplate")
+        button:SetSize(frame.contentFrame:GetWidth() - 20, buttonHeight)
+        button:SetPoint("TOPLEFT", frame.contentFrame, "TOPLEFT", 10, -yOffset)
+        button:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            tile = true,
+            tileSize = 16,
+            edgeSize = 1,
+            insets = { left = 1, right = 1, top = 1, bottom = 1 }
+        })
+        
+        -- Set button color
+        if name == currentProfile then
+            -- Current profile
+            button:SetBackdropColor(0.2, 0.4, 0.6, 0.8)
+            button:SetBackdropBorderColor(0.4, 0.6, 0.9, 0.8)
+        else
+            -- Other profile
+            button:SetBackdropColor(0.2, 0.2, 0.2, 0.8)
+            button:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
+        end
+        
+        -- Add highlight
+        button:SetHighlightTexture("Interface\\Buttons\\UI-Listbox-Highlight")
+        
+        -- Add profile name
+        local nameText = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        nameText:SetPoint("LEFT", 10, 0)
+        nameText:SetText(name)
+        
+        -- Add class/spec info if available
+        if profile.class and profile.spec then
+            local classSpecText = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            classSpecText:SetPoint("RIGHT", -100, 0)
+            
+            -- Get class/spec names
+            local className = profile.class
+            local specName = "Spec " .. profile.spec
+            
+            classSpecText:SetText(className .. " - " .. specName)
+        end
+        
+        -- Add buttons
+        local switchButton = CreateFrame("Button", nil, button, "UIPanelButtonTemplate")
+        switchButton:SetSize(60, 20)
+        switchButton:SetPoint("RIGHT", button, "RIGHT", -10, 0)
+        switchButton:SetText("Switch")
+        switchButton:SetScript("OnClick", function()
+            -- Switch to this profile
+            self:SwitchProfile(name)
+            
+            -- Refresh the list
+            frame.Refresh()
+        end)
+        
+        local exportButton = CreateFrame("Button", nil, button, "UIPanelButtonTemplate")
+        exportButton:SetSize(60, 20)
+        exportButton:SetPoint("RIGHT", switchButton, "LEFT", -5, 0)
+        exportButton:SetText("Export")
+        exportButton:SetScript("OnClick", function()
+            -- Show export frame for this profile
+            self:ShowExportFrame(name)
+        end)
+        
+        -- Set click handler
+        button:SetScript("OnClick", function()
+            -- Open profile options
+            self:ShowProfileOptions(name)
+        end)
+        
+        -- Disable switch button if it's the current profile
+        if name == currentProfile then
+            switchButton:Disable()
+        end
+        
+        -- Add to buttons list
+        table.insert(frame.profileButtons, button)
+        
+        -- Update offset
+        yOffset = yOffset + buttonHeight + 5
+    end
+    
+    -- Update content frame height
+    frame.contentFrame:SetHeight(yOffset)
+}
+
+-- Show profile options
+function ProfileManager:ShowProfileOptions(name)
+    -- This would show a dialog with profile options
+    -- For implementation simplicity, we'll just print a debug message
+    API.PrintDebug("Showing options for profile: " .. name)
+}
+
+-- Show new profile dialog
+function ProfileManager:ShowNewProfileDialog()
+    -- This would show a dialog for creating a new profile
+    -- For implementation simplicity, we'll just create a new profile
+    
+    -- Generate a unique name
+    local name = "New Profile"
+    local counter = 1
+    
+    while profiles[name] do
+        name = "New Profile " .. counter
+        counter = counter + 1
+    end
+    
+    -- Create the profile
+    self:CreateProfile(name)
+    
+    -- Refresh the profile list
+    profileListFrame.Refresh()
+}
+
+-- Open profile manager
+function ProfileManager:OpenProfileManager()
+    self:ShowProfileList()
+}
+
+-- Get active profile name
+function ProfileManager:GetActiveProfileName()
+    return currentProfile
+}
+
+-- Get active profile
+function ProfileManager:GetActiveProfile()
+    return profiles[currentProfile]
+}
+
+-- Get profile by name
+function ProfileManager:GetProfile(name)
+    return profiles[name]
+}
+
+-- Get all profiles
+function ProfileManager:GetAllProfiles()
+    return profiles
+}
+
+-- Get profiles for class/spec
+function ProfileManager:GetProfilesForClassSpec(class, spec)
+    local result = {}
+    
+    for name, profile in pairs(profiles) do
+        if profile.class == class and profile.spec == spec then
+            result[name] = profile
         end
     end
     
-    return dest
-end
+    return result
+}
 
--- Initialize the module
-ProfileManager:Initialize()
+-- Set default profile for spec
+function ProfileManager:SetDefaultProfileForSpec(class, spec, profileName)
+    -- Skip if profile doesn't exist
+    if not profiles[profileName] then
+        return false
+    end
+    
+    -- Update settings
+    local settings = ConfigRegistry:GetSettings("ProfileManager")
+    local specKey = class .. "-" .. spec
+    
+    settings.generalSettings.defaultProfilesPerSpec[specKey] = profileName
+    
+    API.PrintDebug("Set default profile for " .. class .. "-" .. spec .. " to " .. profileName)
+    return true
+}
 
+-- Return the module
 return ProfileManager

@@ -10,6 +10,15 @@ Core\API.lua
 Core\ConfigRegistry.lua
 Core\AdvancedAbilityControl.lua
 Core\ModuleManager.lua
+Core\MachineLearning.lua
+Core\CombatAnalysis.lua
+Core\BossStrategies.lua
+Core\PlayerSkillSystem.lua
+Core\EnhancedConfigUI.lua
+Core\InterruptManager.lua
+Core\TargetPrioritySystem.lua
+Core\OneButtonMode.lua
+Core\ProfileManager.lua
 
 # UI files (to be implemented)
 UI\AdvancedAbilityControlUI.lua
