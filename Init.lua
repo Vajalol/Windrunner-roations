@@ -1,137 +1,215 @@
 ------------------------------------------
--- WindrunnerRotations - Initialization
+-- WindrunnerRotations - Main Initialization
 -- Author: VortexQ8
+-- The War Within Season 2
 ------------------------------------------
 
--- Simple test for the Replit environment
-print("WindrunnerRotations starting...")
+-- Set up addon namespace
+local addonName, WR = ...
 
--- Create the addon namespace
-local addon = {}
-addon.version = "1.0.0"
-addon.Classes = {
-    Mage = {},
-    Warlock = {},
-    Warrior = {},
-    Paladin = {},
-    Druid = {},
-    DeathKnight = {}
-}
-addon.Core = {}
+-- Version information
+local ADDON_VERSION = "1.0.0"
+local ADDON_BUILD = 10010
+local WOW_EXPECTED_VERSION = 100205 -- 10.2.5
+local TINKR_EXPECTED_VERSION = "3.0"
 
--- Create minimal API module
-addon.API = {
-    PrintDebug = function(message)
-        print("|cFF69CCF0[WindrunnerRotations]|r " .. tostring(message))
-    end,
-    PrintError = function(message)
-        print("|cFFFF0000[WindrunnerRotations] ERROR:|r " .. tostring(message))
-    end,
-    VerifyTinkr = function() return true end,
-    GetPlayerGUID = function() return "player-guid" end,
-    GetTargetGUID = function() return "target-guid" end,
-    GetPlayerHealthPercent = function() return 100 end,
-    GetPlayerPower = function() return 5 end,
-    GetTargetHealthPercent = function() return 100 end,
-    PlayerHasBuff = function() return false end,
-    CanCast = function() return true end,
-    CastSpell = function(spellId) print("Casting spell: " .. tostring(spellId)) end,
-    CastSpellAtCursor = function(spellId) print("Casting spell at cursor: " .. tostring(spellId)) end,
-    CastSpellOnGUID = function(spellId, guid) print("Casting spell: " .. tostring(spellId) .. " on " .. tostring(guid)) end,
-    RegisterSpell = function(spellId) end,
-    RegisterEvent = function(event, callback) end,
-    HandleEvent = function(event, ...) end,
-    GetActiveSpecID = function() return 0 end,
-    HasTalent = function() return false end,
-    HasSpell = function() return true end,
-    IsGCDReady = function() return true end,
-    IsPlayerCasting = function() return false end,
-    IsPlayerChanneling = function() return false end,
-    IsPlayerMoving = function() return false end,
-    ShouldUseBurst = function() return false end,
-    GetSpellCharges = function() return 0 end,
-    GetSpellCooldownRemaining = function() return 0 end,
-    GetLastSpell = function() return 0 end,
-    GetNearbyEnemiesCount = function() return 0 end,
-    GetAllEnemies = function() return {} end,
-    GetBuffStacks = function() return 0 end,
-    TableContains = function(tbl, item) return false end,
-    TableRemove = function(tbl, item) end,
-    GetSubTable = function(tbl, start, count) return {} end,
-    GetHighestHealthEnemy = function() return nil end,
-    GetLowestHealthEnemy = function() return nil end,
-    GetDebuffInfo = function() return nil, nil, nil, nil, nil, 0 end,
-    HasLegendaryEffect = function() return false end,
-    GetNumEnemies = function() return 0 end,
-    GetPetType = function() return "None" end,
-    GetAllEnemies = function() return {} end
+-- Initialization tracking
+local isInitialized = false
+local initStartTime = 0
+local initErrors = {}
+local modulesInitialized = {}
+local initializationOrder = {
+    "API",
+    "ConfigRegistry",
+    "ModuleManager",
+    "ErrorHandler",
+    "PerformanceManager",
+    "VersionManager",
+    "CombatAnalysis",
+    "AntiDetectionSystem",
+    "PvPManager",
+    "RotationManager"
 }
 
--- Create Core modules
-addon.Core.ConfigRegistry = {
-    Initialize = function() 
-        print("ConfigRegistry initialized") 
-        return true 
-    end,
-    GetSettings = function(category) return {} end,
-    RegisterSettings = function(name, settings) return true end
-}
+-- Forward declarations for core modules
+WR.API = WR.API or {}
+WR.ModuleManager = WR.ModuleManager or {}
+WR.ConfigRegistry = WR.ConfigRegistry or {}
+WR.ErrorHandler = WR.ErrorHandler or {}
+WR.PerformanceManager = WR.PerformanceManager or {}
 
-addon.Core.AdvancedAbilityControl = {
-    Initialize = function() 
-        print("AdvancedAbilityControl initialized") 
-        return true 
-    end,
-    RegisterAbility = function(spellId, options) return options or {} end
-}
+----------------------------------------
+-- INITIALIZATION FUNCTIONS
+----------------------------------------
 
-addon.Core.ModuleManager = {
-    Initialize = function() 
-        print("ModuleManager initialized") 
-        return true 
-    end,
-    RunRotation = function() end
-}
-
-print("WindrunnerRotations modules created")
-
--- Initialize everything
-addon.Core.ConfigRegistry.Initialize()
-addon.Core.AdvancedAbilityControl.Initialize()
-addon.Core.ModuleManager.Initialize()
-
-print("WindrunnerRotations initialization complete")
-
--- Add a test function
-addon.Test = function()
-    print("Running test...")
-    -- Test with Affliction Warlock module if it exists
-    if addon.Classes.Warlock.Affliction then
-        print("Testing Affliction Warlock module")
-        -- Initialize the module
-        if addon.Classes.Warlock.Affliction.Initialize then
-            local success = addon.Classes.Warlock.Affliction:Initialize()
-            print("Initialize result: " .. tostring(success))
-        else
-            print("Affliction Warlock Initialize method not found")
-        end
-        
-        -- Run rotation
-        if addon.Classes.Warlock.Affliction.RunRotation then
-            local result = addon.Classes.Warlock.Affliction:RunRotation()
-            print("RunRotation result: " .. tostring(result))
-        else
-            print("Affliction Warlock RunRotation method not found")
-        end
-    else
-        print("Affliction Warlock module not found")
+-- Main initialization function
+local function InitializeAddon()
+    -- Skip if already initialized
+    if isInitialized then
+        return
     end
     
-    print("Test complete")
+    -- Set initialization start time
+    initStartTime = GetTime()
+    
+    -- Print initialization message
+    print("|cFF00FF00WindrunnerRotations|r: Initializing...")
+    
+    -- Initialize modules in order
+    InitializeModules()
+    
+    -- Register slash commands
+    RegisterSlashCommands()
+    
+    -- Mark as initialized
+    isInitialized = true
+    
+    -- Print initialization complete message
+    local initTime = GetTime() - initStartTime
+    print(string.format("|cFF00FF00WindrunnerRotations|r: Initialization complete (%.2f seconds)", initTime))
 end
 
--- Run the test
-addon.Test()
+-- Initialize modules in the correct order
+local function InitializeModules()
+    for _, moduleName in ipairs(initializationOrder) do
+        InitializeModule(moduleName)
+    end
+end
 
--- Return the addon table
-return addon
+-- Initialize a specific module
+local function InitializeModule(moduleName)
+    -- Skip if already initialized
+    if modulesInitialized[moduleName] then
+        return true
+    end
+    
+    -- Check if module exists
+    if not WR[moduleName] then
+        table.insert(initErrors, "Module not found: " .. moduleName)
+        print("|cFF00FF00WindrunnerRotations|r: |cFFFF0000Error:|r Module not found: " .. moduleName)
+        return false
+    end
+    
+    -- Initialize module using pcall to catch errors
+    local success, result = pcall(function()
+        if WR[moduleName].Initialize then
+            return WR[moduleName]:Initialize()
+        else
+            return true -- Module has no Initialize method
+        end
+    end)
+    
+    if not success then
+        -- Initialization failed with error
+        table.insert(initErrors, "Failed to initialize " .. moduleName .. ": " .. tostring(result))
+        print("|cFF00FF00WindrunnerRotations|r: |cFFFF0000Error:|r Failed to initialize " .. moduleName .. ": " .. tostring(result))
+        return false
+    elseif result ~= true then
+        -- Module returned false from Initialize
+        table.insert(initErrors, "Module " .. moduleName .. " initialization returned false")
+        print("|cFF00FF00WindrunnerRotations|r: |cFFFF0000Error:|r Module " .. moduleName .. " initialization returned false")
+        return false
+    end
+    
+    -- Mark as initialized
+    modulesInitialized[moduleName] = true
+    print("|cFF00FF00WindrunnerRotations|r: Module initialized: " .. moduleName)
+    return true
+end
+
+-- Register slash commands
+local function RegisterSlashCommands()
+    -- Register /wr command if not already registered by RotationManager
+    if not SlashCmdList["WINDRUNNERROTATIONS"] then
+        SLASH_WINDRUNNERROTATIONS1 = "/wr"
+        SlashCmdList["WINDRUNNERROTATIONS"] = function(msg)
+            HandleSlashCommand(msg)
+        end
+    end
+    
+    -- Register /wrr command for reloading
+    SLASH_WINDRUNNERRELOAD1 = "/wrr"
+    SlashCmdList["WINDRUNNERRELOAD"] = function(msg)
+        ReloadUI()
+    end
+end
+
+-- Handle slash commands
+local function HandleSlashCommand(msg)
+    -- If RotationManager is initialized, let it handle commands
+    if WR.RotationManager and modulesInitialized["RotationManager"] then
+        -- RotationManager handles commands
+    else
+        -- Handle basic commands
+        local command, args = strsplit(" ", msg, 2)
+        command = strlower(command or "")
+        
+        if command == "init" or command == "initialize" then
+            -- Re-initialize addon
+            InitializeAddon()
+        elseif command == "version" then
+            -- Show version info
+            print("|cFF00FF00WindrunnerRotations|r: Version " .. ADDON_VERSION .. " (Build " .. ADDON_BUILD .. ")")
+        elseif command == "debug" then
+            -- Toggle debug mode
+            if WR.API and WR.API.EnableDebugMode then
+                WR.API.EnableDebugMode(not WR.API.IsDebugMode())
+            end
+        else
+            -- Show help
+            PrintHelp()
+        end
+    end
+end
+
+-- Print help information
+local function PrintHelp()
+    print("|cFF00FF00WindrunnerRotations|r: Commands:")
+    print("  /wr init - Re-initialize addon")
+    print("  /wr version - Show version information")
+    print("  /wr debug - Toggle debug mode")
+    print("  /wrr - Reload UI")
+    
+    -- If RotationManager is initialized, show its commands too
+    if WR.RotationManager and modulesInitialized["RotationManager"] then
+        print("  /wr start - Start rotation")
+        print("  /wr stop - Stop rotation")
+        print("  /wr toggle - Toggle rotation")
+        print("  /wr mode [auto|semi|one|manual] - Set or show rotation mode")
+        print("  /wr status - Show rotation status")
+        print("  /wr aoe - Toggle AoE abilities")
+        print("  /wr cooldowns - Toggle cooldown usage")
+    end
+}
+
+----------------------------------------
+-- EVENT HANDLING
+----------------------------------------
+
+-- Create the event frame
+local eventFrame = CreateFrame("Frame")
+
+-- Register events
+eventFrame:RegisterEvent("ADDON_LOADED")
+eventFrame:RegisterEvent("PLAYER_LOGIN")
+
+-- Event handler
+eventFrame:SetScript("OnEvent", function(self, event, ...)
+    if event == "ADDON_LOADED" and ... == addonName then
+        -- Addon loaded, initialize on next frame to ensure all files are loaded
+        C_Timer.After(0, InitializeAddon)
+    elseif event == "PLAYER_LOGIN" then
+        -- Player login, make sure we're initialized
+        if not isInitialized then
+            InitializeAddon()
+        end
+    end
+end)
+
+-- Make initialization functions available in WR namespace
+WR.InitializeAddon = InitializeAddon
+WR.InitializeModule = InitializeModule
+WR.PrintHelp = PrintHelp
+
+-- Return the WR table
+return WR

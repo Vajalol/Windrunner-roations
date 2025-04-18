@@ -1,105 +1,42 @@
-## Interface: 100205
-## Title: |cFF69CCF0Windrunner|r Rotations
-## Notes: Advanced combat rotation system with adaptive AI-driven decision making
+## Interface: 100200
+## Title: WindrunnerRotations
+## Notes: Advanced combat optimization system with intelligent, adaptive spell casting
 ## Author: VortexQ8
 ## Version: 1.0.0
 ## SavedVariables: WindrunnerRotationsDB
+## SavedVariablesPerCharacter: WindrunnerRotationsCharDB
+## X-Tinkr-Required: 3.0.0
 
 # Core files
+Init.lua
 Core\API.lua
 Core\ConfigRegistry.lua
-Core\AdvancedAbilityControl.lua
 Core\ModuleManager.lua
-Core\MachineLearning.lua
+Core\ErrorHandler.lua
+Core\PerformanceManager.lua
+Core\VersionManager.lua
 Core\CombatAnalysis.lua
-Core\BossStrategies.lua
-Core\PlayerSkillSystem.lua
-Core\EnhancedConfigUI.lua
-Core\InterruptManager.lua
-Core\TargetPrioritySystem.lua
-Core\OneButtonMode.lua
-Core\ProfileManager.lua
+Core\AntiDetectionSystem.lua
+Core\PvPManager.lua
+Core\RotationManager.lua
 
-# UI files (to be implemented)
-UI\AdvancedAbilityControlUI.lua
+# UI files
+# UI\EnhancedConfigUI.lua
 
-# Class modules - Mage
-Classes\Mage\Mage.lua
-Classes\Mage\Fire.lua
-Classes\Mage\Frost.lua
-Classes\Mage\Arcane.lua
+# Class rotations
+# Classes\DeathKnight.lua
+# Classes\DemonHunter.lua
+# Classes\Druid.lua
+# Classes\Evoker.lua
+# Classes\Hunter.lua
+# Classes\Mage.lua
+# Classes\Monk.lua
+# Classes\Paladin.lua
+# Classes\Priest.lua
+# Classes\Rogue.lua
+# Classes\Shaman.lua
+# Classes\Warlock.lua
+# Classes\Warrior.lua
 
-# Class modules - Warrior
-Classes\Warrior\Warrior.lua
-Classes\Warrior\Arms.lua
-Classes\Warrior\Fury.lua
-Classes\Warrior\Protection.lua
-
-# Class modules - Paladin
-Classes\Paladin\Paladin.lua
-Classes\Paladin\Holy.lua
-Classes\Paladin\Protection.lua
-Classes\Paladin\Retribution.lua
-
-# Class modules - Hunter
-Classes\Hunter\Hunter.lua
-Classes\Hunter\BeastMastery.lua
-Classes\Hunter\Marksmanship.lua
-Classes\Hunter\Survival.lua
-
-# Class modules - Rogue
-Classes\Rogue\Rogue.lua
-Classes\Rogue\Assassination.lua
-Classes\Rogue\Outlaw.lua
-Classes\Rogue\Subtlety.lua
-
-# Class modules - Priest
-Classes\Priest\Priest.lua
-Classes\Priest\Discipline.lua
-Classes\Priest\Holy.lua
-Classes\Priest\Shadow.lua
-
-# Class modules - Shaman
-Classes\Shaman\Shaman.lua
-Classes\Shaman\Elemental.lua
-Classes\Shaman\Enhancement.lua
-Classes\Shaman\Restoration.lua
-
-# Class modules - Warlock
-Classes\Warlock\Warlock.lua
-Classes\Warlock\Affliction.lua
-Classes\Warlock\Demonology.lua
-Classes\Warlock\Destruction.lua
-
-# Class modules - Monk
-Classes\Monk\Monk.lua
-Classes\Monk\Brewmaster.lua
-Classes\Monk\Mistweaver.lua
-Classes\Monk\Windwalker.lua
-
-# Class modules - Druid
-Classes\Druid\Druid.lua
-Classes\Druid\Balance.lua
-Classes\Druid\Feral.lua
-Classes\Druid\Guardian.lua
-Classes\Druid\Restoration.lua
-
-# Class modules - Demon Hunter
-Classes\DemonHunter\DemonHunter.lua
-Classes\DemonHunter\Havoc.lua
-Classes\DemonHunter\Vengeance.lua
-
-# Class modules - Death Knight
-Classes\DeathKnight\DeathKnight.lua
-Classes\DeathKnight\Blood.lua
-Classes\DeathKnight\Frost.lua
-Classes\DeathKnight\Unholy.lua
-
-# Class modules - Evoker
-Classes\Evoker\Evoker.lua
-Classes\Evoker\Devastation.lua
-Classes\Evoker\Preservation.lua
-Classes\Evoker\Augmentation.lua
-
-# Main initialization
-Init.lua
+# Testing
+# Tests\UnitTests.lua
