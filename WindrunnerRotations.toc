@@ -32,11 +32,11 @@ Core\RotationManager.lua
 # Classes\Mage.lua
 # Classes\Monk.lua
 # Classes\Paladin.lua
-# Classes\Priest.lua
+Classes\Priest.lua
 # Classes\Rogue.lua
 # Classes\Shaman.lua
 # Classes\Warlock.lua
-# Classes\Warrior.lua
+Classes\Warrior.lua
 
 # Testing
 # Tests\UnitTests.lua

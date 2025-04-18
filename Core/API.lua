@@ -384,7 +384,7 @@ function API.ClearCaches()
     API.ClearSpellCache()
     API.ClearCooldownCache()
     API.ClearItemCache()
-}
+end
 
 -- Clear unit cache
 function API.ClearUnitCache()
@@ -525,7 +525,13 @@ end
 -- Enable debug mode
 function API.EnableDebugMode(enable)
     debugMode = enable
-    API.PrintMessage("Debug mode " .. (enable and "enabled" : "disabled"))
+    local status = ""
+    if enable then
+        status = "enabled"
+    else
+        status = "disabled"
+    end
+    API.PrintMessage("Debug mode " .. status)
     return debugMode
 end
 
