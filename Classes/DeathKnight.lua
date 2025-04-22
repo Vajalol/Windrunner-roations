@@ -1,1171 +1,1337 @@
+------------------------------------------
+-- WindrunnerRotations - Death Knight Class Module
+-- Author: VortexQ8
+-- The War Within Season 2
+------------------------------------------
+
 local addonName, WR = ...
+local DeathKnightModule = {}
+WR.DeathKnight = DeathKnightModule
 
--- Death Knight Class module
-local DeathKnight = {}
-WR.Classes = WR.Classes or {}
-WR.Classes.DEATHKNIGHT = DeathKnight
+-- Dependencies
+local API = WR.API
+local ConfigRegistry = WR.ConfigRegistry
+local RotationManager = WR.RotationManager
+local ErrorHandler = WR.ErrorHandler
+local CombatAnalysis = WR.CombatAnalysis
+local AntiDetectionSystem = WR.AntiDetectionSystem
+local PvPManager = WR.PvPManager
 
--- Inherit from BaseClass
-setmetatable(DeathKnight, {__index = WR.BaseClass})
-
--- Resource type for Death Knights (Runes and Runic Power)
-DeathKnight.resourceType = Enum.PowerType.RunicPower
-DeathKnight.secondaryResourceType = Enum.PowerType.Runes
-
--- Define spec IDs
+-- Death Knight constants
+local CLASS_ID = 6 -- Death Knight class ID
 local SPEC_BLOOD = 250
 local SPEC_FROST = 251
 local SPEC_UNHOLY = 252
 
--- Class initialization
-function DeathKnight:Initialize()
-    -- Inherit base initialization
-    WR.BaseClass.Initialize(self)
-    
-    -- Register Specializations
-    self:RegisterSpec(SPEC_BLOOD, "Blood")
-    self:RegisterSpec(SPEC_FROST, "Frost")
-    self:RegisterSpec(SPEC_UNHOLY, "Unholy")
-    
-    -- Shared spell IDs across all DK specs
-    self.spells = {
-        -- Common Death Knight abilities
-        DEATH_STRIKE = 49998,
-        DEATH_COIL = 47541,
-        DEATH_GRIP = 49576,
-        MIND_FREEZE = 47528,
-        ANTI_MAGIC_SHELL = 48707,
-        ICEBOUND_FORTITUDE = 48792,
-        DEATH_AND_DECAY = 43265,
-        RAISE_DEAD = 46584,
-        LICHBORNE = 49039,
-        DEATH_GATE = 50977,
-        CONTROL_UNDEAD = 111673,
-        PATH_OF_FROST = 3714,
-        WRAITH_WALK = 212552,
-        CHAINS_OF_ICE = 45524,
-        DARK_COMMAND = 56222,
-        DEATHS_ADVANCE = 48265,
-        RAISE_ALLY = 61999,
-        
-        -- Covenant abilities
-        DEATHS_DUE = 324128,      -- Night Fae
-        SWARMING_MIST = 311648,   -- Venthyr
-        SHACKLE_THE_UNWORTHY = 312202, -- Kyrian
-        ABOMINATION_LIMB = 315443 -- Necrolord
-    }
-    
-    -- Load shared Death Knight data
-    self:LoadSharedDeathKnightData()
-    
-    WR:Debug("Death Knight module initialized")
-end
+-- Current player data
+local playerSpec = 0
+local isEnabled = true
+local inCombat = false
 
--- Load shared spell and mechanics data for all DK specs
-function DeathKnight:LoadSharedDeathKnightData()
-    -- Register important buffs
-    WR.Auras:RegisterImportantAura(self.spells.ANTI_MAGIC_SHELL, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.ICEBOUND_FORTITUDE, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.PATH_OF_FROST, 60, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.DEATHS_ADVANCE, 70, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.WRAITH_WALK, 70, true, false)
+-- Spell IDs for Blood Death Knight (The War Within, Season 2)
+local BLOOD_SPELLS = {
+    -- Core abilities
+    HEART_STRIKE = 206930,
+    DEATH_STRIKE = 49998,
+    MARROWREND = 195182,
+    BLOOD_BOIL = 50842,
+    DEATH_AND_DECAY = 43265,
+    DANCING_RUNE_WEAPON = 49028,
+    VAMPIRIC_BLOOD = 55233,
+    BLOOD_TAP = 221699,
+    CONSUMPTION = 274156,
     
-    -- Setup cooldown tracking
-    WR.Cooldown:StartTracking(self.spells.DEATH_STRIKE)
-    WR.Cooldown:StartTracking(self.spells.DEATH_GRIP)
-    WR.Cooldown:StartTracking(self.spells.MIND_FREEZE)
-    WR.Cooldown:StartTracking(self.spells.ANTI_MAGIC_SHELL)
-    WR.Cooldown:StartTracking(self.spells.ICEBOUND_FORTITUDE)
-    WR.Cooldown:StartTracking(self.spells.DEATH_AND_DECAY)
-    WR.Cooldown:StartTracking(self.spells.RAISE_DEAD)
-    WR.Cooldown:StartTracking(self.spells.LICHBORNE)
-    WR.Cooldown:StartTracking(self.spells.WRAITH_WALK)
-    WR.Cooldown:StartTracking(self.spells.CHAINS_OF_ICE)
-    WR.Cooldown:StartTracking(self.spells.DARK_COMMAND)
-    WR.Cooldown:StartTracking(self.spells.DEATHS_ADVANCE)
+    -- Defensive & utility
+    ANTI_MAGIC_SHELL = 48707,
+    ICEBOUND_FORTITUDE = 48792,
+    DEATH_GRIP = 49576,
+    GOREFIEND'S_GRASP = 108199,
+    WRAITH_WALK = 212552,
+    RAISE_ALLY = 61999,
+    CONTROL_UNDEAD = 111673,
     
-    -- Set up the interrupt spell
-    self.interruptRotation = {
-        { spell = self.spells.MIND_FREEZE }
-    }
+    -- Talents
+    TOMBSTONE = 219809,
+    RED_THIRST = 205723,
+    BLOODDRINKER = 206931,
+    BONESTORM = 194844,
+    MARK_OF_BLOOD = 206940,
+    BLOOD_TAP = 221699,
+    HEMOSTASIS = 273946,
+    RUNE_TAP = 194679,
     
-    -- Set up defensive rotation (shared by all specs)
-    self.defensiveRotation = {
-        { spell = self.spells.ICEBOUND_FORTITUDE, threshold = 40 },
-        { spell = self.spells.ANTI_MAGIC_SHELL, threshold = 70 }
-    }
-end
+    -- Misc
+    PATH_OF_FROST = 3714,
+    DEATH_GATE = 50977,
+    RAISE_DEAD = 46585,
+    DARK_COMMAND = 56222
+}
 
--- Load a specific specialization
-function DeathKnight:LoadSpec(specId)
-    -- Call the base class method to set up common components
-    WR.BaseClass.LoadSpec(self, specId)
+-- Spell IDs for Frost Death Knight
+local FROST_SPELLS = {
+    -- Core abilities
+    OBLITERATE = 49020,
+    FROST_STRIKE = 49143,
+    HOWLING_BLAST = 49184,
+    REMORSELESS_WINTER = 196770,
+    EMPOWER_RUNE_WEAPON = 47568,
+    PILLAR_OF_FROST = 51271,
+    FROSTWYRM'S_FURY = 279302,
+    BREATH_OF_SINDRAGOSA = 152279,
     
-    -- Set the resource type based on spec
-    self.resourceType = Enum.PowerType.RunicPower
-    self.secondaryResourceType = Enum.PowerType.Runes
+    -- Defensive & utility
+    ANTI_MAGIC_SHELL = 48707,
+    ICEBOUND_FORTITUDE = 48792,
+    DEATH_GRIP = 49576,
+    WRAITH_WALK = 212552,
+    RAISE_ALLY = 61999,
+    CONTROL_UNDEAD = 111673,
     
-    -- Load specific spec data
-    if specId == SPEC_BLOOD then
-        self:LoadBloodSpec()
-    elseif specId == SPEC_FROST then
-        self:LoadFrostSpec()
-    elseif specId == SPEC_UNHOLY then
-        self:LoadUnholySpec()
-    end
+    -- Talents
+    OBLITERATION = 281238,
+    GLACIAL_ADVANCE = 194913,
+    HORN_OF_WINTER = 57330,
+    FROSTSCYTHE = 207230,
+    ICECAP = 207126,
+    MURDEROUS_EFFICIENCY = 207061,
+    GATHERING_STORM = 194912,
+    AVALANCHE = 207142,
     
-    WR:Debug("Loaded Death Knight spec:", self.specData.name)
+    -- Misc
+    PATH_OF_FROST = 3714,
+    DEATH_GATE = 50977,
+    RAISE_DEAD = 46585,
+    DARK_COMMAND = 56222
+}
+
+-- Spell IDs for Unholy Death Knight
+local UNHOLY_SPELLS = {
+    -- Core abilities
+    SCOURGE_STRIKE = 55090,
+    FESTERING_STRIKE = 85948,
+    DEATH_COIL = 47541,
+    APOCALYPSE = 275699,
+    ARMY_OF_THE_DEAD = 42650,
+    DARK_TRANSFORMATION = 63560,
+    OUTBREAK = 77575,
+    EPIDEMIC = 207317,
+    
+    -- Defensive & utility
+    ANTI_MAGIC_SHELL = 48707,
+    ICEBOUND_FORTITUDE = 48792,
+    DEATH_GRIP = 49576,
+    WRAITH_WALK = 212552,
+    RAISE_ALLY = 61999,
+    CONTROL_UNDEAD = 111673,
+    
+    -- Talents
+    UNHOLY_BLIGHT = 115989,
+    DEFILE = 152280,
+    SOUL_REAPER = 343294,
+    SUMMON_GARGOYLE = 49206,
+    EBON_FEVER = 207269,
+    INFECTED_CLAWS = 207272,
+    CLAWING_SHADOWS = 207311,
+    UNHOLY_PACT = 319230,
+    
+    -- Misc
+    PATH_OF_FROST = 3714,
+    DEATH_GATE = 50977,
+    RAISE_DEAD = 46585,
+    DARK_COMMAND = 56222
+}
+
+-- Important buffs to track
+local BUFFS = {
+    BONE_SHIELD = 195181,
+    DANCING_RUNE_WEAPON = 81256,
+    VAMPIRIC_BLOOD = 55233,
+    HEMOSTASIS = 273947,
+    CRIMSON_SCOURGE = 81141,
+    BLOOD_SHIELD = 77535,
+    PILLAR_OF_FROST = 51271,
+    EMPOWER_RUNE_WEAPON = 47568,
+    KILLING_MACHINE = 51124,
+    RIME = 59052,
+    BREATH_OF_SINDRAGOSA = 152279,
+    DARK_TRANSFORMATION = 63560,
+    SUDDEN_DOOM = 81340,
+    RUNIC_CORRUPTION = 51460,
+    UNHOLY_FRENZY = 207289,
+    ANTI_MAGIC_SHELL = 48707,
+    ICEBOUND_FORTITUDE = 48792,
+    WRAITH_WALK = 212552
+}
+
+-- Important debuffs to track
+local DEBUFFS = {
+    BLOOD_PLAGUE = 55078,
+    MARK_OF_BLOOD = 206940,
+    FROST_FEVER = 55095,
+    RAZORICE = 51714,
+    VIRULENT_PLAGUE = 191587,
+    FESTERING_WOUND = 194310,
+    UNHOLY_BLIGHT = 115994,
+    SOUL_REAPER = 343294,
+    BLOOD_TAP = 221699
+}
+
+-- Initialize the Death Knight module
+function DeathKnightModule:Initialize()
+    -- Register settings
+    self:RegisterSettings()
+    
+    -- Register events
+    self:RegisterEvents()
+    
+    -- Register rotations
+    self:RegisterRotations()
+    
+    API.PrintDebug("Death Knight module initialized")
     return true
 end
 
--- Load Blood specialization
-function DeathKnight:LoadBloodSpec()
-    -- Blood-specific spells
-    self.spells.BLOOD_BOIL = 50842
-    self.spells.HEART_STRIKE = 206930
-    self.spells.MARROWREND = 195182
-    self.spells.VAMPIRIC_BLOOD = 55233
-    self.spells.DANCING_RUNE_WEAPON = 49028
-    self.spells.BLOOD_TAP = 221699
-    self.spells.TOMBSTONE = 219809
-    self.spells.BONESTORM = 194844
-    self.spells.CONSUMPTION = 274156
-    self.spells.MARK_OF_BLOOD = 206940
-    self.spells.RUNE_TAP = 194679
-    self.spells.BLOOD_SHIELD = 77535
-    self.spells.OSSUARY = 219786
-    self.spells.HEMOSTASIS = 273946
-    self.spells.BLOODDRINKER = 206931
-    self.spells.GOREFIENDS_GRASP = 108199
-    self.spells.RAISE_DEAD = 46585
-    self.spells.SACRIFICIAL_PACT = 327574
-    self.spells.BONE_SHIELD = 195181
-    self.spells.RED_THIRST = 205723
-    
-    -- Setup cooldown and aura tracking for Blood
-    WR.Cooldown:StartTracking(self.spells.BLOOD_BOIL)
-    WR.Cooldown:StartTracking(self.spells.MARROWREND)
-    WR.Cooldown:StartTracking(self.spells.VAMPIRIC_BLOOD)
-    WR.Cooldown:StartTracking(self.spells.DANCING_RUNE_WEAPON)
-    WR.Cooldown:StartTracking(self.spells.BLOODDRINKER)
-    WR.Cooldown:StartTracking(self.spells.BONESTORM)
-    WR.Cooldown:StartTracking(self.spells.CONSUMPTION)
-    WR.Cooldown:StartTracking(self.spells.RUNE_TAP)
-    WR.Cooldown:StartTracking(self.spells.GOREFIENDS_GRASP)
-    
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.BONE_SHIELD, 95, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.VAMPIRIC_BLOOD, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.DANCING_RUNE_WEAPON, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.BLOOD_SHIELD, 85, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.OSSUARY, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.HEMOSTASIS, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.MARK_OF_BLOOD, 75, false, true)
-    
-    -- Define Blood tank rotation
-    self.singleTargetRotation = {
-        -- Maintain Bone Shield
-        {
-            spell = self.spells.MARROWREND,
-            condition = function(self)
-                local stacks = self:GetBuffStacks(self.spells.BONE_SHIELD)
-                return stacks < 5 or self:GetBuffRemaining(self.spells.BONE_SHIELD) < 6
-            end
+-- Register settings
+function DeathKnightModule:RegisterSettings()
+    ConfigRegistry:RegisterSettings("DeathKnight", {
+        generalSettings = {
+            enabled = {
+                displayName = "Enable Death Knight Module",
+                description = "Enable the Death Knight module for all specs",
+                type = "toggle",
+                default = true
+            },
+            useDefensives = {
+                displayName = "Use Defensive Abilities",
+                description = "Automatically use defensive abilities when appropriate",
+                type = "toggle",
+                default = true
+            },
+            useInterrupts = {
+                displayName = "Use Interrupts",
+                description = "Automatically interrupt enemy casts when appropriate",
+                type = "toggle",
+                default = true
+            },
+            autoRaiseDead = {
+                displayName = "Auto Raise Dead",
+                description = "Automatically raise your ghoul if missing",
+                type = "toggle",
+                default = true
+            },
+            useIceboundFortitude = {
+                displayName = "Use Icebound Fortitude",
+                description = "Automatically use Icebound Fortitude at low health",
+                type = "toggle",
+                default = true
+            },
+            iceboundThreshold = {
+                displayName = "Icebound Health Threshold",
+                description = "Health percentage to use Icebound Fortitude",
+                type = "slider",
+                min = 10,
+                max = 50,
+                step = 5,
+                default = 30
+            },
+            useAntiMagicShell = {
+                displayName = "Use Anti-Magic Shell",
+                description = "Automatically use Anti-Magic Shell when taking magic damage",
+                type = "toggle",
+                default = true
+            }
         },
-        
-        -- Use Blooddrinker if talented
-        {
-            spell = self.spells.BLOODDRINKER,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BLOODDRINKER) and
-                       not self:SpellOnCooldown(self.spells.BLOODDRINKER) and
-                       self:GetHealthPct() < 85
-            end
+        bloodSettings = {
+            maintainBoneShield = {
+                displayName = "Maintain Bone Shield",
+                description = "Prioritize maintaining Bone Shield stacks",
+                type = "toggle",
+                default = true
+            },
+            boneShieldMinStacks = {
+                displayName = "Minimum Bone Shield Stacks",
+                description = "Minimum Bone Shield stacks before refreshing",
+                type = "slider",
+                min = 3,
+                max = 8,
+                step = 1,
+                default = 5
+            },
+            useVampiricBlood = {
+                displayName = "Use Vampiric Blood",
+                description = "Automatically use Vampiric Blood at low health",
+                type = "toggle",
+                default = true
+            },
+            vampiricBloodThreshold = {
+                displayName = "Vampiric Blood Health Threshold",
+                description = "Health percentage to use Vampiric Blood",
+                type = "slider",
+                min = 20,
+                max = 70,
+                step = 5,
+                default = 40
+            },
+            useDancingRuneWeapon = {
+                displayName = "Use Dancing Rune Weapon",
+                description = "Use Dancing Rune Weapon in combat",
+                type = "toggle",
+                default = true
+            },
+            deathStrikeThreshold = {
+                displayName = "Death Strike Health Threshold",
+                description = "Health percentage to prioritize Death Strike",
+                type = "slider",
+                min = 20,
+                max = 90,
+                step = 5,
+                default = 65
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            }
         },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
+        frostSettings = {
+            usePillarOfFrost = {
+                displayName = "Use Pillar of Frost",
+                description = "Use Pillar of Frost on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useEmpowerRuneWeapon = {
+                displayName = "Use Empower Rune Weapon",
+                description = "Use Empower Rune Weapon on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useSindragosa = {
+                displayName = "Use Breath of Sindragosa",
+                description = "Use Breath of Sindragosa when available",
+                type = "toggle",
+                default = true
+            },
+            sindragosaRPThreshold = {
+                displayName = "Sindragosa Runic Power Threshold",
+                description = "Minimum Runic Power to maintain Breath of Sindragosa",
+                type = "slider",
+                min = 40,
+                max = 80,
+                step = 5,
+                default = 50
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            },
+            useHowlingBlastWithRime = {
+                displayName = "Use Howling Blast with Rime",
+                description = "Prioritize Howling Blast when Rime proc is active",
+                type = "toggle",
+                default = true
+            },
+            poolRPForSindragosa = {
+                displayName = "Pool RP for Sindragosa",
+                description = "Pool Runic Power before Breath of Sindragosa",
+                type = "toggle",
+                default = true
+            }
         },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        { 
-            spell = self.spells.SHACKLE_THE_UNWORTHY,
-            condition = function(self) return IsSpellKnown(self.spells.SHACKLE_THE_UNWORTHY) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        
-        -- Use Dancing Rune Weapon for threat and damage
-        {
-            spell = self.spells.DANCING_RUNE_WEAPON,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DANCING_RUNE_WEAPON)
-            end
-        },
-        
-        -- Use Death and Decay when available
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY)
-            end
-        },
-        
-        -- Use Consumption if talented for damage and healing
-        {
-            spell = self.spells.CONSUMPTION,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CONSUMPTION) and
-                       not self:SpellOnCooldown(self.spells.CONSUMPTION)
-            end
-        },
-        
-        -- Use Blood Boil to apply Blood Plague
-        {
-            spell = self.spells.BLOOD_BOIL,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.BLOOD_BOIL)
-            end
-        },
-        
-        -- Use Death Strike for healing
-        {
-            spell = self.spells.DEATH_STRIKE,
-            condition = function(self)
-                return self:GetRunicPower() >= 45 and
-                       (self:GetHealthPct() < 80 or
-                        self:GetBuffStacks(self.spells.HEMOSTASIS) > 0)
-            end
-        },
-        
-        -- Use Heart Strike as main Rune spender
-        { spell = self.spells.HEART_STRIKE }
-    }
-    
-    -- AoE rotation for Blood
-    self.aoeRotation = {
-        -- Maintain Bone Shield
-        {
-            spell = self.spells.MARROWREND,
-            condition = function(self)
-                local stacks = self:GetBuffStacks(self.spells.BONE_SHIELD)
-                return stacks < 5 or self:GetBuffRemaining(self.spells.BONE_SHIELD) < 6
-            end
-        },
-        
-        -- Use Bonestorm if talented
-        {
-            spell = self.spells.BONESTORM,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BONESTORM) and
-                       not self:SpellOnCooldown(self.spells.BONESTORM) and
-                       self:GetRunicPower() >= 90
-            end
-        },
-        
-        -- Use Gorefiend's Grasp for adds
-        {
-            spell = self.spells.GOREFIENDS_GRASP,
-            condition = function(self)
-                return self:GetEnemyCount(15) >= 3 and
-                       not self:SpellOnCooldown(self.spells.GOREFIENDS_GRASP)
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
-        },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        
-        -- Use Death and Decay for Heart Strike cleave
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY)
-            end
-        },
-        
-        -- Use Dancing Rune Weapon for AoE threat and damage
-        {
-            spell = self.spells.DANCING_RUNE_WEAPON,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DANCING_RUNE_WEAPON)
-            end
-        },
-        
-        -- Use Consumption for AoE damage and healing
-        {
-            spell = self.spells.CONSUMPTION,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CONSUMPTION) and
-                       not self:SpellOnCooldown(self.spells.CONSUMPTION)
-            end
-        },
-        
-        -- Use Blood Boil for AoE damage
-        {
-            spell = self.spells.BLOOD_BOIL,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.BLOOD_BOIL)
-            end
-        },
-        
-        -- Use Death Strike for healing
-        {
-            spell = self.spells.DEATH_STRIKE,
-            condition = function(self)
-                return self:GetRunicPower() >= 85 or self:GetHealthPct() < 70
-            end
-        },
-        
-        -- Use Heart Strike as main Rune spender
-        { spell = self.spells.HEART_STRIKE }
-    }
-    
-    -- Define burst rotation
-    self.burstRotation = {
-        {
-            spell = self.spells.DANCING_RUNE_WEAPON,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DANCING_RUNE_WEAPON)
-            end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY)
-            end
-        },
-        {
-            spell = self.spells.CONSUMPTION,
-            condition = function(self) return IsSpellKnown(self.spells.CONSUMPTION) end
+        unholySettings = {
+            useApocalypse = {
+                displayName = "Use Apocalypse",
+                description = "Use Apocalypse on cooldown",
+                type = "toggle",
+                default = true
+            },
+            apocalypseFestWoundThreshold = {
+                displayName = "Minimum Festering Wounds for Apocalypse",
+                description = "Minimum Festering Wounds on target before using Apocalypse",
+                type = "slider",
+                min = 3,
+                max = 6,
+                step = 1,
+                default = 4
+            },
+            useArmyOfTheDead = {
+                displayName = "Use Army of the Dead",
+                description = "Use Army of the Dead on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useDarkTransformation = {
+                displayName = "Use Dark Transformation",
+                description = "Use Dark Transformation on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useUnholyBlight = {
+                displayName = "Use Unholy Blight",
+                description = "Use Unholy Blight on cooldown",
+                type = "toggle",
+                default = true
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            },
+            maintainVirulentPlague = {
+                displayName = "Maintain Virulent Plague",
+                description = "Prioritize maintaining Virulent Plague on targets",
+                type = "toggle",
+                default = true
+            }
         }
-    }
-    
-    -- Add Blood-specific defensive abilities
-    table.insert(self.defensiveRotation, {
-        spell = self.spells.VAMPIRIC_BLOOD,
-        threshold = 60
     })
     
-    table.insert(self.defensiveRotation, {
-        spell = self.spells.RUNE_TAP,
-        threshold = 70
-    })
+    -- Add callback for settings changes
+    ConfigRegistry:RegisterCallback("DeathKnight", function(settings)
+        self:ApplySettings(settings)
+    end)
+end
+
+-- Apply settings
+function DeathKnightModule:ApplySettings(settings)
+    -- Apply general settings
+    isEnabled = settings.generalSettings.enabled
+end
+
+-- Register events
+function DeathKnightModule:RegisterEvents()
+    -- Register for specialization changed event
+    API.RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function(unit)
+        if unit == "player" then
+            self:OnSpecializationChanged()
+        end
+    end)
     
-    table.insert(self.defensiveRotation, {
-        spell = self.spells.TOMBSTONE,
-        condition = function(self)
-            return IsSpellKnown(self.spells.TOMBSTONE) and
-                   self:GetBuffStacks(self.spells.BONE_SHIELD) >= 5 and
-                   self:GetHealthPct() < 50
+    -- Register for entering combat event
+    API.RegisterEvent("PLAYER_REGEN_DISABLED", function()
+        inCombat = true
+    end)
+    
+    -- Register for leaving combat event
+    API.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        inCombat = false
+    end)
+    
+    -- Update specialization on initialization
+    self:OnSpecializationChanged()
+end
+
+-- On specialization changed
+function DeathKnightModule:OnSpecializationChanged()
+    -- Get current spec ID
+    playerSpec = API.GetActiveSpecID()
+    
+    API.PrintDebug("Death Knight specialization changed: " .. playerSpec)
+    
+    -- Ensure correct rotation is registered
+    if playerSpec == SPEC_BLOOD then
+        self:RegisterBloodRotation()
+    elseif playerSpec == SPEC_FROST then
+        self:RegisterFrostRotation()
+    elseif playerSpec == SPEC_UNHOLY then
+        self:RegisterUnholyRotation()
+    end
+end
+
+-- Register rotations
+function DeathKnightModule:RegisterRotations()
+    -- Register spec-specific rotations
+    self:RegisterBloodRotation()
+    self:RegisterFrostRotation()
+    self:RegisterUnholyRotation()
+end
+
+-- Register Blood rotation
+function DeathKnightModule:RegisterBloodRotation()
+    RotationManager:RegisterRotation("DeathKnightBlood", {
+        id = "DeathKnightBlood",
+        name = "Death Knight - Blood",
+        class = "DEATHKNIGHT",
+        spec = SPEC_BLOOD,
+        level = 10,
+        description = "Blood Death Knight rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:BloodRotation()
         end
     })
 end
 
--- Load Frost specialization
-function DeathKnight:LoadFrostSpec()
-    -- Frost-specific spells
-    self.spells.OBLITERATE = 49020
-    self.spells.FROST_STRIKE = 49143
-    self.spells.HOWLING_BLAST = 49184
-    self.spells.REMORSELESS_WINTER = 196770
-    self.spells.EMPOWER_RUNE_WEAPON = 47568
-    self.spells.PILLAR_OF_FROST = 51271
-    self.spells.BREATH_OF_SINDRAGOSA = 152279
-    self.spells.FROSTWYRMS_FURY = 279302
-    self.spells.GLACIAL_ADVANCE = 194913
-    self.spells.HORN_OF_WINTER = 57330
-    self.spells.FROST_FEVER = 55095
-    self.spells.KILLING_MACHINE = 51124
-    self.spells.CHILL_STREAK = 305392
-    self.spells.COLD_HEART = 281208
-    self.spells.RAZORICE = 51714
-    self.spells.RIME = 59052
-    self.spells.MURDEROUS_EFFICIENCY = 207061
-    self.spells.BLINDING_SLEET = 207167
-    self.spells.FROSTSCYTHE = 207230
-    self.spells.FROZEN_PULSE = 194909
-    self.spells.ICECAP = 207126
-    
-    -- Setup cooldown and aura tracking for Frost
-    WR.Cooldown:StartTracking(self.spells.OBLITERATE)
-    WR.Cooldown:StartTracking(self.spells.HOWLING_BLAST)
-    WR.Cooldown:StartTracking(self.spells.REMORSELESS_WINTER)
-    WR.Cooldown:StartTracking(self.spells.EMPOWER_RUNE_WEAPON)
-    WR.Cooldown:StartTracking(self.spells.PILLAR_OF_FROST)
-    WR.Cooldown:StartTracking(self.spells.BREATH_OF_SINDRAGOSA)
-    WR.Cooldown:StartTracking(self.spells.FROSTWYRMS_FURY)
-    WR.Cooldown:StartTracking(self.spells.GLACIAL_ADVANCE)
-    WR.Cooldown:StartTracking(self.spells.HORN_OF_WINTER)
-    WR.Cooldown:StartTracking(self.spells.CHILL_STREAK)
-    WR.Cooldown:StartTracking(self.spells.BLINDING_SLEET)
-    
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.PILLAR_OF_FROST, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.KILLING_MACHINE, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.FROST_FEVER, 85, false, true)
-    WR.Auras:RegisterImportantAura(self.spells.COLD_HEART, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.RIME, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.BREATH_OF_SINDRAGOSA, 95, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.REMORSELESS_WINTER, 85, true, false)
-    
-    -- Define Frost single target rotation
-    self.singleTargetRotation = {
-        -- Apply Frost Fever
-        {
-            spell = self.spells.HOWLING_BLAST,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.FROST_FEVER) or
-                       self:GetDebuffRemaining(self.spells.FROST_FEVER) < 4
-            end
-        },
-        
-        -- Use Pillar of Frost and other cooldowns together
-        {
-            spell = self.spells.PILLAR_OF_FROST,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.PILLAR_OF_FROST)
-            end
-        },
-        
-        -- Use Empower Rune Weapon during Pillar of Frost
-        {
-            spell = self.spells.EMPOWER_RUNE_WEAPON,
-            condition = function(self)
-                return self:HasBuff(self.spells.PILLAR_OF_FROST) and
-                       not self:SpellOnCooldown(self.spells.EMPOWER_RUNE_WEAPON)
-            end
-        },
-        
-        -- Use covenant abilities during cooldowns
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) 
-                return IsSpellKnown(self.spells.SWARMING_MIST) and
-                       self:HasBuff(self.spells.PILLAR_OF_FROST)
-            end
-        },
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
-        },
-        { 
-            spell = self.spells.SHACKLE_THE_UNWORTHY,
-            condition = function(self) return IsSpellKnown(self.spells.SHACKLE_THE_UNWORTHY) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        
-        -- Use Breath of Sindragosa during Pillar of Frost
-        {
-            spell = self.spells.BREATH_OF_SINDRAGOSA,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BREATH_OF_SINDRAGOSA) and
-                       self:HasBuff(self.spells.PILLAR_OF_FROST) and
-                       not self:SpellOnCooldown(self.spells.BREATH_OF_SINDRAGOSA) and
-                       self:GetRunicPower() >= 60
-            end
-        },
-        
-        -- Use Frostwyrm's Fury during Pillar of Frost
-        {
-            spell = self.spells.FROSTWYRMS_FURY,
-            condition = function(self)
-                return self:HasBuff(self.spells.PILLAR_OF_FROST) and
-                       not self:SpellOnCooldown(self.spells.FROSTWYRMS_FURY)
-            end
-        },
-        
-        -- Use Cold Heart during Pillar of Frost at max stacks
-        {
-            spell = self.spells.CHAINS_OF_ICE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.COLD_HEART) and
-                       self:HasBuff(self.spells.PILLAR_OF_FROST) and
-                       self:GetBuffStacks(self.spells.COLD_HEART) >= 15
-            end
-        },
-        
-        -- Use Remorseless Winter on cooldown
-        {
-            spell = self.spells.REMORSELESS_WINTER,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.REMORSELESS_WINTER)
-            end
-        },
-        
-        -- Use Howling Blast with Rime proc
-        {
-            spell = self.spells.HOWLING_BLAST,
-            condition = function(self)
-                return self:HasBuff(self.spells.RIME)
-            end
-        },
-        
-        -- Use Frostscythe with Killing Machine (if talented)
-        {
-            spell = self.spells.FROSTSCYTHE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.FROSTSCYTHE) and
-                       self:HasBuff(self.spells.KILLING_MACHINE)
-            end
-        },
-        
-        -- Use Obliterate with Killing Machine
-        {
-            spell = self.spells.OBLITERATE,
-            condition = function(self)
-                return self:HasBuff(self.spells.KILLING_MACHINE)
-            end
-        },
-        
-        -- Use Horn of Winter for resources
-        {
-            spell = self.spells.HORN_OF_WINTER,
-            condition = function(self)
-                return IsSpellKnown(self.spells.HORN_OF_WINTER) and
-                       not self:SpellOnCooldown(self.spells.HORN_OF_WINTER) and
-                       self:GetRuneCount() < 2
-            end
-        },
-        
-        -- Use Obliterate when runes are available
-        {
-            spell = self.spells.OBLITERATE,
-            condition = function(self)
-                return self:GetRuneCount() >= 2 and
-                       (not IsSpellKnown(self.spells.BREATH_OF_SINDRAGOSA) or
-                        not self:HasBuff(self.spells.BREATH_OF_SINDRAGOSA) or
-                        self:GetRunicPower() >= 50)
-            end
-        },
-        
-        -- Use Frost Strike to spend Runic Power
-        {
-            spell = self.spells.FROST_STRIKE,
-            condition = function(self)
-                return (not IsSpellKnown(self.spells.BREATH_OF_SINDRAGOSA) or
-                        not self:HasBuff(self.spells.BREATH_OF_SINDRAGOSA)) and
-                       self:GetRunicPower() >= 30
-            end
-        }
-    }
-    
-    -- AoE rotation for Frost
-    self.aoeRotation = {
-        -- Apply Frost Fever with Howling Blast
-        {
-            spell = self.spells.HOWLING_BLAST,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.FROST_FEVER) or
-                       self:GetDebuffRemaining(self.spells.FROST_FEVER) < 4
-            end
-        },
-        
-        -- Use Pillar of Frost
-        {
-            spell = self.spells.PILLAR_OF_FROST,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.PILLAR_OF_FROST)
-            end
-        },
-        
-        -- Use Empower Rune Weapon during Pillar of Frost
-        {
-            spell = self.spells.EMPOWER_RUNE_WEAPON,
-            condition = function(self)
-                return self:HasBuff(self.spells.PILLAR_OF_FROST) and
-                       not self:SpellOnCooldown(self.spells.EMPOWER_RUNE_WEAPON)
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) 
-                return IsSpellKnown(self.spells.SWARMING_MIST) and
-                       self:GetEnemyCount(8) >= 3
-            end
-        },
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        
-        -- Use Frostwyrm's Fury for AoE burst
-        {
-            spell = self.spells.FROSTWYRMS_FURY,
-            condition = function(self)
-                return self:GetEnemyCount(12) >= 3 and
-                       not self:SpellOnCooldown(self.spells.FROSTWYRMS_FURY)
-            end
-        },
-        
-        -- Use Chill Streak for PvP AoE (if talented)
-        {
-            spell = self.spells.CHILL_STREAK,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CHILL_STREAK) and
-                       self:GetEnemyCount(10) >= 2 and
-                       not self:SpellOnCooldown(self.spells.CHILL_STREAK)
-            end
-        },
-        
-        -- Use Remorseless Winter for AoE damage and slow
-        {
-            spell = self.spells.REMORSELESS_WINTER,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.REMORSELESS_WINTER)
-            end
-        },
-        
-        -- Use Glacial Advance for AoE
-        {
-            spell = self.spells.GLACIAL_ADVANCE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.GLACIAL_ADVANCE) and
-                       self:GetEnemyCount(8) >= 3 and
-                       self:GetRunicPower() >= 30
-            end
-        },
-        
-        -- Use Frostscythe for AoE if talented
-        {
-            spell = self.spells.FROSTSCYTHE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.FROSTSCYTHE) and
-                       self:GetEnemyCount(8) >= 3 and
-                       (self:HasBuff(self.spells.KILLING_MACHINE) or
-                        self:GetRuneCount() >= 1)
-            end
-        },
-        
-        -- Use Howling Blast with Rime proc
-        {
-            spell = self.spells.HOWLING_BLAST,
-            condition = function(self)
-                return self:HasBuff(self.spells.RIME)
-            end
-        },
-        
-        -- Use Howling Blast for AoE
-        {
-            spell = self.spells.HOWLING_BLAST,
-            condition = function(self)
-                return self:GetEnemyCount(8) >= 3 and
-                       self:GetRuneCount() >= 1
-            end
-        },
-        
-        -- Use Death and Decay for AoE
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return self:GetEnemyCount(8) >= 3 and
-                       not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY)
-            end
-        },
-        
-        -- Use Horn of Winter for resources
-        {
-            spell = self.spells.HORN_OF_WINTER,
-            condition = function(self)
-                return IsSpellKnown(self.spells.HORN_OF_WINTER) and
-                       not self:SpellOnCooldown(self.spells.HORN_OF_WINTER) and
-                       self:GetRuneCount() < 2
-            end
-        },
-        
-        -- Use Frost Strike to spend Runic Power
-        {
-            spell = self.spells.FROST_STRIKE,
-            condition = function(self)
-                return self:GetRunicPower() >= 80
-            end
-        },
-        
-        -- Use Obliterate when runes are available
-        {
-            spell = self.spells.OBLITERATE,
-            condition = function(self)
-                return self:GetRuneCount() >= 2
-            end
-        }
-    }
-    
-    -- Define burst rotation
-    self.burstRotation = {
-        { spell = self.spells.PILLAR_OF_FROST },
-        { spell = self.spells.EMPOWER_RUNE_WEAPON },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        {
-            spell = self.spells.BREATH_OF_SINDRAGOSA,
-            condition = function(self) return IsSpellKnown(self.spells.BREATH_OF_SINDRAGOSA) end
-        },
-        { spell = self.spells.FROSTWYRMS_FURY }
-    }
+-- Register Frost rotation
+function DeathKnightModule:RegisterFrostRotation()
+    RotationManager:RegisterRotation("DeathKnightFrost", {
+        id = "DeathKnightFrost",
+        name = "Death Knight - Frost",
+        class = "DEATHKNIGHT",
+        spec = SPEC_FROST,
+        level = 10,
+        description = "Frost Death Knight rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:FrostRotation()
+        end
+    })
 end
 
--- Load Unholy specialization
-function DeathKnight:LoadUnholySpec()
-    -- Unholy-specific spells
-    self.spells.SCOURGE_STRIKE = 55090
-    self.spells.FESTERING_STRIKE = 85948
-    self.spells.DEATH_COIL = 47541
-    self.spells.DARK_TRANSFORMATION = 63560
-    self.spells.APOCALYPSE = 275699
-    self.spells.ARMY_OF_THE_DEAD = 42650
-    self.spells.OUTBREAK = 77575
-    self.spells.UNHOLY_BLIGHT = 115989
-    self.spells.SOUL_REAPER = 343294
-    self.spells.EPIDEMIC = 207317
-    self.spells.SUMMON_GARGOYLE = 49206
-    self.spells.UNHOLY_ASSAULT = 207289
-    self.spells.FESTERING_WOUND = 194310
-    self.spells.VIRULENT_PLAGUE = 191587
-    self.spells.SUDDEN_DOOM = 81340
-    self.spells.RUNIC_CORRUPTION = 51460
-    self.spells.DARK_SUCCOR = 101568
-    self.spells.DARK_ARBITER = 207349
-    self.spells.DEFILE = 152280
-    self.spells.CLAWING_SHADOWS = 207311
-    self.spells.BURSTING_SORES = 207264
-    self.spells.EBON_FEVER = 207269
-    self.spells.INFECTED_CLAWS = 207272
-    self.spells.CORPSE_SHIELD = 207319
-    self.spells.UNHOLY_PACT = 319230
+-- Register Unholy rotation
+function DeathKnightModule:RegisterUnholyRotation()
+    RotationManager:RegisterRotation("DeathKnightUnholy", {
+        id = "DeathKnightUnholy",
+        name = "Death Knight - Unholy",
+        class = "DEATHKNIGHT",
+        spec = SPEC_UNHOLY,
+        level = 10,
+        description = "Unholy Death Knight rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:UnholyRotation()
+        end
+    })
+end
+
+-- Blood rotation
+function DeathKnightModule:BloodRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
+    end
     
-    -- Setup cooldown and aura tracking for Unholy
-    WR.Cooldown:StartTracking(self.spells.SCOURGE_STRIKE)
-    WR.Cooldown:StartTracking(self.spells.FESTERING_STRIKE)
-    WR.Cooldown:StartTracking(self.spells.DARK_TRANSFORMATION)
-    WR.Cooldown:StartTracking(self.spells.APOCALYPSE)
-    WR.Cooldown:StartTracking(self.spells.ARMY_OF_THE_DEAD)
-    WR.Cooldown:StartTracking(self.spells.SOUL_REAPER)
-    WR.Cooldown:StartTracking(self.spells.SUMMON_GARGOYLE)
-    WR.Cooldown:StartTracking(self.spells.UNHOLY_ASSAULT)
-    WR.Cooldown:StartTracking(self.spells.UNHOLY_BLIGHT)
-    WR.Cooldown:StartTracking(self.spells.DEFILE)
+    -- Get player and target
+    local player = "player"
+    local target = "target"
     
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.VIRULENT_PLAGUE, 90, false, true)
-    WR.Auras:RegisterImportantAura(self.spells.FESTERING_WOUND, 85, false, true)
-    WR.Auras:RegisterImportantAura(self.spells.DARK_TRANSFORMATION, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.SUDDEN_DOOM, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.RUNIC_CORRUPTION, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.SOUL_REAPER, 85, false, true)
-    WR.Auras:RegisterImportantAura(self.spells.UNHOLY_PACT, 85, true, false)
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
+    end
     
-    -- Define Unholy single target rotation
-    self.singleTargetRotation = {
-        -- Apply Virulent Plague
-        {
-            spell = self.spells.OUTBREAK,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.VIRULENT_PLAGUE) or
-                       self:GetDebuffRemaining(self.spells.VIRULENT_PLAGUE) < 4
-            end
-        },
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("DeathKnight")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local runicPower = API.GetUnitPower(player, Enum.PowerType.RunicPower)
+    local runes = API.GetRuneCount()
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.bloodSettings.aoeThreshold <= enemies
+    local hasBoneShield, boneShieldStacks = API.UnitHasBuff(player, BUFFS.BONE_SHIELD)
+    local hasDancingRuneWeapon = API.UnitHasBuff(player, BUFFS.DANCING_RUNE_WEAPON)
+    local hasVampiricBlood = API.UnitHasBuff(player, BUFFS.VAMPIRIC_BLOOD)
+    local hasCrimsonScourge = API.UnitHasBuff(player, BUFFS.CRIMSON_SCOURGE)
+    local hasBloodPlague = API.UnitHasDebuff(target, DEBUFFS.BLOOD_PLAGUE)
+    
+    -- Check for ghoul
+    if settings.generalSettings.autoRaiseDead and not UnitExists("pet") then
+        if API.IsSpellKnown(BLOOD_SPELLS.RAISE_DEAD) and API.IsSpellUsable(BLOOD_SPELLS.RAISE_DEAD) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.RAISE_DEAD,
+                target = player
+            }
+        end
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Anti-Magic Shell against magic damage
+        if settings.generalSettings.useAntiMagicShell and
+           API.IsSpellKnown(BLOOD_SPELLS.ANTI_MAGIC_SHELL) and 
+           API.IsSpellUsable(BLOOD_SPELLS.ANTI_MAGIC_SHELL) and
+           API.IsTakingMagicDamage() then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.ANTI_MAGIC_SHELL,
+                target = player
+            }
+        end
         
-        -- Use Unholy Blight if talented (replaces Outbreak)
-        {
-            spell = self.spells.UNHOLY_BLIGHT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.UNHOLY_BLIGHT) and
-                       not self:SpellOnCooldown(self.spells.UNHOLY_BLIGHT) and
-                       (not self:HasDebuff(self.spells.VIRULENT_PLAGUE) or
-                        self:GetDebuffRemaining(self.spells.VIRULENT_PLAGUE) < 4)
-            end
-        },
+        -- Icebound Fortitude at low health
+        if settings.generalSettings.useIceboundFortitude and
+           healthPercent <= settings.generalSettings.iceboundThreshold and
+           API.IsSpellKnown(BLOOD_SPELLS.ICEBOUND_FORTITUDE) and 
+           API.IsSpellUsable(BLOOD_SPELLS.ICEBOUND_FORTITUDE) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.ICEBOUND_FORTITUDE,
+                target = player
+            }
+        end
         
-        -- Use Army of the Dead on cooldown
-        {
-            spell = self.spells.ARMY_OF_THE_DEAD,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.ARMY_OF_THE_DEAD) and
-                       not self:IsMoving() -- Requires standing still to cast
-            end
-        },
+        -- Vampiric Blood at low health
+        if settings.bloodSettings.useVampiricBlood and
+           healthPercent <= settings.bloodSettings.vampiricBloodThreshold and
+           API.IsSpellKnown(BLOOD_SPELLS.VAMPIRIC_BLOOD) and 
+           API.IsSpellUsable(BLOOD_SPELLS.VAMPIRIC_BLOOD) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.VAMPIRIC_BLOOD,
+                target = player
+            }
+        end
         
-        -- Use covenant abilities
-        { 
-            spell = self.spells.SHACKLE_THE_UNWORTHY,
-            condition = function(self) return IsSpellKnown(self.spells.SHACKLE_THE_UNWORTHY) end
-        },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
-        },
+        -- Death Strike at low health
+        if healthPercent <= settings.bloodSettings.deathStrikeThreshold and
+           runicPower >= 45 and
+           API.IsSpellKnown(BLOOD_SPELLS.DEATH_STRIKE) and 
+           API.IsSpellUsable(BLOOD_SPELLS.DEATH_STRIKE) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.DEATH_STRIKE,
+                target = target
+            }
+        end
+    end
+    
+    -- Marrowrend to maintain Bone Shield if needed
+    if settings.bloodSettings.maintainBoneShield and
+       (not hasBoneShield or boneShieldStacks < settings.bloodSettings.boneShieldMinStacks) and
+       API.IsSpellKnown(BLOOD_SPELLS.MARROWREND) and 
+       API.IsSpellUsable(BLOOD_SPELLS.MARROWREND) and
+       runes >= 2 then
+        return {
+            type = "spell",
+            id = BLOOD_SPELLS.MARROWREND,
+            target = target
+        }
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Dancing Rune Weapon
+        if settings.bloodSettings.useDancingRuneWeapon and
+           API.IsSpellKnown(BLOOD_SPELLS.DANCING_RUNE_WEAPON) and 
+           API.IsSpellUsable(BLOOD_SPELLS.DANCING_RUNE_WEAPON) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.DANCING_RUNE_WEAPON,
+                target = player
+            }
+        end
         
-        -- Use Dark Transformation on cooldown
-        {
-            spell = self.spells.DARK_TRANSFORMATION,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DARK_TRANSFORMATION)
-            end
-        },
+        -- Blood tap to get more runes
+        if runes <= 2 and
+           API.IsSpellKnown(BLOOD_SPELLS.BLOOD_TAP) and 
+           API.IsSpellUsable(BLOOD_SPELLS.BLOOD_TAP) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.BLOOD_TAP,
+                target = player
+            }
+        end
         
-        -- Stack Festering Wounds
-        {
-            spell = self.spells.FESTERING_STRIKE,
-            condition = function(self)
-                return self:GetDebuffStacks(self.spells.FESTERING_WOUND) < 4
-            end
-        },
+        -- Consumption for damage and healing
+        if API.IsSpellKnown(BLOOD_SPELLS.CONSUMPTION) and 
+           API.IsSpellUsable(BLOOD_SPELLS.CONSUMPTION) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.CONSUMPTION,
+                target = target
+            }
+        end
         
-        -- Use Apocalypse with at least 4 Festering Wounds
-        {
-            spell = self.spells.APOCALYPSE,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.APOCALYPSE) and
-                       self:GetDebuffStacks(self.spells.FESTERING_WOUND) >= 4
-            end
-        },
+        -- Blooddrinker if talented
+        if API.IsSpellKnown(BLOOD_SPELLS.BLOODDRINKER) and 
+           API.IsSpellUsable(BLOOD_SPELLS.BLOODDRINKER) and
+           runes < 3 then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.BLOODDRINKER,
+                target = target
+            }
+        end
+    end
+    
+    -- AoE rotation
+    if aoeEnabled and enemies >= 3 then
+        -- Death and Decay with Crimson Scourge proc
+        if hasCrimsonScourge and
+           API.IsSpellKnown(BLOOD_SPELLS.DEATH_AND_DECAY) and 
+           API.IsSpellUsable(BLOOD_SPELLS.DEATH_AND_DECAY) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.DEATH_AND_DECAY,
+                target = player
+            }
+        end
         
-        -- Use Unholy Assault as a burst cooldown
-        {
-            spell = self.spells.UNHOLY_ASSAULT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.UNHOLY_ASSAULT) and
-                       not self:SpellOnCooldown(self.spells.UNHOLY_ASSAULT) and
-                       self:HasBuff(self.spells.DARK_TRANSFORMATION)
-            end
-        },
+        -- Death and Decay normally
+        if runes >= 1 and
+           API.IsSpellKnown(BLOOD_SPELLS.DEATH_AND_DECAY) and 
+           API.IsSpellUsable(BLOOD_SPELLS.DEATH_AND_DECAY) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.DEATH_AND_DECAY,
+                target = player
+            }
+        end
         
-        -- Use Soul Reaper if talented
-        {
-            spell = self.spells.SOUL_REAPER,
-            condition = function(self)
-                return IsSpellKnown(self.spells.SOUL_REAPER) and
-                       not self:SpellOnCooldown(self.spells.SOUL_REAPER) and
-                       self:GetTargetHealthPct() < 35
-            end
-        },
+        -- Blood Boil for AoE Blood Plague
+        if not hasBloodPlague and
+           API.IsSpellKnown(BLOOD_SPELLS.BLOOD_BOIL) and 
+           API.IsSpellUsable(BLOOD_SPELLS.BLOOD_BOIL) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.BLOOD_BOIL,
+                target = target
+            }
+        end
         
-        -- Use Summon Gargoyle if talented
-        {
-            spell = self.spells.SUMMON_GARGOYLE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.SUMMON_GARGOYLE) and
-                       not self:SpellOnCooldown(self.spells.SUMMON_GARGOYLE)
-            end
-        },
+        -- Bonestorm if talented and high runic power
+        if runicPower >= 90 and
+           API.IsSpellKnown(BLOOD_SPELLS.BONESTORM) and 
+           API.IsSpellUsable(BLOOD_SPELLS.BONESTORM) then
+            return {
+                type = "spell",
+                id = BLOOD_SPELLS.BONESTORM,
+                target = player
+            }
+        end
+    end
+    
+    -- Core rotation
+    -- Blood Boil to apply/refresh Blood Plague
+    if (not hasBloodPlague or API.GetSpellCharges(BLOOD_SPELLS.BLOOD_BOIL) > 1.5) and
+       API.IsSpellKnown(BLOOD_SPELLS.BLOOD_BOIL) and 
+       API.IsSpellUsable(BLOOD_SPELLS.BLOOD_BOIL) then
+        return {
+            type = "spell",
+            id = BLOOD_SPELLS.BLOOD_BOIL,
+            target = target
+        }
+    end
+    
+    -- Heart Strike to generate runic power
+    if runes >= 1 and
+       API.IsSpellKnown(BLOOD_SPELLS.HEART_STRIKE) and 
+       API.IsSpellUsable(BLOOD_SPELLS.HEART_STRIKE) then
+        return {
+            type = "spell",
+            id = BLOOD_SPELLS.HEART_STRIKE,
+            target = target
+        }
+    end
+    
+    -- Death Strike to spend runic power
+    if runicPower >= 45 and
+       API.IsSpellKnown(BLOOD_SPELLS.DEATH_STRIKE) and 
+       API.IsSpellUsable(BLOOD_SPELLS.DEATH_STRIKE) then
+        return {
+            type = "spell",
+            id = BLOOD_SPELLS.DEATH_STRIKE,
+            target = target
+        }
+    end
+    
+    return nil
+end
+
+-- Frost rotation
+function DeathKnightModule:FrostRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
+    end
+    
+    -- Get player and target
+    local player = "player"
+    local target = "target"
+    
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
+    end
+    
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("DeathKnight")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local runicPower = API.GetUnitPower(player, Enum.PowerType.RunicPower)
+    local runes = API.GetRuneCount()
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.frostSettings.aoeThreshold <= enemies
+    local hasPillarOfFrost = API.UnitHasBuff(player, BUFFS.PILLAR_OF_FROST)
+    local hasEmpowerRuneWeapon = API.UnitHasBuff(player, BUFFS.EMPOWER_RUNE_WEAPON)
+    local hasKillingMachine = API.UnitHasBuff(player, BUFFS.KILLING_MACHINE)
+    local hasRime = API.UnitHasBuff(player, BUFFS.RIME)
+    local hasBreathOfSindragosa = API.UnitHasBuff(player, BUFFS.BREATH_OF_SINDRAGOSA)
+    local hasFrostFever = API.UnitHasDebuff(target, DEBUFFS.FROST_FEVER)
+    
+    -- Check for ghoul
+    if settings.generalSettings.autoRaiseDead and not UnitExists("pet") then
+        if API.IsSpellKnown(FROST_SPELLS.RAISE_DEAD) and API.IsSpellUsable(FROST_SPELLS.RAISE_DEAD) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.RAISE_DEAD,
+                target = player
+            }
+        end
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Anti-Magic Shell against magic damage
+        if settings.generalSettings.useAntiMagicShell and
+           API.IsSpellKnown(FROST_SPELLS.ANTI_MAGIC_SHELL) and 
+           API.IsSpellUsable(FROST_SPELLS.ANTI_MAGIC_SHELL) and
+           API.IsTakingMagicDamage() then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.ANTI_MAGIC_SHELL,
+                target = player
+            }
+        end
         
-        -- Use Defile if talented
-        {
-            spell = self.spells.DEFILE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DEFILE) and
-                       not self:SpellOnCooldown(self.spells.DEFILE)
-            end
-        },
+        -- Icebound Fortitude at low health
+        if settings.generalSettings.useIceboundFortitude and
+           healthPercent <= settings.generalSettings.iceboundThreshold and
+           API.IsSpellKnown(FROST_SPELLS.ICEBOUND_FORTITUDE) and 
+           API.IsSpellUsable(FROST_SPELLS.ICEBOUND_FORTITUDE) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.ICEBOUND_FORTITUDE,
+                target = player
+            }
+        end
+    end
+    
+    -- Howling Blast to apply Frost Fever
+    if not hasFrostFever and
+       API.IsSpellKnown(FROST_SPELLS.HOWLING_BLAST) and 
+       API.IsSpellUsable(FROST_SPELLS.HOWLING_BLAST) and
+       runes >= 1 then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.HOWLING_BLAST,
+            target = target
+        }
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Pillar of Frost
+        if settings.frostSettings.usePillarOfFrost and
+           API.IsSpellKnown(FROST_SPELLS.PILLAR_OF_FROST) and 
+           API.IsSpellUsable(FROST_SPELLS.PILLAR_OF_FROST) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.PILLAR_OF_FROST,
+                target = player
+            }
+        end
         
-        -- Use Death and Decay for AoE or if Death and Decay talent is used
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY)
-            end
-        },
+        -- Empower Rune Weapon
+        if settings.frostSettings.useEmpowerRuneWeapon and
+           API.IsSpellKnown(FROST_SPELLS.EMPOWER_RUNE_WEAPON) and 
+           API.IsSpellUsable(FROST_SPELLS.EMPOWER_RUNE_WEAPON) and
+           (hasPillarOfFrost or runes <= 2) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.EMPOWER_RUNE_WEAPON,
+                target = player
+            }
+        end
         
-        -- Use Scourge Strike or Clawing Shadows to pop Festering Wounds
-        {
-            spell = self.spells.CLAWING_SHADOWS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CLAWING_SHADOWS) and
-                       self:GetDebuffStacks(self.spells.FESTERING_WOUND) > 0
-            end
-        },
-        {
-            spell = self.spells.SCOURGE_STRIKE,
-            condition = function(self)
-                return not IsSpellKnown(self.spells.CLAWING_SHADOWS) and
-                       self:GetDebuffStacks(self.spells.FESTERING_WOUND) > 0
-            end
-        },
+        -- Breath of Sindragosa
+        if settings.frostSettings.useSindragosa and
+           not hasBreathOfSindragosa and
+           runicPower >= 80 and 
+           hasPillarOfFrost and
+           API.IsSpellKnown(FROST_SPELLS.BREATH_OF_SINDRAGOSA) and 
+           API.IsSpellUsable(FROST_SPELLS.BREATH_OF_SINDRAGOSA) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.BREATH_OF_SINDRAGOSA,
+                target = target
+            }
+        end
         
-        -- Use Death Coil with Sudden Doom proc
-        {
-            spell = self.spells.DEATH_COIL,
-            condition = function(self)
-                return self:HasBuff(self.spells.SUDDEN_DOOM)
-            end
-        },
+        -- Frostwyrm's Fury with Pillar of Frost
+        if hasPillarOfFrost and
+           API.IsSpellKnown(FROST_SPELLS.FROSTWYRM'S_FURY) and 
+           API.IsSpellUsable(FROST_SPELLS.FROSTWYRM'S_FURY) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.FROSTWYRM'S_FURY,
+                target = target
+            }
+        end
         
-        -- Use Death Coil to avoid capping Runic Power
-        {
-            spell = self.spells.DEATH_COIL,
-            condition = function(self)
-                return self:GetRunicPower() >= 80
+        -- Horn of Winter for runic power and runes
+        if API.IsSpellKnown(FROST_SPELLS.HORN_OF_WINTER) and 
+           API.IsSpellUsable(FROST_SPELLS.HORN_OF_WINTER) and
+           (runes <= 3 or runicPower <= 70) then
+            return {
+                type = "spell",
+                id = FROST_SPELLS.HORN_OF_WINTER,
+                target = player
+            }
+        end
+    end
+    
+    -- Maintain Breath of Sindragosa by avoiding runic power drops
+    if hasBreathOfSindragosa and runicPower <= settings.frostSettings.sindragosaRPThreshold then
+        -- Avoid using runic power until enough to keep Breath up
+        -- Only use rune abilities
+    else
+        -- AoE rotation
+        if aoeEnabled and enemies >= 3 then
+            -- Frostscythe with Killing Machine
+            if hasKillingMachine and
+               API.IsSpellKnown(FROST_SPELLS.FROSTSCYTHE) and 
+               API.IsSpellUsable(FROST_SPELLS.FROSTSCYTHE) and
+               runes >= 1 then
+                return {
+                    type = "spell",
+                    id = FROST_SPELLS.FROSTSCYTHE,
+                    target = target
+                }
             end
-        },
-        
-        -- Generate more Festering Wounds
-        { spell = self.spells.FESTERING_STRIKE }
+            
+            -- Glacial Advance for AoE
+            if API.IsSpellKnown(FROST_SPELLS.GLACIAL_ADVANCE) and 
+               API.IsSpellUsable(FROST_SPELLS.GLACIAL_ADVANCE) and
+               runicPower >= 30 then
+                return {
+                    type = "spell",
+                    id = FROST_SPELLS.GLACIAL_ADVANCE,
+                    target = target
+                }
+            end
+            
+            -- Remorseless Winter for AoE
+            if API.IsSpellKnown(FROST_SPELLS.REMORSELESS_WINTER) and 
+               API.IsSpellUsable(FROST_SPELLS.REMORSELESS_WINTER) and
+               runes >= 1 then
+                return {
+                    type = "spell",
+                    id = FROST_SPELLS.REMORSELESS_WINTER,
+                    target = player
+                }
+            end
+            
+            -- Howling Blast for AoE
+            if API.IsSpellKnown(FROST_SPELLS.HOWLING_BLAST) and 
+               API.IsSpellUsable(FROST_SPELLS.HOWLING_BLAST) and
+               runes >= 1 then
+                return {
+                    type = "spell",
+                    id = FROST_SPELLS.HOWLING_BLAST,
+                    target = target
+                }
+            end
+        end
     }
     
-    -- AoE rotation for Unholy
-    self.aoeRotation = {
-        -- Apply Virulent Plague
-        {
-            spell = self.spells.OUTBREAK,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.VIRULENT_PLAGUE) or
-                       self:GetDebuffRemaining(self.spells.VIRULENT_PLAGUE) < 4
-            end
-        },
+    -- Core rotation
+    -- Howling Blast with Rime proc
+    if settings.frostSettings.useHowlingBlastWithRime and
+       hasRime and
+       API.IsSpellKnown(FROST_SPELLS.HOWLING_BLAST) and 
+       API.IsSpellUsable(FROST_SPELLS.HOWLING_BLAST) then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.HOWLING_BLAST,
+            target = target
+        }
+    end
+    
+    -- Obliterate with Killing Machine
+    if hasKillingMachine and
+       API.IsSpellKnown(FROST_SPELLS.OBLITERATE) and 
+       API.IsSpellUsable(FROST_SPELLS.OBLITERATE) and
+       runes >= 2 then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.OBLITERATE,
+            target = target
+        }
+    end
+    
+    -- Remorseless Winter on cooldown
+    if API.IsSpellKnown(FROST_SPELLS.REMORSELESS_WINTER) and 
+       API.IsSpellUsable(FROST_SPELLS.REMORSELESS_WINTER) and
+       runes >= 1 then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.REMORSELESS_WINTER,
+            target = player
+        }
+    end
+    
+    -- Obliterate to spend runes
+    if runes >= 2 and
+       API.IsSpellKnown(FROST_SPELLS.OBLITERATE) and 
+       API.IsSpellUsable(FROST_SPELLS.OBLITERATE) then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.OBLITERATE,
+            target = target
+        }
+    end
+    
+    -- Frost Strike to spend runic power
+    if (runicPower >= 30 and not hasBreathOfSindragosa) or 
+       (runicPower >= 70 and not settings.frostSettings.poolRPForSindragosa) and
+       API.IsSpellKnown(FROST_SPELLS.FROST_STRIKE) and 
+       API.IsSpellUsable(FROST_SPELLS.FROST_STRIKE) then
+        return {
+            type = "spell",
+            id = FROST_SPELLS.FROST_STRIKE,
+            target = target
+        }
+    end
+    
+    return nil
+end
+
+-- Unholy rotation
+function DeathKnightModule:UnholyRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
+    end
+    
+    -- Get player and target
+    local player = "player"
+    local target = "target"
+    
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
+    end
+    
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("DeathKnight")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local runicPower = API.GetUnitPower(player, Enum.PowerType.RunicPower)
+    local runes = API.GetRuneCount()
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.unholySettings.aoeThreshold <= enemies
+    local hasVirulentPlague = API.UnitHasDebuff(target, DEBUFFS.VIRULENT_PLAGUE)
+    local festWoundCount = API.GetDebuffStacks(target, DEBUFFS.FESTERING_WOUND)
+    local hasDarkTransformation = API.UnitHasBuff("pet", BUFFS.DARK_TRANSFORMATION)
+    local hasSuddenDoom = API.UnitHasBuff(player, BUFFS.SUDDEN_DOOM)
+    local hasRunicCorruption = API.UnitHasBuff(player, BUFFS.RUNIC_CORRUPTION)
+    
+    -- Check for ghoul
+    if settings.generalSettings.autoRaiseDead and not UnitExists("pet") then
+        if API.IsSpellKnown(UNHOLY_SPELLS.RAISE_DEAD) and API.IsSpellUsable(UNHOLY_SPELLS.RAISE_DEAD) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.RAISE_DEAD,
+                target = player
+            }
+        end
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Anti-Magic Shell against magic damage
+        if settings.generalSettings.useAntiMagicShell and
+           API.IsSpellKnown(UNHOLY_SPELLS.ANTI_MAGIC_SHELL) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.ANTI_MAGIC_SHELL) and
+           API.IsTakingMagicDamage() then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.ANTI_MAGIC_SHELL,
+                target = player
+            }
+        end
         
-        -- Use Unholy Blight if talented for AoE
-        {
-            spell = self.spells.UNHOLY_BLIGHT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.UNHOLY_BLIGHT) and
-                       not self:SpellOnCooldown(self.spells.UNHOLY_BLIGHT) and
-                       self:GetEnemyCount(10) >= 3
-            end
-        },
+        -- Icebound Fortitude at low health
+        if settings.generalSettings.useIceboundFortitude and
+           healthPercent <= settings.generalSettings.iceboundThreshold and
+           API.IsSpellKnown(UNHOLY_SPELLS.ICEBOUND_FORTITUDE) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.ICEBOUND_FORTITUDE) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.ICEBOUND_FORTITUDE,
+                target = player
+            }
+        end
+    end
+    
+    -- Apply or refresh Virulent Plague
+    if settings.unholySettings.maintainVirulentPlague and not hasVirulentPlague and
+       API.IsSpellKnown(UNHOLY_SPELLS.OUTBREAK) and 
+       API.IsSpellUsable(UNHOLY_SPELLS.OUTBREAK) then
+        return {
+            type = "spell",
+            id = UNHOLY_SPELLS.OUTBREAK,
+            target = target
+        }
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Army of the Dead
+        if settings.unholySettings.useArmyOfTheDead and
+           API.IsSpellKnown(UNHOLY_SPELLS.ARMY_OF_THE_DEAD) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.ARMY_OF_THE_DEAD) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.ARMY_OF_THE_DEAD,
+                target = player
+            }
+        end
         
-        -- Use Army of the Dead for big pulls
-        {
-            spell = self.spells.ARMY_OF_THE_DEAD,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.ARMY_OF_THE_DEAD) and
-                       self:GetEnemyCount(10) >= 4 and
-                       not self:IsMoving() -- Requires standing still to cast
-            end
-        },
+        -- Dark Transformation when pet is active
+        if settings.unholySettings.useDarkTransformation and
+           UnitExists("pet") and not hasDarkTransformation and
+           API.IsSpellKnown(UNHOLY_SPELLS.DARK_TRANSFORMATION) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.DARK_TRANSFORMATION) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.DARK_TRANSFORMATION,
+                target = player
+            }
+        end
         
-        -- Use covenant abilities for AoE
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) 
-                return IsSpellKnown(self.spells.ABOMINATION_LIMB) and
-                       self:GetEnemyCount(8) >= 3
-            end
-        },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) 
-                return IsSpellKnown(self.spells.SWARMING_MIST) and
-                       self:GetEnemyCount(8) >= 3
-            end
-        },
-        { 
-            spell = self.spells.DEATHS_DUE,
-            condition = function(self) return IsSpellKnown(self.spells.DEATHS_DUE) end
-        },
+        -- Unholy Blight
+        if settings.unholySettings.useUnholyBlight and
+           API.IsSpellKnown(UNHOLY_SPELLS.UNHOLY_BLIGHT) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.UNHOLY_BLIGHT) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.UNHOLY_BLIGHT,
+                target = player
+            }
+        end
         
-        -- Use Dark Transformation on cooldown
-        {
-            spell = self.spells.DARK_TRANSFORMATION,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DARK_TRANSFORMATION)
-            end
-        },
+        -- Summon Gargoyle if talented
+        if API.IsSpellKnown(UNHOLY_SPELLS.SUMMON_GARGOYLE) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.SUMMON_GARGOYLE) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.SUMMON_GARGOYLE,
+                target = target
+            }
+        end
         
-        -- Stack Festering Wounds for AoE
-        {
-            spell = self.spells.FESTERING_STRIKE,
-            condition = function(self)
-                return self:GetDebuffStacks(self.spells.FESTERING_WOUND) < 3
-            end
-        },
+        -- Apocalypse with enough wounds
+        if settings.unholySettings.useApocalypse and
+           festWoundCount >= settings.unholySettings.apocalypseFestWoundThreshold and
+           API.IsSpellKnown(UNHOLY_SPELLS.APOCALYPSE) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.APOCALYPSE) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.APOCALYPSE,
+                target = target
+            }
+        end
         
-        -- Use Apocalypse for AoE adds
-        {
-            spell = self.spells.APOCALYPSE,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.APOCALYPSE) and
-                       self:GetDebuffStacks(self.spells.FESTERING_WOUND) >= 4 and
-                       self:GetEnemyCount(10) >= 3
-            end
-        },
+        -- Soul Reaper if talented
+        if targetHealthPercent < 35 and
+           API.IsSpellKnown(UNHOLY_SPELLS.SOUL_REAPER) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.SOUL_REAPER) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.SOUL_REAPER,
+                target = target
+            }
+        end
+    end
+    
+    -- AoE rotation
+    if aoeEnabled and enemies >= 3 then
+        -- Defile if talented
+        if API.IsSpellKnown(UNHOLY_SPELLS.DEFILE) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.DEFILE) then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.DEFILE,
+                target = target
+            }
+        end
         
-        -- Use Death and Decay for AoE
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.DEATH_AND_DECAY) and
-                       self:GetEnemyCount(10) >= 2
-            end
-        },
+        -- Death and Decay
+        if API.IsSpellKnown(UNHOLY_SPELLS.DEATH_AND_DECAY) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.DEATH_AND_DECAY) and
+           runes >= 1 then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.DEATH_AND_DECAY,
+                target = player
+            }
+        end
         
-        -- Use Defile instead of Death and Decay if talented
-        {
-            spell = self.spells.DEFILE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DEFILE) and
-                       not self:SpellOnCooldown(self.spells.DEFILE) and
-                       self:GetEnemyCount(10) >= 2
-            end
-        },
-        
-        -- Use Epidemic for AoE damage
-        {
-            spell = self.spells.EPIDEMIC,
-            condition = function(self)
-                return IsSpellKnown(self.spells.EPIDEMIC) and
-                       self:GetEnemyCount(10) >= 3 and
-                       self:GetRunicPower() >= 30
-            end
-        },
-        
-        -- Use Scourge Strike inside Death and Decay for AoE
-        {
-            spell = self.spells.SCOURGE_STRIKE,
-            condition = function(self)
-                return self:GetDebuffStacks(self.spells.FESTERING_WOUND) > 0 and
-                       self:IsStandingInDND() and
-                       not IsSpellKnown(self.spells.CLAWING_SHADOWS)
-            end
-        },
-        
+        -- Epidemic for AoE
+        if API.IsSpellKnown(UNHOLY_SPELLS.EPIDEMIC) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.EPIDEMIC) and
+           runicPower >= 30 then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.EPIDEMIC,
+                target = target
+            }
+        end
+    end
+    
+    -- Core rotation
+    -- Festering Strike to apply wounds
+    if festWoundCount < 4 and
+       API.IsSpellKnown(UNHOLY_SPELLS.FESTERING_STRIKE) and 
+       API.IsSpellUsable(UNHOLY_SPELLS.FESTERING_STRIKE) and
+       runes >= 2 then
+        return {
+            type = "spell",
+            id = UNHOLY_SPELLS.FESTERING_STRIKE,
+            target = target
+        }
+    end
+    
+    -- Death Coil with Sudden Doom proc
+    if hasSuddenDoom and
+       API.IsSpellKnown(UNHOLY_SPELLS.DEATH_COIL) and 
+       API.IsSpellUsable(UNHOLY_SPELLS.DEATH_COIL) then
+        return {
+            type = "spell",
+            id = UNHOLY_SPELLS.DEATH_COIL,
+            target = target
+        }
+    end
+    
+    -- Scourge Strike / Clawing Shadows to pop wounds
+    if festWoundCount >= 1 then
         -- Use Clawing Shadows if talented
-        {
-            spell = self.spells.CLAWING_SHADOWS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CLAWING_SHADOWS) and
-                       self:GetDebuffStacks(self.spells.FESTERING_WOUND) > 0
-            end
-        },
-        
-        -- Use Death Coil to spend Runic Power if not using Epidemic
-        {
-            spell = self.spells.DEATH_COIL,
-            condition = function(self)
-                return (not IsSpellKnown(self.spells.EPIDEMIC) or
-                        self:GetEnemyCount(10) < 3) and
-                       self:GetRunicPower() >= 80
-            end
-        },
-        
-        -- Generate more Festering Wounds with Festering Strike
-        { spell = self.spells.FESTERING_STRIKE }
-    }
+        if API.IsSpellKnown(UNHOLY_SPELLS.CLAWING_SHADOWS) and 
+           API.IsSpellUsable(UNHOLY_SPELLS.CLAWING_SHADOWS) and
+           runes >= 1 then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.CLAWING_SHADOWS,
+                target = target
+            }
+        -- Otherwise use Scourge Strike
+        elseif API.IsSpellKnown(UNHOLY_SPELLS.SCOURGE_STRIKE) and 
+               API.IsSpellUsable(UNHOLY_SPELLS.SCOURGE_STRIKE) and
+               runes >= 1 then
+            return {
+                type = "spell",
+                id = UNHOLY_SPELLS.SCOURGE_STRIKE,
+                target = target
+            }
+        end
+    end
     
-    -- Define burst rotation
-    self.burstRotation = {
-        { spell = self.spells.DARK_TRANSFORMATION },
-        {
-            spell = self.spells.UNHOLY_ASSAULT,
-            condition = function(self) return IsSpellKnown(self.spells.UNHOLY_ASSAULT) end
-        },
-        { spell = self.spells.APOCALYPSE },
-        {
-            spell = self.spells.SUMMON_GARGOYLE,
-            condition = function(self) return IsSpellKnown(self.spells.SUMMON_GARGOYLE) end
-        },
-        { 
-            spell = self.spells.ABOMINATION_LIMB,
-            condition = function(self) return IsSpellKnown(self.spells.ABOMINATION_LIMB) end
-        },
-        { 
-            spell = self.spells.SWARMING_MIST,
-            condition = function(self) return IsSpellKnown(self.spells.SWARMING_MIST) end
-        },
-        {
-            spell = self.spells.DEATH_AND_DECAY,
-            condition = function(self) return not IsSpellKnown(self.spells.DEFILE) end
-        },
-        {
-            spell = self.spells.DEFILE,
-            condition = function(self) return IsSpellKnown(self.spells.DEFILE) end
+    -- Death Coil to spend runic power
+    if runicPower >= 40 and
+       API.IsSpellKnown(UNHOLY_SPELLS.DEATH_COIL) and 
+       API.IsSpellUsable(UNHOLY_SPELLS.DEATH_COIL) then
+        return {
+            type = "spell",
+            id = UNHOLY_SPELLS.DEATH_COIL,
+            target = target
         }
-    }
-end
-
--- Check if player is standing in Death and Decay
-function DeathKnight:IsStandingInDND()
-    -- This would use actual zone checks in the real addon
-    -- For our purposes, we'll just check if the spell is on cooldown
-    return self:SpellOnCooldown(self.spells.DEATH_AND_DECAY) or
-           (IsSpellKnown(self.spells.DEFILE) and self:SpellOnCooldown(self.spells.DEFILE))
-end
-
--- Get current rune count
-function DeathKnight:GetRuneCount()
-    -- In a real addon, this would use GetRuneCooldown() API
-    -- For our purposes, we'll simulate a random rune count
-    return math.random(0, 6)
-end
-
--- Class-specific pre-rotation checks
-function DeathKnight:ClassSpecificChecks()
-    -- Check for class-specific conditions
+    end
     
-    -- Check for active pet/raise dead if it's an Unholy DK
-    if self.currentSpec == SPEC_UNHOLY and
-       not self:HasActivePet() and
-       not self:SpellOnCooldown(self.spells.RAISE_DEAD) then
-        WR.Queue:Add(self.spells.RAISE_DEAD)
+    -- Festering Strike as filler
+    if runes >= 2 and
+       API.IsSpellKnown(UNHOLY_SPELLS.FESTERING_STRIKE) and 
+       API.IsSpellUsable(UNHOLY_SPELLS.FESTERING_STRIKE) then
+        return {
+            type = "spell",
+            id = UNHOLY_SPELLS.FESTERING_STRIKE,
+            target = target
+        }
+    end
+    
+    return nil
+end
+
+-- Should execute rotation
+function DeathKnightModule:ShouldExecuteRotation()
+    if not isEnabled then
+        return false
+    end
+    
+    -- Check if player matches class
+    local playerInfo = API.GetPlayerInfo()
+    if playerInfo.class ~= "DEATHKNIGHT" then
         return false
     end
     
     return true
 end
 
--- Check if the player has an active pet
-function DeathKnight:HasActivePet()
-    -- In a real addon, would use UnitExists("pet")
-    -- For our mock implementation, just return true to avoid endless pet summons
-    return true
-end
-
--- Get default action when nothing else is available
-function DeathKnight:GetDefaultAction()
-    if self.currentSpec == SPEC_BLOOD then
-        return self.spells.HEART_STRIKE
-    elseif self.currentSpec == SPEC_FROST then
-        return self.spells.FROST_STRIKE
-    elseif self.currentSpec == SPEC_UNHOLY then
-        return self.spells.SCOURGE_STRIKE
+-- Get rune count
+function API.GetRuneCount()
+    -- Try to use Tinkr's API if available
+    if API.IsTinkrLoaded() and Tinkr.Util then
+        return Tinkr.Util:Runes() or 0
     end
     
-    return nil
+    -- Fallback to WoW API
+    local count = 0
+    for i = 1, 6 do
+        local start, duration, runeReady = GetRuneCooldown(i)
+        if runeReady then
+            count = count + 1
+        end
+    end
+    
+    return count
 end
 
--- Initialize the module
-DeathKnight:Initialize()
+-- Check if taking magic damage
+function API.IsTakingMagicDamage()
+    -- This would need to be implemented with proper combat log parsing
+    -- For now, we'll just return a simple approximation based on recent damage
+    local damage = API.GetRecentMagicDamage(3) -- Last 3 seconds
+    return damage > 0
+end
 
-return DeathKnight
+-- Get recent magic damage
+function API.GetRecentMagicDamage(seconds)
+    -- This would need to be implemented with proper combat log parsing
+    -- For now, just return a placeholder
+    return 0
+end
+
+-- Get debuff stacks
+function API.GetDebuffStacks(unit, debuff)
+    -- Try to use Tinkr's API if available
+    if API.IsTinkrLoaded() and Tinkr.Unit then
+        return Tinkr.Unit[unit]:Debuff(debuff, "player"):Stacks() or 0
+    end
+    
+    -- Fallback to WoW API
+    local name, _, count = API.UnitHasDebuff(unit, debuff)
+    if name then
+        return count or 0
+    end
+    
+    return 0
+end
+
+-- Register for export
+WR.DeathKnight = DeathKnightModule
+
+return DeathKnightModule

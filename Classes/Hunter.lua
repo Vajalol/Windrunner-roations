@@ -1,985 +1,1448 @@
+------------------------------------------
+-- WindrunnerRotations - Hunter Class Module
+-- Author: VortexQ8
+-- The War Within Season 2
+------------------------------------------
+
 local addonName, WR = ...
+local HunterModule = {}
+WR.Hunter = HunterModule
 
--- Hunter Class module
-local Hunter = {}
-WR.Classes = WR.Classes or {}
-WR.Classes.HUNTER = Hunter
+-- Dependencies
+local API = WR.API
+local ConfigRegistry = WR.ConfigRegistry
+local RotationManager = WR.RotationManager
+local ErrorHandler = WR.ErrorHandler
+local CombatAnalysis = WR.CombatAnalysis
+local AntiDetectionSystem = WR.AntiDetectionSystem
+local PvPManager = WR.PvPManager
 
--- Inherit from BaseClass
-setmetatable(Hunter, {__index = WR.BaseClass})
-
--- Resource type for hunters (focus)
-Hunter.resourceType = Enum.PowerType.Focus
-
--- Define spec IDs
+-- Hunter constants
+local CLASS_ID = 3 -- Hunter class ID
 local SPEC_BEAST_MASTERY = 253
 local SPEC_MARKSMANSHIP = 254
 local SPEC_SURVIVAL = 255
 
--- Class initialization
-function Hunter:Initialize()
-    -- Inherit base initialization
-    WR.BaseClass.Initialize(self)
-    
-    -- Register Specializations
-    self:RegisterSpec(SPEC_BEAST_MASTERY, "Beast Mastery")
-    self:RegisterSpec(SPEC_MARKSMANSHIP, "Marksmanship")
-    self:RegisterSpec(SPEC_SURVIVAL, "Survival")
-    
-    -- Shared spell IDs across all hunter specs
-    self.spells = {
-        -- Common hunter abilities
-        ASPECT_OF_THE_WILD = 193530,
-        ASPECT_OF_THE_TURTLE = 186265,
-        ASPECT_OF_THE_CHEETAH = 186257,
-        EXHILARATION = 109304,
-        FREEZING_TRAP = 187650,
-        TAR_TRAP = 187698,
-        CONCUSSIVE_SHOT = 5116,
-        HUNTERS_MARK = 257284,
-        MISDIRECTION = 34477,
-        FEIGN_DEATH = 5384,
-        COUNTER_SHOT = 147362,
-        MEND_PET = 136,
-        INTIMIDATION = 19577,
-        TRANQUILIZING_SHOT = 19801,
-        CALL_PET_1 = 883,
-        DISMISS_PET = 2641,
-        FETCH = 125050,
-        DISENGAGE = 781,
-        BINDING_SHOT = 109248,
-        CAMOUFLAGE = 199483,
-        ASPECT_OF_THE_EAGLE = 186289,
-        
-        -- Covenant abilities
-        WILD_SPIRITS = 328231,       -- Night Fae
-        RESONATING_ARROW = 308491,   -- Kyrian
-        DEATH_CHAKRAM = 325028,      -- Necrolord
-        FLAYED_SHOT = 324149,        -- Venthyr
-    }
-    
-    -- Load shared hunter data
-    self:LoadSharedHunterData()
-    
-    WR:Debug("Hunter module initialized")
-end
+-- Current player data
+local playerSpec = 0
+local isEnabled = true
+local inCombat = false
 
--- Load shared spell and mechanics data for all hunter specs
-function Hunter:LoadSharedHunterData()
-    -- Register important buffs
-    WR.Auras:RegisterImportantAura(self.spells.ASPECT_OF_THE_WILD, 80, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.ASPECT_OF_THE_TURTLE, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.ASPECT_OF_THE_EAGLE, 85, true, false)
+-- Spell IDs for Beast Mastery Hunter (The War Within, Season 2)
+local BM_SPELLS = {
+    -- Core abilities
+    KILL_COMMAND = 34026,
+    COBRA_SHOT = 193455,
+    BARBED_SHOT = 217200,
+    BESTIAL_WRATH = 19574,
+    ASPECT_OF_THE_WILD = 193530,
+    MULTISHOT = 2643,
+    KILL_SHOT = 53351,
+    CONCUSSIVE_SHOT = 5116,
+    INTIMIDATION = 19577,
+    BEAST_CLEAVE = 115939,
     
-    -- Setup cooldown tracking
-    WR.Cooldown:StartTracking(self.spells.COUNTER_SHOT)
-    WR.Cooldown:StartTracking(self.spells.ASPECT_OF_THE_WILD)
-    WR.Cooldown:StartTracking(self.spells.ASPECT_OF_THE_TURTLE)
-    WR.Cooldown:StartTracking(self.spells.FREEZING_TRAP)
-    WR.Cooldown:StartTracking(self.spells.EXHILARATION)
-    WR.Cooldown:StartTracking(self.spells.DISENGAGE)
-    WR.Cooldown:StartTracking(self.spells.BINDING_SHOT)
+    -- Defensive & utility
+    ASPECT_OF_THE_TURTLE = 186265,
+    EXHILARATION = 109304,
+    FEIGN_DEATH = 5384,
+    DISENGAGE = 781,
+    MISDIRECTION = 34477,
+    ASPECT_OF_THE_CHEETAH = 186257,
+    FLARE = 1543,
+    FREEZING_TRAP = 187650,
+    TAR_TRAP = 187698,
+    TRANQUILIZING_SHOT = 19801,
     
-    -- Set up interrupt rotation (shared by all specs)
-    self.interruptRotation = {
-        { spell = self.spells.COUNTER_SHOT }
-    }
+    -- Talents
+    BLOODSHED = 321530,
+    SPITTING_COBRA = 194407,
+    STAMPEDE = 201430,
+    CALL_OF_THE_WILD = 359844,
+    DIRE_BEAST = 120679,
+    BARRAGE = 120360,
+    A_MURDER_OF_CROWS = 131894,
+    BINDING_SHOT = 109248,
+    WILD_CALL = 185789,
     
-    -- Set up defensive rotation (shared by all specs)
-    self.defensiveRotation = {
-        { spell = self.spells.ASPECT_OF_THE_TURTLE, threshold = 20 }, -- Use Turtle at very low health
-        { spell = self.spells.EXHILARATION, threshold = 40 } -- Use Exhilaration at moderate health
-    }
-end
+    -- Pet summons
+    CALL_PET_1 = 883,
+    CALL_PET_2 = 83242,
+    CALL_PET_3 = 83243,
+    CALL_PET_4 = 83244,
+    CALL_PET_5 = 83245,
+    DISMISS_PET = 2641,
+    REVIVE_PET = 982,
+    
+    -- Misc
+    MEND_PET = 136,
+    HUNTERS_MARK = 257284,
+    EAGLE_EYE = 6197,
+    FEED_PET = 6991,
+    TAME_BEAST = 1515
+}
 
--- Load a specific specialization
-function Hunter:LoadSpec(specId)
-    -- Call the base class method to set up common components
-    WR.BaseClass.LoadSpec(self, specId)
+-- Spell IDs for Marksmanship Hunter
+local MM_SPELLS = {
+    -- Core abilities
+    AIMED_SHOT = 19434,
+    ARCANE_SHOT = 185358,
+    RAPID_FIRE = 257044,
+    STEADY_SHOT = 56641,
+    TRUESHOT = 288613,
+    CHIMAERA_SHOT = 342049,
+    BURSTING_SHOT = 186387,
+    MULTISHOT = 257620,
+    KILL_SHOT = 53351,
+    VOLLEY = 260243,
     
-    -- Load specific spec data
-    if specId == SPEC_BEAST_MASTERY then
-        self:LoadBeastMasterySpec()
-    elseif specId == SPEC_MARKSMANSHIP then
-        self:LoadMarksmanshipSpec()
-    elseif specId == SPEC_SURVIVAL then
-        self:LoadSurvivalSpec()
-    end
+    -- Defensive & utility
+    ASPECT_OF_THE_TURTLE = 186265,
+    EXHILARATION = 109304,
+    FEIGN_DEATH = 5384,
+    DISENGAGE = 781,
+    MISDIRECTION = 34477,
+    ASPECT_OF_THE_CHEETAH = 186257,
+    FLARE = 1543,
+    FREEZING_TRAP = 187650,
+    TAR_TRAP = 187698,
+    TRANQUILIZING_SHOT = 19801,
     
-    WR:Debug("Loaded hunter spec:", self.specData.name)
+    -- Talents
+    BARRAGE = 120360,
+    A_MURDER_OF_CROWS = 131894,
+    EXPLOSIVE_SHOT = 212431,
+    SERPENT_STING = 271788,
+    BINDING_SHOT = 109248,
+    PRECISE_SHOTS = 260240,
+    TRICK_SHOTS = 257621,
+    SALVO = 400456,
+    STEEL_TRAP = 162488,
+    WAILING_ARROW = 392060,
+    
+    -- Pet summons
+    CALL_PET_1 = 883,
+    CALL_PET_2 = 83242,
+    CALL_PET_3 = 83243,
+    CALL_PET_4 = 83244,
+    CALL_PET_5 = 83245,
+    DISMISS_PET = 2641,
+    REVIVE_PET = 982,
+    
+    -- Misc
+    MEND_PET = 136,
+    HUNTERS_MARK = 257284,
+    EAGLE_EYE = 6197,
+    FEED_PET = 6991,
+    TAME_BEAST = 1515
+}
+
+-- Spell IDs for Survival Hunter
+local SV_SPELLS = {
+    -- Core abilities
+    RAPTOR_STRIKE = 186270,
+    KILL_COMMAND = 259489,
+    CARVE = 187708,
+    WILDFIRE_BOMB = 259495,
+    COORDINATED_ASSAULT = 266779,
+    FLANKING_STRIKE = 269751,
+    HARPOON = 190925,
+    MONGOOSE_BITE = 259387,
+    CHAKRAMS = 259391,
+    BUTCHERY = 212436,
+    
+    -- Defensive & utility
+    ASPECT_OF_THE_TURTLE = 186265,
+    EXHILARATION = 109304,
+    FEIGN_DEATH = 5384,
+    DISENGAGE = 781,
+    MISDIRECTION = 34477,
+    ASPECT_OF_THE_CHEETAH = 186257,
+    FLARE = 1543,
+    FREEZING_TRAP = 187650,
+    TAR_TRAP = 187698,
+    TRANQUILIZING_SHOT = 19801,
+    
+    -- Talents
+    STEEL_TRAP = 162488,
+    A_MURDER_OF_CROWS = 131894,
+    WILDFIRE_INFUSION = 271014,
+    BIRDS_OF_PREY = 260331,
+    BINDING_SHOT = 109248,
+    BLOODSEEKER = 260248,
+    GUERRILLA_TACTICS = 264332,
+    SPEARHEAD = 360966,
+    FURY_OF_THE_EAGLE = 203415,
+    
+    -- Pet summons
+    CALL_PET_1 = 883,
+    CALL_PET_2 = 83242,
+    CALL_PET_3 = 83243,
+    CALL_PET_4 = 83244,
+    CALL_PET_5 = 83245,
+    DISMISS_PET = 2641,
+    REVIVE_PET = 982,
+    
+    -- Misc
+    MEND_PET = 136,
+    HUNTERS_MARK = 257284,
+    EAGLE_EYE = 6197,
+    FEED_PET = 6991,
+    TAME_BEAST = 1515
+}
+
+-- Important buffs to track
+local BUFFS = {
+    BESTIAL_WRATH = 19574,
+    ASPECT_OF_THE_WILD = 193530,
+    BEAST_CLEAVE = 268877,
+    FRENZY = 272790,
+    TRUESHOT = 288613,
+    PRECISE_SHOTS = 260242,
+    TRICK_SHOTS = 257622,
+    LOCK_AND_LOAD = 194594,
+    COORDINATED_ASSAULT = 266779,
+    MONGOOSE_FURY = 259388,
+    TERMS_OF_ENGAGEMENT = 265898,
+    ASPECT_OF_THE_TURTLE = 186265,
+    ASPECT_OF_THE_CHEETAH = 186257,
+    POSTHASTE = 118922,
+    VIPERS_VENOM = 268552,
+    TIP_OF_THE_SPEAR = 260286,
+    LONE_WOLF = 155228
+}
+
+-- Important debuffs to track
+local DEBUFFS = {
+    HUNTERS_MARK = 257284,
+    SERPENT_STING = 271788,
+    CONCUSSIVE_SHOT = 5116,
+    BLOODSEEKER = 259277,
+    LATENT_POISON = 273286,
+    PHEROMONE_BOMB = 270332,
+    SHRAPNEL_BOMB = 270339,
+    VOLATILE_BOMB = 271049,
+    INTERNAL_BLEEDING = 270343,
+    BINDING_SHOT = 117526,
+    FREEZING_TRAP = 3355,
+    TAR_TRAP = 135299
+}
+
+-- Initialize the Hunter module
+function HunterModule:Initialize()
+    -- Register settings
+    self:RegisterSettings()
+    
+    -- Register events
+    self:RegisterEvents()
+    
+    -- Register rotations
+    self:RegisterRotations()
+    
+    API.PrintDebug("Hunter module initialized")
     return true
 end
 
--- Load Beast Mastery specialization
-function Hunter:LoadBeastMasterySpec()
-    -- Beast Mastery-specific spells
-    self.spells.KILL_COMMAND = 34026
-    self.spells.BESTIAL_WRATH = 19574
-    self.spells.BARBED_SHOT = 217200
-    self.spells.COBRA_SHOT = 193455
-    self.spells.MULTISHOT = 2643
-    self.spells.DIRE_BEAST = 120679
-    self.spells.KILL_SHOT = 53351
-    self.spells.A_MURDER_OF_CROWS = 131894
-    self.spells.CHIMAERA_SHOT = 53209
-    self.spells.STAMPEDE = 201430
-    self.spells.DIRE_BEAST_BASILISK = 205691
-    self.spells.BARRAGE = 120360
-    self.spells.SPITTING_COBRA = 194407
-    self.spells.BEAST_CLEAVE = 115939
-    self.spells.BESTIAL_WRATH = 19574
-    self.spells.BLOODSHED = 321530
-    
-    -- Setup cooldown and aura tracking for Beast Mastery
-    WR.Cooldown:StartTracking(self.spells.KILL_COMMAND)
-    WR.Cooldown:StartTracking(self.spells.BESTIAL_WRATH)
-    WR.Cooldown:StartTracking(self.spells.DIRE_BEAST)
-    WR.Cooldown:StartTracking(self.spells.A_MURDER_OF_CROWS)
-    WR.Cooldown:StartTracking(self.spells.BARRAGE)
-    WR.Cooldown:StartTracking(self.spells.STAMPEDE)
-    
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.BESTIAL_WRATH, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.BEAST_CLEAVE, 80, true, false)
-    WR.Auras:RegisterImportantAura(268877, 85, true, false) -- Beast Cleave buff (pet)
-    WR.Auras:RegisterImportantAura(272790, 70, true, false) -- Frenzy buff
-    
-    -- Define Beast Mastery rotation, prioritizing abilities in order
-    self.singleTargetRotation = {
-        -- Use Bestial Wrath on cooldown
-        { spell = self.spells.BESTIAL_WRATH },
-        
-        -- Use Aspect of the Wild with Bestial Wrath
-        { 
-            spell = self.spells.ASPECT_OF_THE_WILD,
-            condition = function(self)
-                return self:HasBuff(self.spells.BESTIAL_WRATH) or
-                       self:GetSpellCooldown(self.spells.BESTIAL_WRATH) < 3
-            end
+-- Register settings
+function HunterModule:RegisterSettings()
+    ConfigRegistry:RegisterSettings("Hunter", {
+        generalSettings = {
+            enabled = {
+                displayName = "Enable Hunter Module",
+                description = "Enable the Hunter module for all specs",
+                type = "toggle",
+                default = true
+            },
+            useDefensives = {
+                displayName = "Use Defensive Abilities",
+                description = "Automatically use defensive abilities when appropriate",
+                type = "toggle",
+                default = true
+            },
+            useInterrupts = {
+                displayName = "Use Interrupts",
+                description = "Automatically interrupt enemy casts when appropriate",
+                type = "toggle",
+                default = true
+            },
+            autoCallPet = {
+                displayName = "Auto Call Pet",
+                description = "Automatically call your pet if missing",
+                type = "toggle",
+                default = true
+            },
+            preferredPet = {
+                displayName = "Preferred Pet",
+                description = "Which pet slot to call",
+                type = "dropdown",
+                options = {"Pet 1", "Pet 2", "Pet 3", "Pet 4", "Pet 5"},
+                default = "Pet 1"
+            },
+            mendPetThreshold = {
+                displayName = "Mend Pet Threshold",
+                description = "Pet health percentage to use Mend Pet",
+                type = "slider",
+                min = 20,
+                max = 80,
+                step = 5,
+                default = 50
+            },
+            useAspectOfTheTurtle = {
+                displayName = "Use Aspect of the Turtle",
+                description = "Automatically use Aspect of the Turtle at low health",
+                type = "toggle",
+                default = true
+            },
+            turtleThreshold = {
+                displayName = "Turtle Health Threshold",
+                description = "Health percentage to use Aspect of the Turtle",
+                type = "slider",
+                min = 10,
+                max = 40,
+                step = 5,
+                default = 20
+            }
         },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
+        beastMasterySettings = {
+            useBarrage = {
+                displayName = "Use Barrage",
+                description = "Use Barrage for AoE",
+                type = "toggle",
+                default = true
+            },
+            barrageThreshold = {
+                displayName = "Barrage Threshold",
+                description = "Minimum targets to use Barrage",
+                type = "slider",
+                min = 2,
+                max = 5,
+                step = 1,
+                default = 3
+            },
+            useBestialWrath = {
+                displayName = "Use Bestial Wrath",
+                description = "Use Bestial Wrath on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useAspectOfTheWild = {
+                displayName = "Use Aspect of the Wild",
+                description = "Use Aspect of the Wild on cooldown",
+                type = "toggle",
+                default = true
+            },
+            syncBWandAotW = {
+                displayName = "Sync BW and Aspect of the Wild",
+                description = "Try to use Bestial Wrath and Aspect of the Wild together",
+                type = "toggle",
+                default = true
+            },
+            useDireBeast = {
+                displayName = "Use Dire Beast",
+                description = "Use Dire Beast on cooldown",
+                type = "toggle",
+                default = true
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            }
         },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
+        marksmanshipSettings = {
+            useTrueshot = {
+                displayName = "Use Trueshot",
+                description = "Use Trueshot on cooldown",
+                type = "toggle",
+                default = true
+            },
+            trueshotWithAimedShot = {
+                displayName = "Trueshot with Aimed Shot",
+                description = "Use Trueshot after Aimed Shot for maximum effect",
+                type = "toggle",
+                default = true
+            },
+            useBarrage = {
+                displayName = "Use Barrage",
+                description = "Use Barrage for AoE",
+                type = "toggle",
+                default = true
+            },
+            barrageThreshold = {
+                displayName = "Barrage Threshold",
+                description = "Minimum targets to use Barrage",
+                type = "slider",
+                min = 2,
+                max = 5,
+                step = 1,
+                default = 3
+            },
+            useSerpentSting = {
+                displayName = "Use Serpent Sting",
+                description = "Maintain Serpent Sting on targets",
+                type = "toggle",
+                default = true
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            },
+            useExplosiveShot = {
+                displayName = "Use Explosive Shot",
+                description = "Use Explosive Shot in AoE situations",
+                type = "toggle",
+                default = true
+            }
         },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Bloodshed if talented
-        { 
-            spell = self.spells.BLOODSHED,
-            condition = function(self) return IsSpellKnown(self.spells.BLOODSHED) end
-        },
-        
-        -- Use Kill Shot on targets below 20% health
-        {
-            spell = self.spells.KILL_SHOT,
-            condition = function(self) 
-                return self:TargetInExecuteRange() and 
-                       IsSpellKnown(self.spells.KILL_SHOT)
-            end
-        },
-        
-        -- Use Barbed Shot to maintain Frenzy stacks or when charges are about to cap
-        { 
-            spell = self.spells.BARBED_SHOT,
-            condition = function(self)
-                local charges, maxCharges = self:GetSpellCharges(self.spells.BARBED_SHOT)
-                local frenzyRemaining = self:GetBuffRemaining(272790, "pet") -- Frenzy buff on pet
-                
-                return charges >= maxCharges - 0.5 or 
-                       (frenzyRemaining > 0 and frenzyRemaining < 2)
-            end
-        },
-        
-        -- Use Kill Command on cooldown
-        {
-            spell = self.spells.KILL_COMMAND,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.KILL_COMMAND)
-            end
-        },
-        
-        -- Use Chimaera Shot if talented
-        {
-            spell = self.spells.CHIMAERA_SHOT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CHIMAERA_SHOT)
-            end
-        },
-        
-        -- Use A Murder of Crows if talented
-        {
-            spell = self.spells.A_MURDER_OF_CROWS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.A_MURDER_OF_CROWS)
-            end
-        },
-        
-        -- Use Dire Beast if talented
-        {
-            spell = self.spells.DIRE_BEAST,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DIRE_BEAST)
-            end
-        },
-        
-        -- Use Stampede if talented
-        {
-            spell = self.spells.STAMPEDE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.STAMPEDE) and
-                       self:HasBuff(self.spells.ASPECT_OF_THE_WILD)
-            end
-        },
-        
-        -- Use Barrage if talented and facing multiple targets
-        {
-            spell = self.spells.BARRAGE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BARRAGE) and
-                       self:GetEnemyCount(15) >= 2
-            end
-        },
-        
-        -- Use another Barbed Shot if focus is high
-        {
-            spell = self.spells.BARBED_SHOT,
-            condition = function(self)
-                local charges = self:GetSpellCharges(self.spells.BARBED_SHOT)
-                return charges > 0 and self:GetResourcePct() > 70
-            end
-        },
-        
-        -- Use Cobra Shot as filler if enough focus and Kill Command isn't coming off cooldown soon
-        { 
-            spell = self.spells.COBRA_SHOT,
-            condition = function(self)
-                local kcCD = self:GetSpellCooldown(self.spells.KILL_COMMAND)
-                return self:GetResource() >= 35 and kcCD > 1.5
-            end
+        survivalSettings = {
+            useCoordinatedAssault = {
+                displayName = "Use Coordinated Assault",
+                description = "Use Coordinated Assault on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useWildfireBomb = {
+                displayName = "Use Wildfire Bomb",
+                description = "Use Wildfire Bomb on cooldown",
+                type = "toggle",
+                default = true
+            },
+            bombPriority = {
+                displayName = "Bomb Priority",
+                description = "Which Wildfire Infusion bomb to prioritize",
+                type = "dropdown",
+                options = {"Auto", "Shrapnel", "Pheromone", "Volatile"},
+                default = "Auto"
+            },
+            useMongooseBite = {
+                displayName = "Use Mongoose Bite",
+                description = "Prioritize Mongoose Bite if talented",
+                type = "toggle",
+                default = true
+            },
+            mongoosePooling = {
+                displayName = "Mongoose Focus Pooling",
+                description = "Pool Focus for Mongoose Bite",
+                type = "toggle",
+                default = true
+            },
+            aoeThreshold = {
+                displayName = "AoE Threshold",
+                description = "Number of targets to switch to AoE rotation",
+                type = "slider",
+                min = 2,
+                max = 6,
+                step = 1,
+                default = 3
+            },
+            useHarpoon = {
+                displayName = "Use Harpoon",
+                description = "Use Harpoon to engage enemies",
+                type = "toggle",
+                default = true
+            }
         }
-    }
+    })
     
-    -- Define AoE rotation for Beast Mastery
-    self.aoeRotation = {
-        -- Use Bestial Wrath on cooldown
-        { spell = self.spells.BESTIAL_WRATH },
-        
-        -- Use Aspect of the Wild with Bestial Wrath
-        { 
-            spell = self.spells.ASPECT_OF_THE_WILD,
-            condition = function(self)
-                return self:HasBuff(self.spells.BESTIAL_WRATH) or
-                       self:GetSpellCooldown(self.spells.BESTIAL_WRATH) < 3
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Bloodshed if talented
-        { 
-            spell = self.spells.BLOODSHED,
-            condition = function(self) return IsSpellKnown(self.spells.BLOODSHED) end
-        },
-        
-        -- Use Stampede if talented
-        {
-            spell = self.spells.STAMPEDE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.STAMPEDE)
-            end
-        },
-        
-        -- Use Barrage if talented
-        {
-            spell = self.spells.BARRAGE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BARRAGE)
-            end
-        },
-        
-        -- Use Multishot to maintain Beast Cleave
-        {
-            spell = self.spells.MULTISHOT,
-            condition = function(self)
-                local beastCleaveRemaining = self:GetBuffRemaining(self.spells.BEAST_CLEAVE, "pet")
-                return beastCleaveRemaining < 1.5
-            end
-        },
-        
-        -- Use Barbed Shot to maintain Frenzy stacks or when charges are about to cap
-        { 
-            spell = self.spells.BARBED_SHOT,
-            condition = function(self)
-                local charges, maxCharges = self:GetSpellCharges(self.spells.BARBED_SHOT)
-                local frenzyRemaining = self:GetBuffRemaining(272790, "pet") -- Frenzy buff on pet
-                
-                return charges >= maxCharges - 0.5 or 
-                       (frenzyRemaining > 0 and frenzyRemaining < 2)
-            end
-        },
-        
-        -- Use Kill Command on cooldown
-        {
-            spell = self.spells.KILL_COMMAND,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.KILL_COMMAND)
-            end
-        },
-        
-        -- Use A Murder of Crows if talented
-        {
-            spell = self.spells.A_MURDER_OF_CROWS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.A_MURDER_OF_CROWS)
-            end
-        },
-        
-        -- Use Dire Beast if talented
-        {
-            spell = self.spells.DIRE_BEAST,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DIRE_BEAST)
-            end
-        },
-        
-        -- Use another Barbed Shot if focus is high
-        {
-            spell = self.spells.BARBED_SHOT,
-            condition = function(self)
-                local charges = self:GetSpellCharges(self.spells.BARBED_SHOT)
-                return charges > 0 and self:GetResourcePct() > 70
-            end
-        },
-        
-        -- Use Multishot as a filler in AoE
-        {
-            spell = self.spells.MULTISHOT,
-            condition = function(self)
-                return self:GetResource() >= 40
-            end
-        },
-        
-        -- Use Cobra Shot as a filler if nothing else is available
-        {
-            spell = self.spells.COBRA_SHOT,
-            condition = function(self)
-                local kcCD = self:GetSpellCooldown(self.spells.KILL_COMMAND)
-                return self:GetResource() >= 50 and kcCD > 1.5
-            end
-        }
-    }
-    
-    -- Define burst rotation
-    self.burstRotation = {
-        { spell = self.spells.ASPECT_OF_THE_WILD },
-        { spell = self.spells.BESTIAL_WRATH },
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        { 
-            spell = self.spells.STAMPEDE,
-            condition = function(self) return IsSpellKnown(self.spells.STAMPEDE) end
-        }
-    }
-end
+    -- Add callback for settings changes
+    ConfigRegistry:RegisterCallback("Hunter", function(settings)
+        self:ApplySettings(settings)
+    end)
+}
 
--- Load Marksmanship specialization
-function Hunter:LoadMarksmanshipSpec()
-    -- Marksmanship-specific spells
-    self.spells.AIMED_SHOT = 19434
-    self.spells.RAPID_FIRE = 257044
-    self.spells.STEADY_SHOT = 56641
-    self.spells.MULTISHOT = 2643
-    self.spells.ARCANE_SHOT = 185358
-    self.spells.TRUESHOT = 288613
-    self.spells.BURSTING_SHOT = 186387
-    self.spells.KILL_SHOT = 53351
-    self.spells.VOLLEY = 260243
-    self.spells.EXPLOSIVE_SHOT = 212431
-    self.spells.PIERCING_SHOT = 198670
-    self.spells.SERPENT_STING = 271788
-    self.spells.DOUBLE_TAP = 260402
-    self.spells.CHIMAERA_SHOT = 342049
-    self.spells.BARRAGE = 120360
-    self.spells.TRICK_SHOTS = 257622
-    
-    -- Setup cooldown and aura tracking for Marksmanship
-    WR.Cooldown:StartTracking(self.spells.AIMED_SHOT)
-    WR.Cooldown:StartTracking(self.spells.RAPID_FIRE)
-    WR.Cooldown:StartTracking(self.spells.TRUESHOT)
-    WR.Cooldown:StartTracking(self.spells.BURSTING_SHOT)
-    WR.Cooldown:StartTracking(self.spells.VOLLEY)
-    WR.Cooldown:StartTracking(self.spells.DOUBLE_TAP)
-    
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.TRUESHOT, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.TRICK_SHOTS, 80, true, false)
-    WR.Auras:RegisterImportantAura(260395, 85, true, false) -- Precise Shots buff
-    WR.Auras:RegisterImportantAura(194594, 70, true, false) -- Lock and Load buff
-    
-    -- Define Marksmanship rotation, prioritizing abilities in order
-    self.singleTargetRotation = {
-        -- Use Trueshot on cooldown
-        { spell = self.spells.TRUESHOT },
-        
-        -- Use Double Tap if talented
-        { 
-            spell = self.spells.DOUBLE_TAP,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DOUBLE_TAP)
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Kill Shot on targets below 20% health
-        {
-            spell = self.spells.KILL_SHOT,
-            condition = function(self) 
-                return self:TargetInExecuteRange() and 
-                       IsSpellKnown(self.spells.KILL_SHOT)
-            end
-        },
-        
-        -- Use Aimed Shot with Lock and Load proc
-        {
-            spell = self.spells.AIMED_SHOT,
-            condition = function(self)
-                return self:HasBuff(194594) -- Lock and Load proc
-            end
-        },
-        
-        -- Use Aimed Shot when not moving
-        {
-            spell = self.spells.AIMED_SHOT,
-            condition = function(self)
-                return not WR.API:IsPlayerMoving() and
-                       not self:HasBuff(260395) -- Don't cast if we have Precise Shots
-            end
-        },
-        
-        -- Use Rapid Fire
-        { spell = self.spells.RAPID_FIRE },
-        
-        -- Use Chimaera Shot if talented
-        {
-            spell = self.spells.CHIMAERA_SHOT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CHIMAERA_SHOT)
-            end
-        },
-        
-        -- Use Arcane Shot with Precise Shots buff
-        {
-            spell = self.spells.ARCANE_SHOT,
-            condition = function(self)
-                return self:HasBuff(260395) -- Precise Shots buff
-            end
-        },
-        
-        -- Use Serpent Sting if talented and not already applied
-        {
-            spell = self.spells.SERPENT_STING,
-            condition = function(self)
-                return IsSpellKnown(self.spells.SERPENT_STING) and
-                       not self:HasDebuff(self.spells.SERPENT_STING)
-            end
-        },
-        
-        -- Use Explosive Shot if talented
-        {
-            spell = self.spells.EXPLOSIVE_SHOT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.EXPLOSIVE_SHOT)
-            end
-        },
-        
-        -- Use Barrage if talented
-        {
-            spell = self.spells.BARRAGE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BARRAGE)
-            end
-        },
-        
-        -- Use Arcane Shot as filler
-        { spell = self.spells.ARCANE_SHOT },
-        
-        -- Use Steady Shot if low on focus or moving
-        {
-            spell = self.spells.STEADY_SHOT,
-            condition = function(self)
-                return self:GetResourcePct() < 30 or WR.API:IsPlayerMoving()
-            end
-        }
-    }
-    
-    -- Define AoE rotation for Marksmanship
-    self.aoeRotation = {
-        -- Use Trueshot on cooldown
-        { spell = self.spells.TRUESHOT },
-        
-        -- Use Double Tap if talented
-        { 
-            spell = self.spells.DOUBLE_TAP,
-            condition = function(self)
-                return IsSpellKnown(self.spells.DOUBLE_TAP)
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Volley if talented
-        {
-            spell = self.spells.VOLLEY,
-            condition = function(self)
-                return IsSpellKnown(self.spells.VOLLEY)
-            end
-        },
-        
-        -- Use Explosive Shot if talented
-        {
-            spell = self.spells.EXPLOSIVE_SHOT,
-            condition = function(self)
-                return IsSpellKnown(self.spells.EXPLOSIVE_SHOT)
-            end
-        },
-        
-        -- Use Barrage if talented
-        {
-            spell = self.spells.BARRAGE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BARRAGE)
-            end
-        },
-        
-        -- Use Multishot to activate Trick Shots if not active
-        {
-            spell = self.spells.MULTISHOT,
-            condition = function(self)
-                return not self:HasBuff(self.spells.TRICK_SHOTS) and
-                       self:GetResourcePct() >= 20
-            end
-        },
-        
-        -- Use Aimed Shot with Trick Shots active
-        {
-            spell = self.spells.AIMED_SHOT,
-            condition = function(self)
-                return self:HasBuff(self.spells.TRICK_SHOTS) and
-                       not WR.API:IsPlayerMoving()
-            end
-        },
-        
-        -- Use Rapid Fire with Trick Shots active
-        {
-            spell = self.spells.RAPID_FIRE,
-            condition = function(self)
-                return self:HasBuff(self.spells.TRICK_SHOTS)
-            end
-        },
-        
-        -- Use Bursting Shot for CC in AoE
-        { spell = self.spells.BURSTING_SHOT },
-        
-        -- Use Multishot as filler in AoE
-        {
-            spell = self.spells.MULTISHOT,
-            condition = function(self)
-                return self:GetResourcePct() >= 20
-            end
-        },
-        
-        -- Use Steady Shot if low on focus
-        {
-            spell = self.spells.STEADY_SHOT,
-            condition = function(self)
-                return self:GetResourcePct() < 30
-            end
-        }
-    }
-    
-    -- Define burst rotation
-    self.burstRotation = {
-        { spell = self.spells.TRUESHOT },
-        { 
-            spell = self.spells.DOUBLE_TAP,
-            condition = function(self) return IsSpellKnown(self.spells.DOUBLE_TAP) end
-        },
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.VOLLEY,
-            condition = function(self) return IsSpellKnown(self.spells.VOLLEY) end
-        }
-    }
-end
+-- Apply settings
+function HunterModule:ApplySettings(settings)
+    -- Apply general settings
+    isEnabled = settings.generalSettings.enabled
+}
 
--- Load Survival specialization
-function Hunter:LoadSurvivalSpec()
-    -- Survival-specific spells
-    self.spells.CARVE = 187708
-    self.spells.WILDFIRE_BOMB = 259495
-    self.spells.RAPTOR_STRIKE = 186270
-    self.spells.KILL_COMMAND = 259489
-    self.spells.MONGOOSE_BITE = 259387
-    self.spells.FLANKING_STRIKE = 269751
-    self.spells.COORDINATED_ASSAULT = 266779
-    self.spells.BUTCHERY = 212436
-    self.spells.SERPENT_STING = 259491
-    self.spells.STEEL_TRAP = 162488
-    self.spells.WING_CLIP = 195645
-    self.spells.CHAKRAMS = 259391
-    self.spells.BIRDS_OF_PREY = 260331
-    self.spells.HARPOON = 190925
-    self.spells.TERMS_OF_ENGAGEMENT = 265895
-    self.spells.TIP_OF_THE_SPEAR = 260286
-    self.spells.WILDFIRE_INFUSION = 271014
-    self.spells.ASPECT_OF_THE_EAGLE = 186289
-    self.spells.KILL_SHOT = 320976
-    self.spells.MUZZLE = 187707
+-- Register events
+function HunterModule:RegisterEvents()
+    -- Register for specialization changed event
+    API.RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", function(unit)
+        if unit == "player" then
+            self:OnSpecializationChanged()
+        end
+    end)
     
-    -- Setup cooldown and aura tracking for Survival
-    WR.Cooldown:StartTracking(self.spells.WILDFIRE_BOMB)
-    WR.Cooldown:StartTracking(self.spells.KILL_COMMAND)
-    WR.Cooldown:StartTracking(self.spells.COORDINATED_ASSAULT)
-    WR.Cooldown:StartTracking(self.spells.BUTCHERY)
-    WR.Cooldown:StartTracking(self.spells.FLANKING_STRIKE)
-    WR.Cooldown:StartTracking(self.spells.ASPECT_OF_THE_EAGLE)
-    WR.Cooldown:StartTracking(self.spells.HARPOON)
+    -- Register for entering combat event
+    API.RegisterEvent("PLAYER_REGEN_DISABLED", function()
+        inCombat = true
+    end)
     
-    -- Track important buffs/debuffs
-    WR.Auras:RegisterImportantAura(self.spells.COORDINATED_ASSAULT, 90, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.TIP_OF_THE_SPEAR, 70, true, false)
-    WR.Auras:RegisterImportantAura(self.spells.TERMS_OF_ENGAGEMENT, 60, true, false)
-    WR.Auras:RegisterImportantAura(259388, 85, true, false) -- Mongoose Fury buff
+    -- Register for leaving combat event
+    API.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        inCombat = false
+    end)
     
-    -- Set up interrupt rotation specific to Survival
-    self.interruptRotation = {
-        { spell = self.spells.MUZZLE }
-    }
-    
-    -- Define Survival rotation, prioritizing abilities in order
-    self.singleTargetRotation = {
-        -- Use Coordinated Assault on cooldown
-        { spell = self.spells.COORDINATED_ASSAULT },
-        
-        -- Use Aspect of the Eagle for burst
-        { 
-            spell = self.spells.ASPECT_OF_THE_EAGLE,
-            condition = function(self)
-                return self:HasBuff(self.spells.COORDINATED_ASSAULT)
-            end
-        },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Kill Shot on targets below 20% health
-        {
-            spell = self.spells.KILL_SHOT,
-            condition = function(self) 
-                return self:TargetInExecuteRange() and 
-                       IsSpellKnown(self.spells.KILL_SHOT)
-            end
-        },
-        
-        -- Apply Serpent Sting if not active
-        {
-            spell = self.spells.SERPENT_STING,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.SERPENT_STING)
-            end
-        },
-        
-        -- Use Wildfire Bomb on cooldown
-        { spell = self.spells.WILDFIRE_BOMB },
-        
-        -- Use Kill Command on cooldown
-        { 
-            spell = self.spells.KILL_COMMAND,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.KILL_COMMAND) and
-                       self:GetResource() >= 30
-            end
-        },
-        
-        -- Use Flanking Strike if talented
-        {
-            spell = self.spells.FLANKING_STRIKE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.FLANKING_STRIKE)
-            end
-        },
-        
-        -- Use Steel Trap if talented
-        {
-            spell = self.spells.STEEL_TRAP,
-            condition = function(self)
-                return IsSpellKnown(self.spells.STEEL_TRAP)
-            end
-        },
-        
-        -- Use Chakrams if talented
-        {
-            spell = self.spells.CHAKRAMS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CHAKRAMS)
-            end
-        },
-        
-        -- Use Mongoose Bite if talented
-        {
-            spell = self.spells.MONGOOSE_BITE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.MONGOOSE_BITE) and self:GetResource() >= 30
-            end
-        },
-        
-        -- Use Raptor Strike as filler
-        {
-            spell = self.spells.RAPTOR_STRIKE,
-            condition = function(self)
-                return not IsSpellKnown(self.spells.MONGOOSE_BITE) and self:GetResource() >= 30
-            end
-        }
-    }
-    
-    -- Define AoE rotation for Survival
-    self.aoeRotation = {
-        -- Use Coordinated Assault on cooldown
-        { spell = self.spells.COORDINATED_ASSAULT },
-        
-        -- Use covenant abilities
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        
-        -- Use Wildfire Bomb on cooldown
-        { spell = self.spells.WILDFIRE_BOMB },
-        
-        -- Use Butchery if talented
-        {
-            spell = self.spells.BUTCHERY,
-            condition = function(self)
-                return IsSpellKnown(self.spells.BUTCHERY) and self:GetResource() >= 30
-            end
-        },
-        
-        -- Use Chakrams if talented
-        {
-            spell = self.spells.CHAKRAMS,
-            condition = function(self)
-                return IsSpellKnown(self.spells.CHAKRAMS)
-            end
-        },
-        
-        -- Use Carve for AoE
-        {
-            spell = self.spells.CARVE,
-            condition = function(self)
-                return not IsSpellKnown(self.spells.BUTCHERY) and self:GetResource() >= 30
-            end
-        },
-        
-        -- Use Kill Command on cooldown
-        { 
-            spell = self.spells.KILL_COMMAND,
-            condition = function(self)
-                return not self:SpellOnCooldown(self.spells.KILL_COMMAND) and
-                       self:GetResource() >= 30
-            end
-        },
-        
-        -- Apply Serpent Sting if not active
-        {
-            spell = self.spells.SERPENT_STING,
-            condition = function(self)
-                return not self:HasDebuff(self.spells.SERPENT_STING) and
-                       not IsSpellKnown(self.spells.BUTCHERY) -- Skip if we have Butchery
-            end
-        },
-        
-        -- Use Mongoose Bite if talented and Mongoose Fury is active
-        {
-            spell = self.spells.MONGOOSE_BITE,
-            condition = function(self)
-                return IsSpellKnown(self.spells.MONGOOSE_BITE) and 
-                       self:HasBuff(259388) and -- Mongoose Fury
-                       self:GetResource() >= 30
-            end
-        }
-    }
-    
-    -- Define burst rotation
-    self.burstRotation = {
-        { spell = self.spells.COORDINATED_ASSAULT },
-        { spell = self.spells.ASPECT_OF_THE_EAGLE },
-        { 
-            spell = self.spells.WILD_SPIRITS,
-            condition = function(self) return IsSpellKnown(self.spells.WILD_SPIRITS) end
-        },
-        { 
-            spell = self.spells.RESONATING_ARROW,
-            condition = function(self) return IsSpellKnown(self.spells.RESONATING_ARROW) end
-        },
-        { 
-            spell = self.spells.DEATH_CHAKRAM,
-            condition = function(self) return IsSpellKnown(self.spells.DEATH_CHAKRAM) end
-        },
-        { 
-            spell = self.spells.FLAYED_SHOT,
-            condition = function(self) return IsSpellKnown(self.spells.FLAYED_SHOT) end
-        },
-        { spell = self.spells.WILDFIRE_BOMB }
-    }
-end
+    -- Update specialization on initialization
+    self:OnSpecializationChanged()
+}
 
--- Class-specific pre-rotation checks
-function Hunter:ClassSpecificChecks()
-    -- Check for class-specific conditions
+-- On specialization changed
+function HunterModule:OnSpecializationChanged()
+    -- Get current spec ID
+    playerSpec = API.GetActiveSpecID()
     
-    -- Summon pet if we don't have one (except for Lone Wolf Marksmanship)
-    if not UnitExists("pet") and 
-       (self.currentSpec ~= SPEC_MARKSMANSHIP or
-        (self.currentSpec == SPEC_MARKSMANSHIP and not self:HasTalent("Lone Wolf"))) then
-        WR.Queue:Add(self.spells.CALL_PET_1)
-        return false
+    API.PrintDebug("Hunter specialization changed: " .. playerSpec)
+    
+    -- Ensure correct rotation is registered
+    if playerSpec == SPEC_BEAST_MASTERY then
+        self:RegisterBeastMasteryRotation()
+    elseif playerSpec == SPEC_MARKSMANSHIP then
+        self:RegisterMarksmanshipRotation()
+    elseif playerSpec == SPEC_SURVIVAL then
+        self:RegisterSurvivalRotation()
+    end
+}
+
+-- Register rotations
+function HunterModule:RegisterRotations()
+    -- Register spec-specific rotations
+    self:RegisterBeastMasteryRotation()
+    self:RegisterMarksmanshipRotation()
+    self:RegisterSurvivalRotation()
+}
+
+-- Register Beast Mastery rotation
+function HunterModule:RegisterBeastMasteryRotation()
+    RotationManager:RegisterRotation("HunterBeastMastery", {
+        id = "HunterBeastMastery",
+        name = "Hunter - Beast Mastery",
+        class = "HUNTER",
+        spec = SPEC_BEAST_MASTERY,
+        level = 10,
+        description = "Beast Mastery Hunter rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:BeastMasteryRotation()
+        end
+    })
+}
+
+-- Register Marksmanship rotation
+function HunterModule:RegisterMarksmanshipRotation()
+    RotationManager:RegisterRotation("HunterMarksmanship", {
+        id = "HunterMarksmanship",
+        name = "Hunter - Marksmanship",
+        class = "HUNTER",
+        spec = SPEC_MARKSMANSHIP,
+        level = 10,
+        description = "Marksmanship Hunter rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:MarksmanshipRotation()
+        end
+    })
+}
+
+-- Register Survival rotation
+function HunterModule:RegisterSurvivalRotation()
+    RotationManager:RegisterRotation("HunterSurvival", {
+        id = "HunterSurvival",
+        name = "Hunter - Survival",
+        class = "HUNTER",
+        spec = SPEC_SURVIVAL,
+        level = 10,
+        description = "Survival Hunter rotation for The War Within Season 2",
+        author = "WindrunnerRotations",
+        version = "1.0.0",
+        rotation = function()
+            return self:SurvivalRotation()
+        end
+    })
+}
+
+-- Beast Mastery rotation
+function HunterModule:BeastMasteryRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
     end
     
-    -- Use Mend Pet if pet is below 50% health and in combat
-    if UnitExists("pet") and self:InCombat() and 
-       (UnitHealth("pet") / UnitHealthMax("pet") * 100) < 50 and
-       not self:SpellOnCooldown(self.spells.MEND_PET) then
-        WR.Queue:Add(self.spells.MEND_PET)
-        return false
+    -- Get player and target
+    local player = "player"
+    local target = "target"
+    
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
     end
     
-    return true
-end
-
--- Get default action when nothing else is available
-function Hunter:GetDefaultAction()
-    if self.currentSpec == SPEC_BEAST_MASTERY then
-        return self.spells.COBRA_SHOT
-    elseif self.currentSpec == SPEC_MARKSMANSHIP then
-        return self.spells.STEADY_SHOT
-    elseif self.currentSpec == SPEC_SURVIVAL then
-        return self.spells.RAPTOR_STRIKE
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("Hunter")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local petExists = UnitExists("pet")
+    local petHealth, petMaxHealth, petHealthPercent = 100, 100, 100
+    if petExists then
+        petHealth, petMaxHealth, petHealthPercent = API.GetUnitHealth("pet")
+    end
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local focus, maxFocus, focusPercent = API.GetUnitPower(player, Enum.PowerType.Focus)
+    local targetDistance = API.GetUnitDistance(target)
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.beastMasterySettings.aoeThreshold <= enemies
+    
+    -- Check for pet
+    if settings.generalSettings.autoCallPet and not petExists then
+        -- Call pet based on settings
+        local petSlot = settings.generalSettings.preferredPet
+        local petSpellID
+        
+        if petSlot == "Pet 1" then
+            petSpellID = BM_SPELLS.CALL_PET_1
+        elseif petSlot == "Pet 2" then
+            petSpellID = BM_SPELLS.CALL_PET_2
+        elseif petSlot == "Pet 3" then
+            petSpellID = BM_SPELLS.CALL_PET_3
+        elseif petSlot == "Pet 4" then
+            petSpellID = BM_SPELLS.CALL_PET_4
+        elseif petSlot == "Pet 5" then
+            petSpellID = BM_SPELLS.CALL_PET_5
+        else
+            petSpellID = BM_SPELLS.CALL_PET_1
+        end
+        
+        if API.IsSpellKnown(petSpellID) and API.IsSpellUsable(petSpellID) then
+            return {
+                type = "spell",
+                id = petSpellID,
+                target = player
+            }
+        end
+    end
+    
+    -- Revive pet if it's dead
+    if petExists and petHealthPercent <= 0 and
+       API.IsSpellKnown(BM_SPELLS.REVIVE_PET) and API.IsSpellUsable(BM_SPELLS.REVIVE_PET) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.REVIVE_PET,
+            target = player
+        }
+    end
+    
+    -- Mend pet if needed
+    if petExists and petHealthPercent < settings.generalSettings.mendPetThreshold and
+       API.IsSpellKnown(BM_SPELLS.MEND_PET) and API.IsSpellUsable(BM_SPELLS.MEND_PET) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.MEND_PET,
+            target = "pet"
+        }
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Aspect of the Turtle at critical health
+        if settings.generalSettings.useAspectOfTheTurtle and
+           healthPercent <= settings.generalSettings.turtleThreshold and
+           API.IsSpellKnown(BM_SPELLS.ASPECT_OF_THE_TURTLE) and 
+           API.IsSpellUsable(BM_SPELLS.ASPECT_OF_THE_TURTLE) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.ASPECT_OF_THE_TURTLE,
+                target = player
+            }
+        end
+        
+        -- Exhilaration at low health
+        if healthPercent < 40 and 
+           API.IsSpellKnown(BM_SPELLS.EXHILARATION) and 
+           API.IsSpellUsable(BM_SPELLS.EXHILARATION) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.EXHILARATION,
+                target = player
+            }
+        end
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Bestial Wrath and Aspect of the Wild synced if setting enabled
+        local hasAspectOfTheWild = API.UnitHasBuff(player, BUFFS.ASPECT_OF_THE_WILD)
+        local hasBestialWrath = API.UnitHasBuff(player, BUFFS.BESTIAL_WRATH)
+        
+        if settings.beastMasterySettings.useBestialWrath and
+           API.IsSpellKnown(BM_SPELLS.BESTIAL_WRATH) and 
+           API.IsSpellUsable(BM_SPELLS.BESTIAL_WRATH) then
+           
+            local useNow = true
+            -- Check if we need to sync with AotW
+            if settings.beastMasterySettings.syncBWandAotW and
+               settings.beastMasterySettings.useAspectOfTheWild and
+               API.IsSpellKnown(BM_SPELLS.ASPECT_OF_THE_WILD) then
+                local _, aotWCD = API.GetSpellCooldown(BM_SPELLS.ASPECT_OF_THE_WILD)
+                -- Only wait if AotW is coming off cooldown within 3 seconds
+                if not hasAspectOfTheWild and aotWCD > 0 and aotWCD < 3 then
+                    useNow = false
+                end
+            end
+            
+            if useNow then
+                return {
+                    type = "spell",
+                    id = BM_SPELLS.BESTIAL_WRATH,
+                    target = player
+                }
+            end
+        end
+        
+        -- Aspect of the Wild
+        if settings.beastMasterySettings.useAspectOfTheWild and
+           API.IsSpellKnown(BM_SPELLS.ASPECT_OF_THE_WILD) and 
+           API.IsSpellUsable(BM_SPELLS.ASPECT_OF_THE_WILD) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.ASPECT_OF_THE_WILD,
+                target = player
+            }
+        end
+        
+        -- Bloodshed if talented
+        if API.IsSpellKnown(BM_SPELLS.BLOODSHED) and 
+           API.IsSpellUsable(BM_SPELLS.BLOODSHED) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.BLOODSHED,
+                target = target
+            }
+        end
+        
+        -- Stampede if talented
+        if API.IsSpellKnown(BM_SPELLS.STAMPEDE) and 
+           API.IsSpellUsable(BM_SPELLS.STAMPEDE) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.STAMPEDE,
+                target = target
+            }
+        end
+        
+        -- Dire Beast if talented and enabled
+        if settings.beastMasterySettings.useDireBeast and
+           API.IsSpellKnown(BM_SPELLS.DIRE_BEAST) and 
+           API.IsSpellUsable(BM_SPELLS.DIRE_BEAST) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.DIRE_BEAST,
+                target = target
+            }
+        end
+        
+        -- A Murder of Crows if talented
+        if API.IsSpellKnown(BM_SPELLS.A_MURDER_OF_CROWS) and 
+           API.IsSpellUsable(BM_SPELLS.A_MURDER_OF_CROWS) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.A_MURDER_OF_CROWS,
+                target = target
+            }
+        end
+    end
+    
+    -- AoE rotation
+    if aoeEnabled and enemies >= 3 then
+        -- Beast Cleave via Multishot if not active
+        local hasBeastCleave, _, _, beastCleaveRemaining = API.UnitHasBuff("pet", BUFFS.BEAST_CLEAVE)
+        if (not hasBeastCleave or beastCleaveRemaining < 1) and
+           API.IsSpellKnown(BM_SPELLS.MULTISHOT) and 
+           API.IsSpellUsable(BM_SPELLS.MULTISHOT) and
+           focus >= 40 then
+            return {
+                type = "spell",
+                id = BM_SPELLS.MULTISHOT,
+                target = target
+            }
+        end
+        
+        -- Barrage for AoE if enabled
+        if settings.beastMasterySettings.useBarrage and
+           enemies >= settings.beastMasterySettings.barrageThreshold and
+           API.IsSpellKnown(BM_SPELLS.BARRAGE) and 
+           API.IsSpellUsable(BM_SPELLS.BARRAGE) then
+            return {
+                type = "spell",
+                id = BM_SPELLS.BARRAGE,
+                target = target
+            }
+        end
+    end
+    
+    -- Core rotation
+    -- Barbed Shot to maintain Frenzy and reset Kill Command
+    local hasFrenzy, frenzyStacks, _, frenzyRemaining = API.UnitHasBuff("pet", BUFFS.FRENZY)
+    if (not hasFrenzy or frenzyRemaining < 2 or frenzyStacks < 3) and
+       API.IsSpellKnown(BM_SPELLS.BARBED_SHOT) and 
+       API.IsSpellUsable(BM_SPELLS.BARBED_SHOT) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.BARBED_SHOT,
+            target = target
+        }
+    end
+    
+    -- Kill Command on cooldown
+    if API.IsSpellKnown(BM_SPELLS.KILL_COMMAND) and 
+       API.IsSpellUsable(BM_SPELLS.KILL_COMMAND) and
+       focus >= 30 then
+        return {
+            type = "spell",
+            id = BM_SPELLS.KILL_COMMAND,
+            target = target
+        }
+    end
+    
+    -- Barbed Shot if charges are capping
+    local barbedShotCharges = API.GetSpellCharges(BM_SPELLS.BARBED_SHOT)
+    if barbedShotCharges and barbedShotCharges >= 1.8 and
+       API.IsSpellKnown(BM_SPELLS.BARBED_SHOT) and 
+       API.IsSpellUsable(BM_SPELLS.BARBED_SHOT) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.BARBED_SHOT,
+            target = target
+        }
+    end
+    
+    -- Kill Shot if target is low health
+    if targetHealthPercent < 20 and
+       API.IsSpellKnown(BM_SPELLS.KILL_SHOT) and 
+       API.IsSpellUsable(BM_SPELLS.KILL_SHOT) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.KILL_SHOT,
+            target = target
+        }
+    end
+    
+    -- Cobra Shot as focus dump
+    if focus >= 50 and
+       API.IsSpellKnown(BM_SPELLS.COBRA_SHOT) and 
+       API.IsSpellUsable(BM_SPELLS.COBRA_SHOT) then
+        return {
+            type = "spell",
+            id = BM_SPELLS.COBRA_SHOT,
+            target = target
+        }
     end
     
     return nil
+}
+
+-- Marksmanship rotation
+function HunterModule:MarksmanshipRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
+    end
+    
+    -- Get player and target
+    local player = "player"
+    local target = "target"
+    
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
+    end
+    
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("Hunter")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local petExists = UnitExists("pet")
+    local petHealth, petMaxHealth, petHealthPercent = 100, 100, 100
+    if petExists then
+        petHealth, petMaxHealth, petHealthPercent = API.GetUnitHealth("pet")
+    end
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local focus, maxFocus, focusPercent = API.GetUnitPower(player, Enum.PowerType.Focus)
+    local targetDistance = API.GetUnitDistance(target)
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.marksmanshipSettings.aoeThreshold <= enemies
+    local hasTrueshot = API.UnitHasBuff(player, BUFFS.TRUESHOT)
+    local hasPreciseShots = API.UnitHasBuff(player, BUFFS.PRECISE_SHOTS)
+    local hasTrickShots = API.UnitHasBuff(player, BUFFS.TRICK_SHOTS)
+    
+    -- Check for pet if not using Lone Wolf
+    local hasLoneWolf = API.UnitHasBuff(player, BUFFS.LONE_WOLF)
+    if settings.generalSettings.autoCallPet and not petExists and not hasLoneWolf then
+        -- Call pet based on settings
+        local petSlot = settings.generalSettings.preferredPet
+        local petSpellID
+        
+        if petSlot == "Pet 1" then
+            petSpellID = MM_SPELLS.CALL_PET_1
+        elseif petSlot == "Pet 2" then
+            petSpellID = MM_SPELLS.CALL_PET_2
+        elseif petSlot == "Pet 3" then
+            petSpellID = MM_SPELLS.CALL_PET_3
+        elseif petSlot == "Pet 4" then
+            petSpellID = MM_SPELLS.CALL_PET_4
+        elseif petSlot == "Pet 5" then
+            petSpellID = MM_SPELLS.CALL_PET_5
+        else
+            petSpellID = MM_SPELLS.CALL_PET_1
+        end
+        
+        if API.IsSpellKnown(petSpellID) and API.IsSpellUsable(petSpellID) then
+            return {
+                type = "spell",
+                id = petSpellID,
+                target = player
+            }
+        end
+    end
+    
+    -- Revive pet if it's dead
+    if petExists and petHealthPercent <= 0 and
+       API.IsSpellKnown(MM_SPELLS.REVIVE_PET) and API.IsSpellUsable(MM_SPELLS.REVIVE_PET) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.REVIVE_PET,
+            target = player
+        }
+    end
+    
+    -- Mend pet if needed
+    if petExists and petHealthPercent < settings.generalSettings.mendPetThreshold and
+       API.IsSpellKnown(MM_SPELLS.MEND_PET) and API.IsSpellUsable(MM_SPELLS.MEND_PET) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.MEND_PET,
+            target = "pet"
+        }
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Aspect of the Turtle at critical health
+        if settings.generalSettings.useAspectOfTheTurtle and
+           healthPercent <= settings.generalSettings.turtleThreshold and
+           API.IsSpellKnown(MM_SPELLS.ASPECT_OF_THE_TURTLE) and 
+           API.IsSpellUsable(MM_SPELLS.ASPECT_OF_THE_TURTLE) then
+            return {
+                type = "spell",
+                id = MM_SPELLS.ASPECT_OF_THE_TURTLE,
+                target = player
+            }
+        end
+        
+        -- Exhilaration at low health
+        if healthPercent < 40 and 
+           API.IsSpellKnown(MM_SPELLS.EXHILARATION) and 
+           API.IsSpellUsable(MM_SPELLS.EXHILARATION) then
+            return {
+                type = "spell",
+                id = MM_SPELLS.EXHILARATION,
+                target = player
+            }
+        end
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Trueshot
+        if settings.marksmanshipSettings.useTrueshot and
+           API.IsSpellKnown(MM_SPELLS.TRUESHOT) and 
+           API.IsSpellUsable(MM_SPELLS.TRUESHOT) then
+           
+            local useNow = true
+            -- Check if we need a special condition
+            if settings.marksmanshipSettings.trueshotWithAimedShot then
+                -- Only use Trueshot when Aimed Shot is ready
+                local _, aimedShotCD = API.GetSpellCooldown(MM_SPELLS.AIMED_SHOT)
+                if aimedShotCD > 0.5 then -- Give a small buffer
+                    useNow = false
+                end
+            end
+            
+            if useNow then
+                return {
+                    type = "spell",
+                    id = MM_SPELLS.TRUESHOT,
+                    target = player
+                }
+            end
+        end
+        
+        -- Volley if talented
+        if aoeEnabled and
+           API.IsSpellKnown(MM_SPELLS.VOLLEY) and 
+           API.IsSpellUsable(MM_SPELLS.VOLLEY) then
+            return {
+                type = "spell",
+                id = MM_SPELLS.VOLLEY,
+                target = target
+            }
+        end
+        
+        -- A Murder of Crows if talented
+        if API.IsSpellKnown(MM_SPELLS.A_MURDER_OF_CROWS) and 
+           API.IsSpellUsable(MM_SPELLS.A_MURDER_OF_CROWS) then
+            return {
+                type = "spell",
+                id = MM_SPELLS.A_MURDER_OF_CROWS,
+                target = target
+            }
+        end
+    end
+    
+    -- Apply or refresh Serpent Sting if setting enabled
+    if settings.marksmanshipSettings.useSerpentSting and
+       API.IsSpellKnown(MM_SPELLS.SERPENT_STING) and 
+       API.IsSpellUsable(MM_SPELLS.SERPENT_STING) and
+       not API.UnitHasDebuff(target, DEBUFFS.SERPENT_STING) and
+       focus >= 20 then
+        return {
+            type = "spell",
+            id = MM_SPELLS.SERPENT_STING,
+            target = target
+        }
+    end
+    
+    -- AoE rotation
+    if aoeEnabled and enemies >= 3 then
+        -- Apply Trick Shots buff with Multi-Shot first
+        if not hasTrickShots and
+           API.IsSpellKnown(MM_SPELLS.MULTISHOT) and 
+           API.IsSpellUsable(MM_SPELLS.MULTISHOT) and
+           focus >= 40 then
+            return {
+                type = "spell",
+                id = MM_SPELLS.MULTISHOT,
+                target = target
+            }
+        end
+        
+        -- Explosive Shot for AoE if enabled
+        if settings.marksmanshipSettings.useExplosiveShot and
+           API.IsSpellKnown(MM_SPELLS.EXPLOSIVE_SHOT) and 
+           API.IsSpellUsable(MM_SPELLS.EXPLOSIVE_SHOT) and
+           focus >= 20 then
+            return {
+                type = "spell",
+                id = MM_SPELLS.EXPLOSIVE_SHOT,
+                target = target
+            }
+        end
+        
+        -- Barrage for AoE if enabled
+        if settings.marksmanshipSettings.useBarrage and
+           enemies >= settings.marksmanshipSettings.barrageThreshold and
+           API.IsSpellKnown(MM_SPELLS.BARRAGE) and 
+           API.IsSpellUsable(MM_SPELLS.BARRAGE) and
+           focus >= 30 then
+            return {
+                type = "spell",
+                id = MM_SPELLS.BARRAGE,
+                target = target
+            }
+        end
+        
+        -- With Trick Shots, Aimed Shot cleaves
+        if hasTrickShots and focus >= 35 and
+           API.IsSpellKnown(MM_SPELLS.AIMED_SHOT) and 
+           API.IsSpellUsable(MM_SPELLS.AIMED_SHOT) then
+            return {
+                type = "spell",
+                id = MM_SPELLS.AIMED_SHOT,
+                target = target
+            }
+        end
+    end
+    
+    -- Core rotation
+    -- Kill Shot if target is low health
+    if targetHealthPercent < 20 and
+       API.IsSpellKnown(MM_SPELLS.KILL_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.KILL_SHOT) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.KILL_SHOT,
+            target = target
+        }
+    end
+    
+    -- Rapid Fire on cooldown
+    if API.IsSpellKnown(MM_SPELLS.RAPID_FIRE) and 
+       API.IsSpellUsable(MM_SPELLS.RAPID_FIRE) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.RAPID_FIRE,
+            target = target
+        }
+    end
+    
+    -- Aimed Shot if not moving
+    if not IsPlayerMoving() and focus >= 35 and
+       API.IsSpellKnown(MM_SPELLS.AIMED_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.AIMED_SHOT) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.AIMED_SHOT,
+            target = target
+        }
+    end
+    
+    -- Arcane Shot with Precise Shots proc
+    if hasPreciseShots and
+       API.IsSpellKnown(MM_SPELLS.ARCANE_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.ARCANE_SHOT) and
+       focus >= 20 then
+        return {
+            type = "spell",
+            id = MM_SPELLS.ARCANE_SHOT,
+            target = target
+        }
+    end
+    
+    -- Chimaera Shot if talented
+    if API.IsSpellKnown(MM_SPELLS.CHIMAERA_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.CHIMAERA_SHOT) and
+       focus >= 20 then
+        return {
+            type = "spell",
+            id = MM_SPELLS.CHIMAERA_SHOT,
+            target = target
+        }
+    end
+    
+    -- Arcane Shot as focus dump
+    if focus >= 50 and
+       API.IsSpellKnown(MM_SPELLS.ARCANE_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.ARCANE_SHOT) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.ARCANE_SHOT,
+            target = target
+        }
+    end
+    
+    -- Steady Shot to build focus
+    if focus < 70 and
+       API.IsSpellKnown(MM_SPELLS.STEADY_SHOT) and 
+       API.IsSpellUsable(MM_SPELLS.STEADY_SHOT) then
+        return {
+            type = "spell",
+            id = MM_SPELLS.STEADY_SHOT,
+            target = target
+        }
+    end
+    
+    return nil
+}
+
+-- Survival rotation
+function HunterModule:SurvivalRotation()
+    -- Check if we should execute
+    if not self:ShouldExecuteRotation() then
+        return nil
+    end
+    
+    -- Get player and target
+    local player = "player"
+    local target = "target"
+    
+    -- Check if we have a target
+    if not UnitExists(target) or not UnitCanAttack(player, target) or UnitIsDead(target) then
+        return nil
+    end
+    
+    -- Get settings
+    local settings = ConfigRegistry:GetSettings("Hunter")
+    
+    -- Common Combat Variables
+    local health, maxHealth, healthPercent = API.GetUnitHealth(player)
+    local petExists = UnitExists("pet")
+    local petHealth, petMaxHealth, petHealthPercent = 100, 100, 100
+    if petExists then
+        petHealth, petMaxHealth, petHealthPercent = API.GetUnitHealth("pet")
+    end
+    local targetHealth, targetMaxHealth, targetHealthPercent = API.GetUnitHealth(target)
+    local focus, maxFocus, focusPercent = API.GetUnitPower(player, Enum.PowerType.Focus)
+    local targetDistance = API.GetUnitDistance(target)
+    local enemies = API.GetEnemyCount(8)
+    local aoeEnabled = settings.survivalSettings.aoeThreshold <= enemies
+    local hasCoodinatedAssault = API.UnitHasBuff(player, BUFFS.COORDINATED_ASSAULT)
+    local hasMongooseFury, mongooseFuryStacks, _, mongooseFuryRemaining = API.UnitHasBuff(player, BUFFS.MONGOOSE_FURY)
+    
+    -- Check for pet
+    if settings.generalSettings.autoCallPet and not petExists then
+        -- Call pet based on settings
+        local petSlot = settings.generalSettings.preferredPet
+        local petSpellID
+        
+        if petSlot == "Pet 1" then
+            petSpellID = SV_SPELLS.CALL_PET_1
+        elseif petSlot == "Pet 2" then
+            petSpellID = SV_SPELLS.CALL_PET_2
+        elseif petSlot == "Pet 3" then
+            petSpellID = SV_SPELLS.CALL_PET_3
+        elseif petSlot == "Pet 4" then
+            petSpellID = SV_SPELLS.CALL_PET_4
+        elseif petSlot == "Pet 5" then
+            petSpellID = SV_SPELLS.CALL_PET_5
+        else
+            petSpellID = SV_SPELLS.CALL_PET_1
+        end
+        
+        if API.IsSpellKnown(petSpellID) and API.IsSpellUsable(petSpellID) then
+            return {
+                type = "spell",
+                id = petSpellID,
+                target = player
+            }
+        end
+    end
+    
+    -- Revive pet if it's dead
+    if petExists and petHealthPercent <= 0 and
+       API.IsSpellKnown(SV_SPELLS.REVIVE_PET) and API.IsSpellUsable(SV_SPELLS.REVIVE_PET) then
+        return {
+            type = "spell",
+            id = SV_SPELLS.REVIVE_PET,
+            target = player
+        }
+    end
+    
+    -- Mend pet if needed
+    if petExists and petHealthPercent < settings.generalSettings.mendPetThreshold and
+       API.IsSpellKnown(SV_SPELLS.MEND_PET) and API.IsSpellUsable(SV_SPELLS.MEND_PET) then
+        return {
+            type = "spell",
+            id = SV_SPELLS.MEND_PET,
+            target = "pet"
+        }
+    end
+    
+    -- Defensive abilities
+    if settings.generalSettings.useDefensives then
+        -- Aspect of the Turtle at critical health
+        if settings.generalSettings.useAspectOfTheTurtle and
+           healthPercent <= settings.generalSettings.turtleThreshold and
+           API.IsSpellKnown(SV_SPELLS.ASPECT_OF_THE_TURTLE) and 
+           API.IsSpellUsable(SV_SPELLS.ASPECT_OF_THE_TURTLE) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.ASPECT_OF_THE_TURTLE,
+                target = player
+            }
+        end
+        
+        -- Exhilaration at low health
+        if healthPercent < 40 and 
+           API.IsSpellKnown(SV_SPELLS.EXHILARATION) and 
+           API.IsSpellUsable(SV_SPELLS.EXHILARATION) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.EXHILARATION,
+                target = player
+            }
+        end
+    end
+    
+    -- Harpoon for gap closing
+    if settings.survivalSettings.useHarpoon and
+       targetDistance > 8 and targetDistance < 30 and
+       API.IsSpellKnown(SV_SPELLS.HARPOON) and 
+       API.IsSpellUsable(SV_SPELLS.HARPOON) then
+        return {
+            type = "spell",
+            id = SV_SPELLS.HARPOON,
+            target = target
+        }
+    end
+    
+    -- Offensive cooldowns
+    if inCombat then
+        -- Coordinated Assault
+        if settings.survivalSettings.useCoordinatedAssault and
+           API.IsSpellKnown(SV_SPELLS.COORDINATED_ASSAULT) and 
+           API.IsSpellUsable(SV_SPELLS.COORDINATED_ASSAULT) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.COORDINATED_ASSAULT,
+                target = player
+            }
+        end
+        
+        -- Spearhead if talented
+        if API.IsSpellKnown(SV_SPELLS.SPEARHEAD) and 
+           API.IsSpellUsable(SV_SPELLS.SPEARHEAD) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.SPEARHEAD,
+                target = target
+            }
+        end
+        
+        -- A Murder of Crows if talented
+        if API.IsSpellKnown(SV_SPELLS.A_MURDER_OF_CROWS) and 
+           API.IsSpellUsable(SV_SPELLS.A_MURDER_OF_CROWS) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.A_MURDER_OF_CROWS,
+                target = target
+            }
+        end
+        
+        -- Chakrams if talented
+        if aoeEnabled and
+           API.IsSpellKnown(SV_SPELLS.CHAKRAMS) and 
+           API.IsSpellUsable(SV_SPELLS.CHAKRAMS) then
+            return {
+                type = "spell",
+                id = SV_SPELLS.CHAKRAMS,
+                target = target
+            }
+        end
+    end
+    
+    -- Wildfire Bomb
+    if settings.survivalSettings.useWildfireBomb and
+       API.IsSpellKnown(SV_SPELLS.WILDFIRE_BOMB) and 
+       API.IsSpellUsable(SV_SPELLS.WILDFIRE_BOMB) then
+        return {
+            type = "spell",
+            id = SV_SPELLS.WILDFIRE_BOMB,
+            target = target
+        }
+    end
+    
+    -- AoE rotation
+    if aoeEnabled and enemies >= 3 then
+        -- Butchery if talented
+        if API.IsSpellKnown(SV_SPELLS.BUTCHERY) and 
+           API.IsSpellUsable(SV_SPELLS.BUTCHERY) and
+           focus >= 30 then
+            return {
+                type = "spell",
+                id = SV_SPELLS.BUTCHERY,
+                target = target
+            }
+        end
+        
+        -- Carve if not using Butchery
+        if not API.IsSpellKnown(SV_SPELLS.BUTCHERY) and
+           API.IsSpellKnown(SV_SPELLS.CARVE) and 
+           API.IsSpellUsable(SV_SPELLS.CARVE) and
+           focus >= 30 then
+            return {
+                type = "spell",
+                id = SV_SPELLS.CARVE,
+                target = target
+            }
+        end
+    end
+    
+    -- Core rotation
+    -- Kill Command on cooldown
+    if API.IsSpellKnown(SV_SPELLS.KILL_COMMAND) and 
+       API.IsSpellUsable(SV_SPELLS.KILL_COMMAND) and
+       focus >= 30 then
+        return {
+            type = "spell",
+            id = SV_SPELLS.KILL_COMMAND,
+            target = target
+        }
+    end
+    
+    -- Flanking Strike if talented
+    if API.IsSpellKnown(SV_SPELLS.FLANKING_STRIKE) and 
+       API.IsSpellUsable(SV_SPELLS.FLANKING_STRIKE) and
+       focus >= 30 then
+        return {
+            type = "spell",
+            id = SV_SPELLS.FLANKING_STRIKE,
+            target = target
+        }
+    end
+    
+    -- Mongoose Bite if talented and enabled
+    if settings.survivalSettings.useMongooseBite and
+       API.IsSpellKnown(SV_SPELLS.MONGOOSE_BITE) and 
+       API.IsSpellUsable(SV_SPELLS.MONGOOSE_BITE) and
+       focus >= 30 and (not settings.survivalSettings.mongoosePooling or focus >= 70 or hasMongooseFury) then
+        return {
+            type = "spell",
+            id = SV_SPELLS.MONGOOSE_BITE,
+            target = target
+        }
+    end
+    
+    -- Raptor Strike if not using Mongoose Bite
+    if (not API.IsSpellKnown(SV_SPELLS.MONGOOSE_BITE) or not settings.survivalSettings.useMongooseBite) and
+       API.IsSpellKnown(SV_SPELLS.RAPTOR_STRIKE) and 
+       API.IsSpellUsable(SV_SPELLS.RAPTOR_STRIKE) and
+       focus >= 30 then
+        return {
+            type = "spell",
+            id = SV_SPELLS.RAPTOR_STRIKE,
+            target = target
+        }
+    end
+    
+    return nil
+}
+
+-- Should execute rotation
+function HunterModule:ShouldExecuteRotation()
+    if not isEnabled then
+        return false
+    end
+    
+    -- Check if player matches class
+    local playerInfo = API.GetPlayerInfo()
+    if playerInfo.class ~= "HUNTER" then
+        return false
+    end
+    
+    return true
+}
+
+-- Get spell charges
+function API.GetSpellCharges(spellID)
+    if not API.IsSpellKnown(spellID) then
+        return 0
+    end
+    
+    -- Try to use Tinkr's API if available
+    if API.IsTinkrLoaded() and Tinkr.Spell and Tinkr.Spell[spellID] then
+        return Tinkr.Spell[spellID]:GetCharges() or 0
+    end
+    
+    -- Fallback to WoW API
+    local charges, maxCharges, cdStart, cdDuration = GetSpellCharges(spellID)
+    if charges then
+        -- If on cooldown, calculate partial charges
+        if cdStart and cdDuration and cdDuration > 0 then
+            local timeSinceStart = GetTime() - cdStart
+            local partialCharge = timeSinceStart / cdDuration
+            return charges + partialCharge
+        end
+        return charges
+    end
+    
+    return 0
 end
 
--- Initialize the module
-Hunter:Initialize()
+-- Register for export
+WR.Hunter = HunterModule
 
-return Hunter
+return HunterModule

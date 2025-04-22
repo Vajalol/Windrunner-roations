@@ -24,18 +24,18 @@ Core\RotationManager.lua
 # UI\EnhancedConfigUI.lua
 
 # Class rotations
-# Classes\DeathKnight.lua
-# Classes\DemonHunter.lua
-# Classes\Druid.lua
-# Classes\Evoker.lua
-# Classes\Hunter.lua
-# Classes\Mage.lua
-# Classes\Monk.lua
-# Classes\Paladin.lua
+Classes\DeathKnight.lua
+Classes\DemonHunter.lua
+Classes\Druid.lua
+Classes\Evoker.lua
+Classes\Hunter.lua
+Classes\Mage.lua
+Classes\Monk.lua
+Classes\Paladin.lua
 Classes\Priest.lua
-# Classes\Rogue.lua
-# Classes\Shaman.lua
-# Classes\Warlock.lua
+Classes\Rogue.lua
+Classes\Shaman.lua
+Classes\Warlock.lua
 Classes\Warrior.lua
 
 # Testing
