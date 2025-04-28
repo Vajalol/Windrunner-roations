@@ -9,8 +9,8 @@ local API = {}
 WR.API = API
 
 -- Local variables
-local addonVersion = "1.0.0"
-local buildNumber = 10010
+local addonVersion = "1.1.0"
+local buildNumber = 11000
 local eventFrame = nil
 local eventHandlers = {}
 local throttledFunctions = {}
