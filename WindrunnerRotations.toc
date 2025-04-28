@@ -2,7 +2,7 @@
 ## Title: WindrunnerRotations
 ## Notes: Advanced combat optimization system with intelligent, adaptive spell casting
 ## Author: VortexQ8
-## Version: 1.2.0
+## Version: 1.3.0
 ## SavedVariables: WindrunnerRotationsDB
 ## SavedVariablesPerCharacter: WindrunnerRotationsCharDB
 ## X-Tinkr-Required: 3.0.0

@@ -1,5 +1,21 @@
 # Windrunner Rotations - Change Log
 
+## Version 1.3.0 (April 29, 2025)
+
+### Major Features Added
+- **Pet Management System**: Comprehensive pet control for classes like Hunter, Warlock, and Death Knight
+- **Movement Optimization**: Automatic pathfinding and player positioning during combat
+- **Boss Mechanic Avoidance**: Detection and response to specific raid and dungeon boss mechanics
+- **Line of Sight Verification**: Ensures targets are visible before attempting ability usage
+- **Rotation Pause/Resume Logic**: Smart detection of manual player control with automatic resuming
+
+### Advanced Automation
+- Added full auto-follow capability with contextual decision making
+- Implemented dynamic crowd control priorities in multi-target situations
+- Created advanced targeting filters with line of sight and distance checks
+- Added sophisticated path planning for complex movement scenarios
+- Integrated dungeon and raid boss ability detection for proactive defensive usage
+
 ## Version 1.2.0 (April 28, 2025)
 
 ### Major Features Added

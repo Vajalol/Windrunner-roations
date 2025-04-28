@@ -8,8 +8,8 @@
 local addonName, WR = ...
 
 -- Version information
-local ADDON_VERSION = "1.2.0"
-local ADDON_BUILD = 12000
+local ADDON_VERSION = "1.3.0"
+local ADDON_BUILD = 13000
 local WOW_EXPECTED_VERSION = 100205 -- 10.2.5
 local TINKR_EXPECTED_VERSION = "3.0"
 
