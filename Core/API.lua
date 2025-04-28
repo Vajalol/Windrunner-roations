@@ -586,6 +586,166 @@ function API.IsTinkrLoaded()
     return tinkrLoaded
 end
 
+-- Determine if a spell needs cursor targeting (ground-targeted or position-targeted)
+function API.IsGroundTargetedSpell(spellID)
+    -- Table of known ground-targeted spells by class
+    local groundTargetedSpells = {
+        -- Death Knight
+        [43265] = true,   -- Death and Decay
+        [49576] = false,  -- Death Grip (position targeted)
+        [194679] = true,  -- Rune Tap
+        [152280] = true,  -- Defile
+        
+        -- Demon Hunter
+        [198013] = false, -- Eye Beam (cone, not ground targeted)
+        [189110] = false, -- Infernal Strike (position targeted)
+        [188501] = false, -- Spectral Sight
+        [207407] = true,  -- Soul Carver
+        
+        -- Druid
+        [102793] = true,  -- Ursol's Vortex
+        [16979] = false,  -- Wild Charge (position targeted)
+        [102359] = true,  -- Mass Entanglement
+        [88747] = true,   -- Wild Mushroom
+        [33917] = false,  -- Mangle
+        [102383] = true,  -- Wild Charge (Balance)
+        [78674] = false,  -- Starsurge
+        [191034] = true,  -- Starfall
+        
+        -- Hunter
+        [194277] = true,  -- Caltrops
+        [187698] = true,  -- Tar Trap
+        [187650] = true,  -- Freezing Trap
+        [1543] = true,    -- Flare
+        
+        -- Mage
+        [190356] = true,  -- Blizzard
+        [153626] = true,  -- Arcane Orb
+        [157981] = true,  -- Blast Wave
+        [122] = false,    -- Frost Nova
+        [113724] = true,  -- Ring of Frost
+        [31661] = false,  -- Dragon's Breath
+        
+        -- Monk
+        [115315] = true,  -- Summon Black Ox Statue
+        [116844] = true,  -- Ring of Peace
+        [119381] = false, -- Leg Sweep
+        [198898] = true,  -- Song of Chi-Ji
+        
+        -- Paladin
+        [26573] = true,   -- Consecration
+        [204035] = true,  -- Hammer of Righteousness
+        [114165] = true,  -- Holy Prism
+        [200025] = false, -- Beacon of Virtue
+        
+        -- Priest
+        [204263] = true,  -- Shining Force
+        [110744] = true,  -- Divine Star
+        [120517] = true,  -- Halo
+        [32375] = true,   -- Mass Dispel
+        [73510] = true,   -- Mind Spike
+        
+        -- Rogue
+        [114018] = false, -- Shroud of Concealment
+        [36554] = false,  -- Shadowstep (position targeted)
+        [185313] = false, -- Shadow Dance
+        [271877] = true,  -- Crimson Tempest
+        
+        -- Shaman
+        [192077] = true,  -- Wind Rush Totem
+        [192058] = true,  -- Capacitor Totem
+        [108280] = true,  -- Healing Tide Totem
+        [51485] = true,   -- Earthgrab Totem
+        [192222] = true,  -- Liquid Magma Totem
+        [2484] = true,    -- Earthbind Totem
+        [73920] = true,   -- Healing Rain
+        
+        -- Warlock
+        [152108] = true,  -- Cataclysm
+        [30283] = false,  -- Shadowfury
+        [48018] = true,   -- Demonic Circle
+        [111771] = true,  -- Demonic Gateway
+        [5740] = true,    -- Rain of Fire
+        
+        -- Warrior
+        [118000] = false, -- Dragon Roar
+        [46968] = false,  -- Shockwave
+        [228920] = false, -- Ravager
+        [12975] = false,  -- Last Stand
+        [176864] = false, -- Heroic Leap (position targeted)
+        [6544] = false,   -- Heroic Leap (position targeted)
+        [207682] = false, -- Sigil of Flame
+        [202137] = false, -- Sigil of Silence
+        [204596] = false, -- Sigil of Flame
+        [207684] = false, -- Sigil of Misery
+        
+        -- Evoker
+        [359816] = true,  -- Dream Flight
+        [357210] = true,  -- Deep Breath
+        [360995] = true   -- Verdant Embrace
+    }
+    
+    -- Table of position-targeted spells (like leaps or charges)
+    local positionTargetedSpells = {
+        -- Death Knight
+        [49576] = true,   -- Death Grip
+        
+        -- Demon Hunter
+        [189110] = true,  -- Infernal Strike
+        [195072] = true,  -- Fel Rush
+        
+        -- Druid
+        [16979] = true,   -- Wild Charge
+        [102401] = true,  -- Wild Charge (Cat)
+        [102383] = true,  -- Wild Charge (Moonkin)
+        
+        -- Monk
+        [115008] = true,  -- Chi Torpedo
+        [109132] = true,  -- Roll
+        
+        -- Rogue
+        [36554] = true,   -- Shadowstep
+        [195457] = true,  -- Grappling Hook
+        
+        -- Warrior
+        [6544] = true,    -- Heroic Leap
+        [100] = true,     -- Charge
+        [52174] = true,   -- Heroic Leap
+        
+        -- Evoker
+        [358385] = true,  -- Landslide
+        [358267] = true   -- Hover
+    }
+    
+    -- Check if this is a ground-targeted spell
+    if groundTargetedSpells[spellID] then
+        return true, false
+    -- Check if this is a position-targeted spell
+    elseif positionTargetedSpells[spellID] then
+        return false, true
+    end
+    
+    -- Not a special cursor-targeted spell
+    return false, false
+end
+
+-- Smart cast function that automatically handles cursor targeting if needed
+function API.SmartCast(spellID, unit)
+    -- Check if this is a special cursor-targeted spell
+    local isGroundTargeted, isPositionTargeted = API.IsGroundTargetedSpell(spellID)
+    
+    -- Ground targeted spell (AoE)
+    if isGroundTargeted then
+        return API.CastGroundSpellAuto(spellID)
+    -- Position targeted spell (leap/charge)
+    elseif isPositionTargeted then
+        return API.CastPositionSpellAuto(spellID)
+    -- Regular targeted or instant spell
+    else
+        return API.CastSpell(spellID, unit)
+    end
+end
+
 -- Get load errors
 function API.GetLoadErrors()
     return loadErrors
@@ -677,6 +837,81 @@ end
 -- Get enemy count in range
 function API.GetEnemyCount(range)
     return #API.GetEnemiesInRange("player", range)
+end
+
+-- Get best AoE position
+function API.GetBestAoEPosition(radius)
+    -- Default radius if not specified
+    radius = radius or 8
+    
+    -- No Tinkr available, can't determine best position
+    if not tinkrLoaded or not tinkrAPI.Unit or not tinkrAPI.Unit["player"] or not tinkrAPI.Enemy then
+        return nil, nil, nil
+    end
+    
+    -- Get player position as reference
+    local px, py, pz = tinkrAPI.Unit["player"]:GetPosition()
+    if not px or not py or not pz then
+        return nil, nil, nil
+    end
+    
+    -- Get all enemies
+    local enemies = {}
+    for _, enemy in pairs(tinkrAPI.Enemy) do
+        -- Only consider enemies within reasonable casting distance
+        if enemy:GetDistance() <= 40 then
+            local ex, ey, ez = enemy:GetPosition()
+            if ex and ey and ez then
+                table.insert(enemies, {unit = enemy.Unit, x = ex, y = ey, z = ez})
+            end
+        end
+    end
+    
+    -- Not enough enemies for AoE
+    if #enemies < 2 then
+        -- If we have at least one enemy, return its position
+        if #enemies == 1 then
+            return enemies[1].x, enemies[1].y, enemies[1].z
+        end
+        return nil, nil, nil
+    end
+    
+    -- Find the position that affects the most enemies
+    local bestScore = 0
+    local bestX, bestY, bestZ = nil, nil, nil
+    
+    -- Try using each enemy position as a potential center
+    for _, centerEnemy in ipairs(enemies) do
+        local cx, cy, cz = centerEnemy.x, centerEnemy.y, centerEnemy.z
+        local score = 0
+        
+        -- Count how many enemies would be hit from this position
+        for _, targetEnemy in ipairs(enemies) do
+            local distance = math.sqrt((targetEnemy.x - cx)^2 + (targetEnemy.y - cy)^2 + (targetEnemy.z - cz)^2)
+            if distance <= radius then
+                -- Add to score, with diminishing value based on distance from player
+                local playerDistance = math.sqrt((cx - px)^2 + (cy - py)^2 + (cz - pz)^2)
+                local distanceFactor = math.max(0.1, 1 - (playerDistance / 40))
+                score = score + distanceFactor
+            end
+        end
+        
+        -- Check if this is the best position so far
+        if score > bestScore then
+            bestScore = score
+            bestX, bestY, bestZ = cx, cy, cz
+        end
+    end
+    
+    -- If no good position found, try player's target as fallback
+    if not bestX and UnitExists("target") and tinkrAPI.Unit["target"] then
+        local tx, ty, tz = tinkrAPI.Unit["target"]:GetPosition()
+        if tx and ty and tz then
+            bestX, bestY, bestZ = tx, ty, tz
+        end
+    end
+    
+    return bestX, bestY, bestZ
 end
 
 -- Get spell cooldown
@@ -873,6 +1108,219 @@ function API.CastSpell(spellID, unit)
     end
     
     return false
+end
+
+-- Cast ground-targeted spell (AoE at location)
+function API.CastGroundSpell(spellID, x, y, z)
+    -- If we have explicit coordinates to cast at
+    if x and y and z then
+        if tinkrLoaded then
+            -- First try Tinkr's position casting if available
+            if tinkrAPI.Spell and tinkrAPI.Spell[spellID] then
+                return tinkrAPI.Spell[spellID]:CastGround(x, y, z)
+            -- Next try Tinkr's secure execution if available
+            elseif tinkrAPI.Secure and tinkrAPI.Secure.Call then
+                -- The macro approach for ground targeting via Tinkr
+                local posString = string.format("%f,%f,%f", x, y, z)
+                return tinkrAPI.Secure.Call("RunMacroText", "/cast [@cursor] " .. GetSpellInfo(spellID))
+            end
+        end
+        
+        -- Fallback for WoW API is using cursor approach via macro
+        return RunMacroText("/cast [@cursor] " .. GetSpellInfo(spellID))
+    else
+        -- Auto-determine best location
+        return API.CastGroundSpellAuto(spellID)
+    end
+end
+
+-- Cast ground spell at auto-determined best location
+function API.CastGroundSpellAuto(spellID)
+    -- Determine best AoE point based on enemy clustering
+    local bestX, bestY, bestZ = API.GetBestAoEPosition(12) -- 12 yard default AoE radius
+    
+    -- If we found a good position
+    if bestX and bestY and bestZ then
+        return API.CastGroundSpell(spellID, bestX, bestY, bestZ)
+    else
+        -- If no good cluster found, cast at current target if valid
+        if UnitExists("target") and API.IsUnitInRange("target", 40) then
+            if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit["target"] then
+                local tx, ty, tz = tinkrAPI.Unit["target"]:GetPosition()
+                if tx and ty and tz then
+                    return API.CastGroundSpell(spellID, tx, ty, tz)
+                end
+            end
+            
+            -- Fallback to cursor cast on target position
+            return RunMacroText("/cast [@cursor] " .. GetSpellInfo(spellID))
+        else
+            -- Last resort: cast at player position
+            if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit["player"] then
+                local px, py, pz = tinkrAPI.Unit["player"]:GetPosition()
+                if px and py and pz then
+                    return API.CastGroundSpell(spellID, px, py, pz)
+                end
+            end
+            
+            -- Absolute fallback is just casting it in front of the player
+            return RunMacroText("/cast [@cursor] " .. GetSpellInfo(spellID))
+        end
+    end
+    
+    return false
+end
+
+-- Cast position-targeted spell (leap/charge style)
+function API.CastPositionSpell(spellID, x, y, z, minRange, maxRange)
+    -- Set default ranges if not provided
+    minRange = minRange or 8
+    maxRange = maxRange or 25
+    
+    -- If we have explicit coordinates to cast at
+    if x and y and z then
+        -- Validate the position is in range
+        if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit["player"] then
+            local px, py, pz = tinkrAPI.Unit["player"]:GetPosition()
+            if px and py and pz then
+                local distance = math.sqrt((x-px)^2 + (y-py)^2 + (z-pz)^2)
+                if distance < minRange or distance > maxRange then
+                    -- Find valid position along the same vector
+                    local vx, vy, vz = x-px, y-py, z-pz
+                    local magnitude = math.sqrt(vx^2 + vy^2 + vz^2)
+                    local nx, ny, nz = vx/magnitude, vy/magnitude, vz/magnitude
+                    
+                    if distance < minRange then
+                        -- Position is too close, move it out to min range
+                        x, y, z = px + nx * minRange, py + ny * minRange, pz + nz * minRange
+                    else
+                        -- Position is too far, bring it in to max range
+                        x, y, z = px + nx * maxRange, py + ny * maxRange, pz + nz * maxRange
+                    end
+                end
+            end
+        end
+        
+        -- Cast to the position
+        if tinkrLoaded then
+            -- First try Tinkr's position casting if available
+            if tinkrAPI.Spell and tinkrAPI.Spell[spellID] then
+                return tinkrAPI.Spell[spellID]:CastGround(x, y, z)
+            -- Next try Tinkr's secure execution if available
+            elseif tinkrAPI.Secure and tinkrAPI.Secure.Call then
+                -- The macro approach for positioning targeting via Tinkr
+                return tinkrAPI.Secure.Call("RunMacroText", "/cast [@cursor] " .. GetSpellInfo(spellID))
+            end
+        end
+        
+        -- Fallback for WoW API is using cursor approach via macro
+        return RunMacroText("/cast [@cursor] " .. GetSpellInfo(spellID))
+    else
+        -- Auto-determine best position if not provided
+        return API.CastPositionSpellAuto(spellID, minRange, maxRange)
+    end
+end
+
+-- Cast position spell at auto-determined best location
+function API.CastPositionSpellAuto(spellID, minRange, maxRange)
+    -- Set default ranges if not provided
+    minRange = minRange or 8
+    maxRange = maxRange or 25
+    
+    local targetPosition = nil
+    
+    -- First priority: current target if exists and in range
+    if UnitExists("target") then
+        local inRange = true
+        local distance = API.GetUnitDistance("target")
+        
+        if distance < minRange or distance > maxRange then
+            inRange = false
+        end
+        
+        if inRange and tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit["target"] then
+            local tx, ty, tz = tinkrAPI.Unit["target"]:GetPosition()
+            if tx and ty and tz then
+                targetPosition = {x = tx, y = ty, z = tz}
+            end
+        end
+    end
+    
+    -- Second priority: best enemy to leap to (closest priority target)
+    if not targetPosition then
+        -- For classes where leaping to enemy is desirable (warrior, DH, etc)
+        -- We can add class-specific logic here later
+        
+        -- Get all enemies in range
+        local enemies = API.GetEnemiesInRange("player", maxRange)
+        local closestDistance = maxRange
+        local closestEnemy = nil
+        
+        for _, unit in ipairs(enemies) do
+            local distance = API.GetUnitDistance(unit)
+            if distance >= minRange and distance < closestDistance then
+                closestDistance = distance
+                closestEnemy = unit
+            end
+        end
+        
+        if closestEnemy and tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit[closestEnemy] then
+            local ex, ey, ez = tinkrAPI.Unit[closestEnemy]:GetPosition()
+            if ex and ey and ez then
+                targetPosition = {x = ex, y = ey, z = ez}
+            end
+        end
+    end
+    
+    -- Third priority: best escape position (away from enemies)
+    if not targetPosition and API.GetEnemyCount(10) > 0 then
+        -- Calculate escape vector (away from nearby enemies)
+        local px, py, pz = 0, 0, 0
+        local enemyVectorX, enemyVectorY, enemyVectorZ = 0, 0, 0
+        local enemyCount = 0
+        
+        if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit["player"] then
+            px, py, pz = tinkrAPI.Unit["player"]:GetPosition()
+        end
+        
+        if px ~= 0 and py ~= 0 and pz ~= 0 then
+            for _, unit in ipairs(API.GetEnemiesInRange("player", 15)) do
+                if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit[unit] then
+                    local ex, ey, ez = tinkrAPI.Unit[unit]:GetPosition()
+                    if ex and ey and ez then
+                        enemyVectorX = enemyVectorX + (px - ex)
+                        enemyVectorY = enemyVectorY + (py - ey)
+                        enemyVectorZ = enemyVectorZ + (pz - ez)
+                        enemyCount = enemyCount + 1
+                    end
+                end
+            end
+            
+            if enemyCount > 0 then
+                -- Normalize and scale to max range
+                local magnitude = math.sqrt(enemyVectorX^2 + enemyVectorY^2 + enemyVectorZ^2)
+                if magnitude > 0 then
+                    enemyVectorX = enemyVectorX / magnitude * maxRange
+                    enemyVectorY = enemyVectorY / magnitude * maxRange
+                    enemyVectorZ = enemyVectorZ / magnitude * maxRange
+                    
+                    targetPosition = {
+                        x = px + enemyVectorX,
+                        y = py + enemyVectorY,
+                        z = pz + enemyVectorZ
+                    }
+                end
+            end
+        end
+    end
+    
+    -- If we found a valid position, cast to it
+    if targetPosition then
+        return API.CastPositionSpell(spellID, targetPosition.x, targetPosition.y, targetPosition.z, minRange, maxRange)
+    end
+    
+    -- Fallback approach - just cast at cursor location
+    return RunMacroText("/cast [@cursor] " .. GetSpellInfo(spellID))
 end
 
 -- Use item
