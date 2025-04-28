@@ -87,6 +87,12 @@ function API.Initialize()
     -- Initialize Tinkr API if available
     API.InitializeTinkrAPI()
     
+    -- Initialize defensive tracking
+    API.InitializeDefensiveTracking()
+    
+    -- Register common encounter data
+    API.RegisterCommonEncounters()
+    
     API.PrintDebug("API initialized")
     return true
 end
@@ -234,9 +240,96 @@ function API.RegisterInitialEvents()
     
     -- Register unit events
     API.RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", API.OnUnitSpellcastSucceeded)
+    API.RegisterEvent("UNIT_SPELLCAST_START", API.OnUnitSpellcastStart)
+    API.RegisterEvent("UNIT_SPELLCAST_STOP", API.OnUnitSpellcastStop)
+    API.RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", API.OnUnitSpellcastInterrupted)
+    
+    -- Register health events
+    API.RegisterEvent("UNIT_HEALTH", API.OnUnitHealthChanged)
+    
+    -- Register damage events
+    API.RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", API.OnCombatLogEvent)
+    
+    -- Register encounter events
+    API.RegisterEvent("ENCOUNTER_START", API.OnEncounterStart)
+    API.RegisterEvent("ENCOUNTER_END", API.OnEncounterEnd)
     
     -- Register addon events
     API.RegisterEvent("ADDON_LOADED", API.OnAddonLoaded)
+end
+
+-- Handler for combat log events
+function API.OnCombatLogEvent()
+    local timestamp, subEvent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10 = CombatLogGetCurrentEventInfo()
+    
+    -- Check if the player is the destination (took damage)
+    if destGUID == UnitGUID("player") then
+        -- Handle damage events
+        if subEvent == "SPELL_DAMAGE" or subEvent == "SPELL_PERIODIC_DAMAGE" or subEvent == "RANGE_DAMAGE" or subEvent == "SPELL_BUILDING_DAMAGE" then
+            local spellID, spellName, spellSchool = param1, param2, param3
+            local amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing, isOffHand = param4, param5, param6, param7, param8, param9, param10
+            
+            -- Track this damage event
+            API.RecordDamageTaken(amount, spellID, spellName, sourceGUID)
+        elseif subEvent == "SWING_DAMAGE" then
+            local amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing, isOffHand = param1, param2, param3, param4, param5, param6, param7, param8, param9, param10
+            
+            -- Track this swing damage
+            API.RecordDamageTaken(amount, nil, "Melee", sourceGUID)
+        elseif subEvent == "ENVIRONMENTAL_DAMAGE" then
+            local environmentalType, amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing = param1, param2, param3, param4, param5, param6, param7, param8, param9, param10
+            
+            -- Track environmental damage (fire, lava, etc.)
+            API.RecordDamageTaken(amount, nil, "Environment: " .. environmentalType, nil)
+        end
+    end
+end
+
+-- Handler for unit health changed events
+function API.OnUnitHealthChanged(unit)
+    if unit == "player" then
+        -- Update threat level when player health changes
+        API.UpdateThreatLevel()
+    end
+end
+
+-- Handler for encounter start
+function API.OnEncounterStart(encounterId, encounterName, difficultyId, groupSize)
+    -- Set current encounter
+    API.SetCurrentEncounter(encounterId)
+    
+    -- Initialize defensive tracking for this encounter
+    API.InitializeDefensiveTracking()
+    
+    API.PrintDebug("Encounter started: " .. encounterName .. " (ID: " .. encounterId .. ")")
+end
+
+-- Handler for encounter end
+function API.OnEncounterEnd(encounterId, encounterName, difficultyId, groupSize, success)
+    -- Clear current encounter
+    API.SetCurrentEncounter(nil)
+    
+    API.PrintDebug("Encounter ended: " .. encounterName .. " (Success: " .. (success and "yes" or "no") .. ")")
+end
+
+-- Handler for unit spellcast start
+function API.OnUnitSpellcastStart(unit, castGUID, spellID)
+    -- Track enemy casting for interrupt system
+    if UnitCanAttack("player", unit) then
+        -- Update target priorities for interrupt system
+    elseif UnitIsPlayer(unit) and not UnitIsUnit(unit, "player") then
+        -- Track allied player casts (for coordination)
+    end
+end
+
+-- Handler for unit spellcast stop
+function API.OnUnitSpellcastStop(unit, castGUID, spellID)
+    -- Track enemy cast completions
+end
+
+-- Handler for unit spellcast interrupted
+function API.OnUnitSpellcastInterrupted(unit, castGUID, spellID)
+    -- Track successful interrupts
 end
 
 -- Register event
@@ -1161,6 +1254,853 @@ function API.IsHealingSpell(spellID)
     return healingSpells[spellID] == true
 end
 
+-- Enemy classification system - classify an enemy unit based on various attributes
+function API.ClassifyEnemy(unit)
+    if not UnitExists(unit) then
+        return "unknown", 0
+    end
+    
+    local classification = {
+        type = "normal",      -- normal, elite, rare, boss, raidBoss, pvp, healer, highValue
+        priority = 50,        -- 0-100 scale, higher = more important
+        classification = "",  -- WoW classification string
+        isTanking = false,    -- Is tanking the player/group
+        isCasting = false,    -- Is casting something
+        isDangerous = false,  -- Is doing something dangerous
+        inExecute = false,    -- Is in execute range
+        healthPct = 100,      -- Health percentage
+        distance = 999,       -- Distance to player
+        guid = UnitGUID(unit),
+        marker = GetRaidTargetIndex(unit) or 0, -- Raid marker (skull, cross, etc)
+        buffs = {},           -- Important buffs
+        debuffs = {}          -- Important debuffs
+    }
+    
+    -- Get basic info
+    local _, _, healthPct = API.GetUnitHealth(unit)
+    classification.healthPct = healthPct
+    classification.distance = API.GetUnitDistance(unit)
+    classification.classification = UnitClassification(unit)
+    
+    -- Check raid marker
+    if classification.marker > 0 then
+        -- Adjust priority based on raid marker
+        if classification.marker == 8 then      -- Skull
+            classification.priority = classification.priority + 40
+            classification.type = "highValue"
+        elseif classification.marker == 7 then  -- Cross
+            classification.priority = classification.priority + 30
+        elseif classification.marker == 6 then  -- Square
+            classification.priority = classification.priority + 20
+        elseif classification.marker == 1 then  -- Star
+            classification.priority = classification.priority + 25
+        else
+            classification.priority = classification.priority + 10
+        end
+    end
+    
+    -- Check unit classification from WoW
+    if UnitClassification(unit) == "worldboss" then
+        classification.type = "raidBoss"
+        classification.priority = 100
+    elseif UnitClassification(unit) == "rareelite" then
+        classification.type = "rare"
+        classification.priority = 90
+    elseif UnitClassification(unit) == "elite" then
+        classification.type = "elite"
+        classification.priority = 85
+    elseif UnitClassification(unit) == "rare" then
+        classification.type = "rare"
+        classification.priority = 80
+    end
+    
+    -- Check if it's a player (PvP)
+    if UnitIsPlayer(unit) then
+        classification.type = "pvp"
+        classification.priority = 85
+        
+        -- Check if it's a healer
+        local _, class = UnitClass(unit)
+        if class == "PRIEST" or class == "DRUID" or class == "MONK" or 
+           class == "PALADIN" or class == "SHAMAN" or class == "EVOKER" then
+            -- Check if they're casting a heal
+            local castInfo = API.GetUnitCastInfo(unit)
+            if castInfo and API.IsHealingSpell(castInfo.spellId) then
+                classification.type = "healer"
+                classification.priority = 95
+                classification.isDangerous = true
+            end
+        end
+    end
+    
+    -- Check if unit is in execute range
+    if healthPct < 20 then
+        classification.inExecute = true
+        classification.priority = classification.priority + 20
+    end
+    
+    -- Check if casting
+    local castInfo = API.GetUnitCastInfo(unit)
+    if castInfo then
+        classification.isCasting = true
+        
+        -- Check if casting something dangerous
+        if API.IsHighPriorityInterrupt(castInfo.spellId) then
+            classification.isDangerous = true
+            classification.priority = classification.priority + 25
+        end
+    end
+    
+    -- Check if tanking
+    if UnitThreatSituation("player", unit) and UnitThreatSituation("player", unit) >= 2 then
+        classification.isTanking = true
+        classification.priority = classification.priority + 15
+    end
+    
+    -- Check for important auras
+    -- Buffs that make an enemy more dangerous
+    local dangerousBuffs = {
+        [31884] = true,  -- Avenging Wrath
+        [51271] = true,  -- Pillar of Frost
+        [190319] = true, -- Combustion
+        [121471] = true, -- Shadow Blades
+        [1719] = true,   -- Recklessness
+        [194223] = true, -- Celestial Alignment
+        [13750] = true,  -- Adrenaline Rush
+        [102560] = true  -- Incarnation: Chosen of Elune
+    }
+    
+    for buffID, _ in pairs(dangerousBuffs) do
+        local hasBuff = API.UnitHasBuff(unit, buffID)
+        if hasBuff then
+            classification.buffs[buffID] = true
+            classification.isDangerous = true
+            classification.priority = classification.priority + 15
+        end
+    end
+    
+    -- Return the classification type and priority
+    return classification.type, classification.priority, classification
+end
+
+-- Is high priority spell to interrupt
+function API.IsHighPriorityInterrupt(spellID)
+    -- Table of dangerous spells that should be interrupted with high priority
+    local highPrioritySpells = {
+        -- Healing spells
+        [2060] = true,   -- Heal (Priest)
+        [2061] = true,   -- Flash Heal
+        [8936] = true,   -- Regrowth
+        [19750] = true,  -- Flash of Light
+        [8004] = true,   -- Healing Surge
+        [73920] = true,  -- Healing Rain
+        [116670] = true, -- Vivify
+        
+        -- Dangerous damage spells
+        [191823] = true, -- Furious Blast
+        [200248] = true, -- Arcane Bolt
+        [398150] = true, -- Runecarver's Deathtouch
+        [377004] = true, -- Deafening Screech
+        [388862] = true, -- Searing Blow
+        [387564] = true, -- Mystic Blast
+        [387145] = true, -- Frost Shock
+        [374544] = true, -- Soul Cleave
+        [387411] = true, -- Death Bolt
+        [396812] = true, -- Molten Boulder
+        [388925] = true, -- Seismic Slam
+        [373932] = true, -- Vital Rupture
+        [397892] = true, -- Scintillating Frost
+        [377348] = true, -- Eternity Zone
+        [386019] = true, -- Wildfire
+        
+        -- CC spells
+        [20066] = true,  -- Repentance
+        [115078] = true, -- Paralysis
+        [118] = true,    -- Polymorph
+        [51514] = true,  -- Hex
+        [211015] = true, -- Face Palm
+        [710] = true,    -- Banish
+        [5782] = true,   -- Fear
+        [10326] = true,  -- Turn Evil
+        
+        -- Summoning spells
+        [30146] = true,  -- Summon Imp
+        [697] = true,    -- Summon Voidwalker
+        [23789] = true,  -- Summon Dreadsteed
+        
+        -- Misc high threat spells
+        [32375] = true,  -- Mass Dispel
+        [64901] = true,  -- Symbol of Hope
+        [15286] = true,  -- Vampiric Embrace
+        [64843] = true,  -- Divine Hymn
+        [108281] = true, -- Ancestral Guidance
+        [204437] = true, -- Lightning Lasso
+    }
+    
+    -- If the spell is a healing spell, automatically consider it high priority
+    if API.IsHealingSpell(spellID) then
+        return true
+    end
+    
+    return highPrioritySpells[spellID] == true
+end
+
+-- Get the next interrupt target (for coordinating interrupts in a group)
+function API.GetInterruptTarget(range, ownInterruptOnly)
+    local interruptTargets = {}
+    local interruptableUnits = {}
+    
+    -- Check all enemies in range
+    local enemies = API.GetEnemiesInRange("player", range)
+    for _, unit in ipairs(enemies) do
+        local castInfo = API.GetUnitCastInfo(unit)
+        
+        -- Target is casting and cast is interruptible
+        if castInfo and castInfo.interruptible then
+            local priority = 1
+            
+            -- Set priority based on spell
+            if API.IsHighPriorityInterrupt(castInfo.spellId) then
+                priority = 100  -- High priority spells
+            elseif API.IsHealingSpell(castInfo.spellId) then
+                priority = 90   -- Any healing spell
+            elseif castInfo.remaining < 0.5 then
+                priority = 80   -- About to finish casting
+            elseif UnitIsPlayer(unit) then
+                priority = 70   -- Player casts are generally important
+            end
+            
+            -- Adjust for target's health (lower health = higher priority)
+            local _, _, healthPercent = API.GetUnitHealth(unit)
+            if healthPercent < 30 then
+                priority = priority + 15  -- Low health enemy (likely a kill target)
+            end
+            
+            -- Adjust for cast time remaining
+            local timeRemaining = castInfo.remaining
+            if timeRemaining < 1.0 then
+                priority = priority + 25  -- About to complete cast, higher priority
+            end
+            
+            -- Store the unit and its priority
+            table.insert(interruptTargets, {
+                unit = unit,
+                spellId = castInfo.spellId,
+                spellName = castInfo.name,
+                priority = priority,
+                timeRemaining = timeRemaining
+            })
+        end
+    end
+    
+    -- If no interruptible targets found
+    if #interruptTargets == 0 then
+        return nil
+    end
+    
+    -- Sort by priority (highest first)
+    table.sort(interruptTargets, function(a, b)
+        return a.priority > b.priority
+    end)
+    
+    -- Return the highest priority target
+    return interruptTargets[1].unit, interruptTargets[1].spellId, interruptTargets[1].spellName
+end
+
+-- Try to interrupt a target using available interrupt abilities
+function API.TryInterrupt(range, interruptSpells)
+    -- Only process if we have interrupt spells
+    if not interruptSpells or #interruptSpells == 0 then
+        return false
+    end
+    
+    -- Get the best target to interrupt
+    local interruptTarget, spellId, spellName = API.GetInterruptTarget(range)
+    if not interruptTarget then
+        return false
+    end
+    
+    -- Try each interrupt ability in order
+    for _, interruptData in ipairs(interruptSpells) do
+        local spellID = interruptData.spellId
+        local dispellable = interruptData.dispel or false  -- Some interrupts can only hit certain spell schools
+        
+        -- Skip if spell is on cooldown or not usable
+        if not API.IsSpellUsable(spellID) then
+            goto continue
+        end
+        
+        -- Cast the interrupt spell at the target
+        if API.CastSpell(spellID, interruptTarget) then
+            API.PrintDebug("Interrupting " .. (spellName or "Unknown Spell") .. " on " .. interruptTarget)
+            return true
+        end
+        
+        ::continue::
+    end
+    
+    return false
+end
+
+-- Check if a spell can be interrupted by this player
+function API.CanInterruptSpell(spellID)
+    -- Table of spells that cannot be interrupted
+    local uninterruptibleSpells = {
+        -- Raid boss abilities
+        [17651] = true,   -- Iron Fury
+        [99526] = true,   -- Ka Boom!
+        [143343] = true,  -- Deafening Screech
+        [106523] = true,  -- Cataclysm
+        [74367] = true,   -- Fury of the Darkened Sky
+        
+        -- Dungeon boss abilities
+        [398206] = true,  -- Absolute Zero
+        [397881] = true,  -- Oceanic Tempest
+        [407796] = true,  -- Frostbomb Detonation
+        [410904] = true,  -- Expulsion
+        [378282] = true,  -- Earthfury
+        
+        -- Special enemy abilities
+        [19615] = true,   -- Frenzy
+        [31616] = true,   -- Nature Channeling
+        [46190] = true,   -- Shadow Channeling
+        
+        -- Raid mechanics
+        [144922] = true,  -- Manifest Rage
+        [235597] = true,  -- Annihilation
+    }
+    
+    return not uninterruptibleSpells[spellID]
+end
+
+-- Encounter-specific logic system
+local encounterRegistry = {}
+local currentEncounterId = 0
+local inEncounter = false
+local encounterStartTime = 0
+local encounterPhase = 1
+
+-- Register encounter data
+function API.RegisterEncounter(encounterId, encounterData)
+    encounterRegistry[encounterId] = encounterData
+    API.PrintDebug("Registered encounter: " .. encounterData.name)
+end
+
+-- Set current encounter
+function API.SetCurrentEncounter(encounterId)
+    if encounterId and encounterRegistry[encounterId] then
+        currentEncounterId = encounterId
+        inEncounter = true
+        encounterStartTime = GetTime()
+        encounterPhase = 1
+        API.PrintDebug("Set current encounter: " .. encounterRegistry[encounterId].name)
+        return true
+    else
+        -- Clear current encounter
+        currentEncounterId = 0
+        inEncounter = false
+        encounterStartTime = 0
+        encounterPhase = 1
+        API.PrintDebug("Cleared current encounter")
+        return false
+    end
+end
+
+-- Get current encounter
+function API.GetCurrentEncounter()
+    if inEncounter and currentEncounterId > 0 then
+        local encounterData = encounterRegistry[currentEncounterId]
+        if encounterData then
+            return encounterData.id, encounterData, encounterPhase, GetTime() - encounterStartTime
+        end
+    end
+    return nil, nil, 0, 0
+end
+
+-- Update encounter phase
+function API.UpdateEncounterPhase(newPhase)
+    if inEncounter and currentEncounterId > 0 then
+        encounterPhase = newPhase
+        API.PrintDebug("Updated encounter phase to " .. newPhase)
+        return true
+    end
+    return false
+end
+
+-- Get encounter-specific target
+function API.GetEncounterTarget(role)
+    if not inEncounter or currentEncounterId == 0 then
+        return nil
+    end
+    
+    local encounter = encounterRegistry[currentEncounterId]
+    if not encounter then
+        return nil
+    end
+    
+    -- Check if there's a phase-specific target
+    if encounter.phases and encounter.phases[encounterPhase] and encounter.phases[encounterPhase].targets then
+        local phaseTargets = encounter.phases[encounterPhase].targets
+        
+        -- Get role-specific target if available
+        if role and phaseTargets[role] then
+            return phaseTargets[role]
+        end
+        
+        -- Otherwise get default target for this phase
+        if phaseTargets.default then
+            return phaseTargets.default
+        end
+    end
+    
+    -- Fall back to encounter-level targets
+    if encounter.targets then
+        -- Get role-specific target if available
+        if role and encounter.targets[role] then
+            return encounter.targets[role]
+        end
+        
+        -- Otherwise get default target
+        if encounter.targets.default then
+            return encounter.targets.default
+        end
+    end
+    
+    return nil
+end
+
+-- Should use ability in current encounter
+function API.ShouldUseAbilityInEncounter(spellID, targetUnit)
+    if not inEncounter or currentEncounterId == 0 then
+        return true -- No encounter-specific rules, so allow ability
+    end
+    
+    local encounter = encounterRegistry[currentEncounterId]
+    if not encounter then
+        return true -- No encounter data, so allow ability
+    end
+    
+    -- Check if there are encounter-specific ability rules
+    if encounter.abilities and encounter.abilities[spellID] then
+        local abilityRules = encounter.abilities[spellID]
+        
+        -- Check if we're in a restricted phase
+        if abilityRules.restrictPhases then
+            local phaseAllowed = false
+            for _, phase in ipairs(abilityRules.restrictPhases) do
+                if phase == encounterPhase then
+                    phaseAllowed = true
+                    break
+                end
+            end
+            
+            if not phaseAllowed then
+                return false -- This ability is restricted in the current phase
+            end
+        end
+        
+        -- Check for required targets
+        if abilityRules.requiredTargets and targetUnit then
+            local targetGUID = UnitGUID(targetUnit)
+            if targetGUID then
+                local targetAllowed = false
+                for _, targetId in ipairs(abilityRules.requiredTargets) do
+                    -- Check if the target's NPC ID matches
+                    local targetNpcId = tonumber(targetGUID:match("Creature%-0%-%d+%-%d+%-%d+%-(%d+)"))
+                    if targetNpcId and targetNpcId == targetId then
+                        targetAllowed = true
+                        break
+                    end
+                end
+                
+                if not targetAllowed then
+                    return false -- This ability is not allowed on this target
+                end
+            end
+        end
+        
+        -- Special case handling for this ability
+        if abilityRules.customHandler and type(abilityRules.customHandler) == "function" then
+            return abilityRules.customHandler(targetUnit, encounterPhase)
+        end
+    end
+    
+    -- No restrictions found, allow the ability
+    return true
+end
+
+-- Register common raid and dungeon encounters
+function API.RegisterCommonEncounters()
+    -- Raid: Amirdrassil, the Dream's Hope
+    API.RegisterEncounter(2564, { -- Gnarlroot
+        id = 2564,
+        name = "Gnarlroot",
+        type = "raid",
+        phases = {
+            [1] = { -- Phase 1
+                startAt = 0,
+                targets = {
+                    default = "boss1"
+                }
+            },
+            [2] = { -- Phase 2 (add phase)
+                targets = {
+                    dps = "priority", -- Target the highest priority add
+                    healer = "boss1",
+                    tank = "boss1"
+                }
+            }
+        },
+        abilities = {
+            [5246] = { -- Intimidating Shout
+                restrictPhases = {2}, -- Only use in phase 2
+                customHandler = function(target, phase)
+                    -- Only use if there are 3+ adds
+                    return API.GetEnemyCount(8) >= 3
+                end
+            }
+        }
+    })
+    
+    API.RegisterEncounter(2563, { -- Igira the Cruel
+        id = 2563,
+        name = "Igira the Cruel",
+        type = "raid",
+        phases = {
+            [1] = { -- Phase 1
+                startAt = 0
+            },
+            [2] = { -- Phase 2
+                targets = {
+                    dps = "boss1",
+                    healer = "boss1",
+                    tank = "boss1"
+                }
+            },
+            [3] = { -- Phase 3
+                abilities = {
+                    [6673] = { -- Battle Shout
+                        restrictPhases = {3} -- Only use in phase 3
+                    }
+                }
+            }
+        }
+    })
+    
+    -- Dungeon: Dawn of the Infinite
+    API.RegisterEncounter(2528, { -- Chrono-Lord Deios
+        id = 2528,
+        name = "Chrono-Lord Deios",
+        type = "dungeon",
+        phases = {
+            [1] = { -- Phase 1
+                startAt = 0,
+                targets = {
+                    default = "boss1"
+                }
+            },
+            [2] = { -- Intermission
+                targets = {
+                    dps = "priority", -- Target the highest priority add
+                    healer = "boss1",
+                    tank = "boss1"
+                }
+            }
+        },
+        abilities = {
+            [383067] = { -- Massive Slam
+                restrictPhases = {1}, -- Only use in phase 1
+            }
+        }
+    })
+end
+
+-- Smart Defensive System
+-- Track incoming damage
+local damageHistory = {}
+local damageBySpellID = {}
+local lastDamageTime = 0
+local recentDamageWindow = 5 -- How many seconds to consider recent damage
+local recentDamageTaken = 0
+local totalHealthLost = 0
+local damageSpikes = {}
+local maxDamageSpikes = 10
+local lastHealthPct = 100
+local isInDanger = false
+local currentThreatLevel = 0 -- 0-100 scale
+
+-- Initialize defensive tracking
+function API.InitializeDefensiveTracking()
+    damageHistory = {}
+    damageBySpellID = {}
+    lastDamageTime = GetTime()
+    recentDamageTaken = 0
+    totalHealthLost = 0
+    damageSpikes = {}
+    lastHealthPct = UnitHealth("player") / UnitHealthMax("player") * 100
+    isInDanger = false
+    currentThreatLevel = 0
+    
+    API.PrintDebug("Defensive tracking initialized")
+end
+
+-- Record damage taken
+function API.RecordDamageTaken(amount, spellID, spellName, sourceGUID)
+    local now = GetTime()
+    local healthPct = UnitHealth("player") / UnitHealthMax("player") * 100
+    
+    -- Record this damage event
+    local damageEvent = {
+        time = now,
+        amount = amount,
+        spellID = spellID,
+        spellName = spellName,
+        sourceGUID = sourceGUID,
+        healthPct = healthPct
+    }
+    
+    -- Add to history
+    table.insert(damageHistory, damageEvent)
+    
+    -- Limit history size
+    if #damageHistory > 100 then
+        table.remove(damageHistory, 1)
+    end
+    
+    -- Track damage by spell
+    if spellID then
+        if not damageBySpellID[spellID] then
+            damageBySpellID[spellID] = {
+                total = 0,
+                count = 0,
+                lastTime = 0,
+                name = spellName,
+                sources = {}
+            }
+        end
+        
+        damageBySpellID[spellID].total = damageBySpellID[spellID].total + amount
+        damageBySpellID[spellID].count = damageBySpellID[spellID].count + 1
+        damageBySpellID[spellID].lastTime = now
+        
+        -- Track damage source
+        if sourceGUID then
+            if not damageBySpellID[spellID].sources[sourceGUID] then
+                damageBySpellID[spellID].sources[sourceGUID] = {
+                    total = 0,
+                    count = 0
+                }
+            end
+            
+            damageBySpellID[spellID].sources[sourceGUID].total = damageBySpellID[spellID].sources[sourceGUID].total + amount
+            damageBySpellID[spellID].sources[sourceGUID].count = damageBySpellID[spellID].sources[sourceGUID].count + 1
+        end
+    end
+    
+    -- Update recent damage
+    recentDamageTaken = recentDamageTaken + amount
+    
+    -- Detect damage spike
+    local healthDropPct = lastHealthPct - healthPct
+    if healthDropPct > 15 then
+        -- Record this as a damage spike
+        local spike = {
+            time = now,
+            amount = amount,
+            spellID = spellID,
+            healthDropPct = healthDropPct,
+            healthPct = healthPct
+        }
+        
+        table.insert(damageSpikes, spike)
+        
+        -- Limit damage spikes history
+        if #damageSpikes > maxDamageSpikes then
+            table.remove(damageSpikes, 1)
+        end
+        
+        -- Set danger state
+        isInDanger = true
+    end
+    
+    -- Update last values
+    lastDamageTime = now
+    lastHealthPct = healthPct
+    totalHealthLost = totalHealthLost + amount
+    
+    -- Update threat level
+    API.UpdateThreatLevel()
+end
+
+-- Update threat level
+function API.UpdateThreatLevel()
+    local now = GetTime()
+    local healthPct = UnitHealth("player") / UnitHealthMax("player") * 100
+    
+    -- Base threat on current health
+    local healthThreat = 0
+    if healthPct < 25 then
+        healthThreat = 80
+    elseif healthPct < 40 then
+        healthThreat = 60
+    elseif healthPct < 60 then
+        healthThreat = 40
+    elseif healthPct < 75 then
+        healthThreat = 20
+    end
+    
+    -- Adjust for recent damage
+    local recentDamageThreat = 0
+    local recentDamage = API.GetRecentDamageTaken(3) -- Damage in last 3 seconds
+    local playerMaxHealth = UnitHealthMax("player")
+    
+    if recentDamage > playerMaxHealth * 0.3 then
+        recentDamageThreat = 80
+    elseif recentDamage > playerMaxHealth * 0.2 then
+        recentDamageThreat = 60
+    elseif recentDamage > playerMaxHealth * 0.1 then
+        recentDamageThreat = 40
+    elseif recentDamage > playerMaxHealth * 0.05 then
+        recentDamageThreat = 20
+    end
+    
+    -- Adjust for damage spikes
+    local spikeThreat = 0
+    if #damageSpikes > 0 then
+        local mostRecentSpike = damageSpikes[#damageSpikes]
+        if mostRecentSpike.time > now - 4 then
+            -- Recent spike
+            if mostRecentSpike.healthDropPct > 30 then
+                spikeThreat = 100
+            elseif mostRecentSpike.healthDropPct > 20 then
+                spikeThreat = 80
+            else
+                spikeThreat = 60
+            end
+        end
+    end
+    
+    -- Adjust for enemy count
+    local enemyCountThreat = 0
+    local enemyCount = API.GetEnemyCount(8)
+    if enemyCount > 5 then
+        enemyCountThreat = 40
+    elseif enemyCount > 3 then
+        enemyCountThreat = 20
+    end
+    
+    -- Adjust for being in a boss encounter
+    local encounterThreat = 0
+    if inEncounter and currentEncounterId > 0 then
+        encounterThreat = 20
+    end
+    
+    -- Calculate final threat
+    currentThreatLevel = math.max(healthThreat, recentDamageThreat, spikeThreat, enemyCountThreat, encounterThreat)
+    
+    -- Reset danger state if threat is low
+    if currentThreatLevel < 20 and isInDanger then
+        isInDanger = false
+    end
+end
+
+-- Get recent damage taken
+function API.GetRecentDamageTaken(seconds)
+    seconds = seconds or recentDamageWindow
+    local now = GetTime()
+    local total = 0
+    
+    for _, event in ipairs(damageHistory) do
+        if event.time > now - seconds then
+            total = total + event.amount
+        end
+    end
+    
+    return total
+end
+
+-- Get current threat level
+function API.GetThreatLevel()
+    return currentThreatLevel, isInDanger
+end
+
+-- Should use defensive cooldown
+function API.ShouldUseDefensive(defensiveType, minThreatLevel, minHealthPct, maxHealthPct)
+    -- Default values
+    minThreatLevel = minThreatLevel or 50
+    minHealthPct = minHealthPct or 0
+    maxHealthPct = maxHealthPct or 100
+    
+    -- Get current state
+    local healthPct = UnitHealth("player") / UnitHealthMax("player") * 100
+    
+    -- Check health percentage range
+    if healthPct < minHealthPct or healthPct > maxHealthPct then
+        return false
+    end
+    
+    -- Check threat level
+    if currentThreatLevel < minThreatLevel then
+        return false
+    end
+    
+    -- Additional checks based on defensive type
+    if defensiveType == "emergency" then
+        -- Emergency defensives (like Last Stand, Divine Shield)
+        return healthPct < 30 or (isInDanger and currentThreatLevel >= 80)
+    elseif defensiveType == "major" then
+        -- Major defensives (like Shield Wall, Icebound Fortitude)
+        return healthPct < 50 or (isInDanger and currentThreatLevel >= 60)
+    elseif defensiveType == "minor" then
+        -- Minor defensives (like Frenzied Regeneration, Ignore Pain)
+        return healthPct < 75 or currentThreatLevel >= 40
+    elseif defensiveType == "aoe" then
+        -- AoE defensives (like Anti-Magic Zone, Rallying Cry)
+        return API.GetEnemyCount(8) >= 3 or currentThreatLevel >= 50
+    elseif defensiveType == "immunity" then
+        -- Immunity effects (like Divine Shield, Ice Block)
+        return healthPct < 15 or (isInDanger and currentThreatLevel >= 90)
+    end
+    
+    -- Default to using the defensive if no specific type matched
+    return true
+end
+
+-- Use smart defensive
+function API.UseSmartDefensive(defensiveSpells)
+    -- Check if we have defensive spells
+    if not defensiveSpells or #defensiveSpells == 0 then
+        return false
+    end
+    
+    -- Try each defensive ability in order
+    for _, defensiveData in ipairs(defensiveSpells) do
+        local spellID = defensiveData.spellId
+        local defType = defensiveData.type or "minor"
+        local minThreat = defensiveData.minThreat or 50
+        local minHealth = defensiveData.minHealth or 0
+        local maxHealth = defensiveData.maxHealth or 100
+        
+        -- Skip if spell is on cooldown or not usable
+        if not API.IsSpellUsable(spellID) then
+            goto continue
+        end
+        
+        -- Check if we should use this defensive
+        if API.ShouldUseDefensive(defType, minThreat, minHealth, maxHealth) then
+            -- Cast the defensive spell
+            if API.CastSpell(spellID) then
+                API.PrintDebug("Using " .. defType .. " defensive: " .. GetSpellInfo(spellID))
+                return true
+            end
+        end
+        
+        ::continue::
+    end
+    
+    return false
+end
+
 -- Get best AoE position
 function API.GetBestAoEPosition(radius)
     -- Default radius if not specified
@@ -1399,6 +2339,57 @@ function API.UnitHasDebuff(unit, spellID, sourceUnit)
     end
     
     return false, 0, 0, 0
+end
+
+-- Get unit casting information
+function API.GetUnitCastInfo(unit)
+    if not UnitExists(unit) then
+        return nil
+    end
+    
+    -- Try to get cast info from Tinkr
+    if tinkrLoaded and tinkrAPI.Unit and tinkrAPI.Unit[unit] then
+        local cast = tinkrAPI.Unit[unit]:GetCastingInfo()
+        if cast then
+            return {
+                spellId = cast.SpellID,
+                name = cast.SpellName,
+                startTime = cast.CastStart,
+                endTime = cast.CastEnd,
+                remaining = cast.CastEnd - GetTime(),
+                interruptible = not cast.Uninterruptible
+            }
+        end
+    end
+    
+    -- Fallback to WoW API
+    local name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible, spellId = UnitCastingInfo(unit)
+    if name then
+        return {
+            spellId = spellId,
+            name = name,
+            startTime = startTime / 1000,
+            endTime = endTime / 1000,
+            remaining = (endTime / 1000) - GetTime(),
+            interruptible = not notInterruptible
+        }
+    end
+    
+    -- Check channeling as well
+    name, text, texture, startTime, endTime, isTradeSkill, notInterruptible, spellId = UnitChannelInfo(unit)
+    if name then
+        return {
+            spellId = spellId,
+            name = name,
+            startTime = startTime / 1000,
+            endTime = endTime / 1000,
+            remaining = (endTime / 1000) - GetTime(),
+            interruptible = not notInterruptible,
+            isChanneled = true
+        }
+    end
+    
+    return nil
 end
 
 -- Cast spell
