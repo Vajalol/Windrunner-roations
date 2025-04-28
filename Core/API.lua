@@ -367,15 +367,56 @@ end
 -- Initialize Tinkr API
 function API.InitializeTinkrAPI()
     -- Check if Tinkr is loaded
-    if Tinkr then
-        tinkrLoaded = true
-        tinkrAPI = Tinkr
-        API.PrintDebug("Tinkr API detected and loaded")
-    else
+    if not Tinkr then
         tinkrLoaded = false
         table.insert(loadErrors, "Tinkr not detected. Make sure Tinkr is installed and loaded.")
         API.PrintError("Tinkr not detected. Make sure Tinkr is installed and loaded.")
+        return false
     end
+    
+    -- Check for required Tinkr components
+    local missingComponents = {}
+    
+    -- Check for Tinkr.Secure API
+    if not Tinkr.Secure or not Tinkr.Secure.Call then
+        table.insert(missingComponents, "Tinkr.Secure.Call")
+    end
+    
+    -- Check for Tinkr.Spell API for spell casting
+    if not Tinkr.Spell then
+        table.insert(missingComponents, "Tinkr.Spell")
+    end
+    
+    -- Check for Tinkr.Unit API for unit information
+    if not Tinkr.Unit then
+        table.insert(missingComponents, "Tinkr.Unit")
+    end
+    
+    -- Check for Tinkr.Enemy API for enemy detection
+    if not Tinkr.Enemy then
+        table.insert(missingComponents, "Tinkr.Enemy")
+    end
+    
+    -- Check for Tinkr.Optimizer API for performance optimization
+    if not Tinkr.Optimizer then
+        table.insert(missingComponents, "Tinkr.Optimizer")
+    end
+    
+    -- Report missing components if any
+    if #missingComponents > 0 then
+        local errorMsg = "Missing Tinkr components: " .. table.concat(missingComponents, ", ")
+        table.insert(loadErrors, errorMsg)
+        API.PrintError(errorMsg)
+        API.PrintError("Some features may not work correctly. Please update your Tinkr installation.")
+    end
+    
+    -- Set up Tinkr API
+    tinkrLoaded = true
+    tinkrAPI = Tinkr
+    API.PrintDebug("Tinkr API detected and loaded")
+    
+    -- Return success status
+    return #missingComponents == 0
 end
 
 -- Clear caches
@@ -806,21 +847,29 @@ end
 -- Cast spell
 function API.CastSpell(spellID, unit)
     -- Cast using Tinkr if available
-    if tinkrLoaded and tinkrAPI.Spell then
-        if tinkrAPI.Spell[spellID] then
+    if tinkrLoaded then
+        -- First try to use Tinkr's Spell object if available
+        if tinkrAPI.Spell and tinkrAPI.Spell[spellID] then
             if unit then
                 return tinkrAPI.Spell[spellID]:Cast(unit)
             else
                 return tinkrAPI.Spell[spellID]:Cast()
             end
+        -- Next try to use Tinkr's secure execution method
+        elseif tinkrAPI.Secure and tinkrAPI.Secure.Call then
+            if unit then
+                return tinkrAPI.Secure.Call("CastSpellByID", spellID, unit)
+            else
+                return tinkrAPI.Secure.Call("CastSpellByID", spellID)
+            end
         end
+    end
+    
+    -- Fallback to WoW API if Tinkr not available or methods failed
+    if unit then
+        return CastSpellByID(spellID, unit)
     else
-        -- Fallback to WoW API
-        if unit then
-            return CastSpellByID(spellID, unit)
-        else
-            return CastSpellByID(spellID)
-        end
+        return CastSpellByID(spellID)
     end
     
     return false
@@ -829,21 +878,29 @@ end
 -- Use item
 function API.UseItem(itemID, unit)
     -- Use item using Tinkr if available
-    if tinkrLoaded and tinkrAPI.Item then
-        if tinkrAPI.Item[itemID] then
+    if tinkrLoaded then
+        -- First try to use Tinkr's Item object if available
+        if tinkrAPI.Item and tinkrAPI.Item[itemID] then
             if unit then
                 return tinkrAPI.Item[itemID]:Use(unit)
             else
                 return tinkrAPI.Item[itemID]:Use()
             end
+        -- Next try to use Tinkr's secure execution method
+        elseif tinkrAPI.Secure and tinkrAPI.Secure.Call then
+            if unit then
+                return tinkrAPI.Secure.Call("UseItemByName", itemID, unit)
+            else
+                return tinkrAPI.Secure.Call("UseItemByName", itemID)
+            end
         end
+    end
+    
+    -- Fallback to WoW API if Tinkr not available or methods failed
+    if unit then
+        return UseItemByName(itemID, unit)
     else
-        -- Fallback to WoW API
-        if unit then
-            return UseItemByName(itemID, unit)
-        else
-            return UseItemByName(itemID)
-        end
+        return UseItemByName(itemID)
     end
     
     return false

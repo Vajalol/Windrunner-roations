@@ -511,16 +511,35 @@ function AntiDetectionSystem:ProcessActionQueue(now)
 
 -- Queue function
 function AntiDetectionSystem:QueueFunction(funcName, originalFunc, ...)
+    local args = {...}  -- Store arguments to pass them later
+    
     -- Skip queue if anti-detection is disabled or in safe mode
     if not isEnabled or safeModeEnabled then
-        return originalFunc(...)
+        -- Try to use Tinkr.Secure.Call if available for protected functions
+        if API and API.IsTinkrLoaded and API.IsTinkrLoaded() and 
+           Tinkr and Tinkr.Secure and Tinkr.Secure.Call and 
+           type(funcName) == "string" then
+            return Tinkr.Secure.Call(funcName, unpack(args))
+        else
+            -- Fallback to original function
+            return originalFunc(unpack(args))
+        end
     end
     
     -- Skip queue if the queue is too large (safety feature)
     if #actionQueue >= MAX_QUEUE_SIZE then
         -- Execute directly to prevent queue overflow
         API.PrintDebug("Action queue overflow, executing directly: " .. funcName)
-        return originalFunc(...)
+        
+        -- Try to use Tinkr.Secure.Call if available for protected functions
+        if API and API.IsTinkrLoaded and API.IsTinkrLoaded() and 
+           Tinkr and Tinkr.Secure and Tinkr.Secure.Call and 
+           type(funcName) == "string" then
+            return Tinkr.Secure.Call(funcName, unpack(args))
+        else
+            -- Fallback to original function
+            return originalFunc(unpack(args))
+        end
     end
     
     -- Determine action type

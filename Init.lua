@@ -49,6 +49,35 @@ local function InitializeAddon()
         return
     end
     
+    -- Check if Tinkr is available and at required version
+    if not Tinkr then
+        print("|cFFFF0000WindrunnerRotations:|r Requires Tinkr unlocker. Addon disabled.")
+        print("|cFFFF0000WindrunnerRotations:|r Make sure Tinkr is installed and running before loading this addon.")
+        return
+    end
+    
+    -- Verify Tinkr version
+    local versionMismatch = false
+    if not Tinkr.version then
+        print("|cFFFF0000WindrunnerRotations:|r Cannot detect Tinkr version. Required version: " .. TINKR_EXPECTED_VERSION)
+        versionMismatch = true
+    elseif type(Tinkr.version) == "string" and Tinkr.version < TINKR_EXPECTED_VERSION then
+        print("|cFFFF0000WindrunnerRotations:|r Tinkr version " .. Tinkr.version .. " detected. Required version: " .. TINKR_EXPECTED_VERSION)
+        versionMismatch = true
+    end
+    
+    -- Verify Tinkr.Secure API is available
+    if not Tinkr.Secure or not Tinkr.Secure.Call then
+        print("|cFFFF0000WindrunnerRotations:|r Tinkr.Secure API not found. Required for protected function calls.")
+        versionMismatch = true
+    end
+    
+    -- Abort if version requirements not met
+    if versionMismatch then
+        print("|cFFFF0000WindrunnerRotations:|r Please update your Tinkr installation to version " .. TINKR_EXPECTED_VERSION .. " or higher.")
+        return
+    end
+    
     -- Set initialization start time
     initStartTime = GetTime()
     
