@@ -59,15 +59,18 @@ local ARMS_SPELLS = {
     STORM_BOLT = 107570,
     AVATAR = 107574,
     SWEEPING_STRIKES = 260708,
-    SPEAR_OF_BASTION = 376080,
+    SPEAR_OF_BASTION = 376080, -- Unchanged in TWW Season 2
+    THUNDEROUS_ROAR = 384318, -- New talent in TWW Season 2
     RAVAGER = 152277,
     SKULLSPLITTER = 260643,
     DEADLY_CALM = 262228,
     DREADNAUGHT = 262150,
+    BLOODBORNE = 444223, -- New talent in Season 2
+    TEST_OF_MIGHT = 385008, -- Added in Season 2
+    JUGGERNAUT = 383292, -- Became more important in Season 2
     
     -- Rage generators
     CHARGE_RAGE = 100,
-    CONQUERORS_BANNER = 324143,
     
     -- Misc
     BATTLE_STANCE = 386164,
@@ -78,7 +81,7 @@ local ARMS_SPELLS = {
     HEROIC_THROW = 57755
 }
 
--- Spell IDs for Fury Warrior
+-- Spell IDs for Fury Warrior (The War Within, Season 2)
 local FURY_SPELLS = {
     -- Core abilities
     BLOODTHIRST = 23881,
@@ -88,6 +91,7 @@ local FURY_SPELLS = {
     WHIRLWIND = 190411,
     ONSLAUGHT = 315720,
     CRUSHING_BLOW = 335097,
+    ODYN_FURY = 385059, -- Important TWW Season 2 ability
     
     -- Defensive & utility
     ENRAGED_REGENERATION = 184364,
@@ -99,20 +103,24 @@ local FURY_SPELLS = {
     CHARGE = 100,
     HEROIC_LEAP = 6544,
     
-    -- Talents
+    -- Talents 
     SUDDEN_DEATH = 280721,
     STORM_BOLT = 107570,
     AVATAR = 107574,
-    SPEAR_OF_BASTION = 376080,
+    SPEAR_OF_BASTION = 376080, -- Unchanged in TWW Season 2
+    THUNDEROUS_ROAR = 384318, -- New in TWW Season 2
     RAVAGER = 228920,
     BLADESTORM_FURY = 46924,
     RECKLESSNESS = 1719,
     SIEGEBREAKER = 280772,
     MEAT_CLEAVER = 280392,
+    TENDERIZE = 388933, -- Important in Season 2
+    ANNIHILATOR = 383916, -- Key talent in Season 2 
+    RAGING_ARMAMENTS = 388904, -- New in Season 2
+    DANCING_BLADES = 391683, -- Important for TWW
     
     -- Rage generators
     CHARGE_RAGE = 100,
-    CONQUERORS_BANNER = 324143,
     
     -- Misc
     BATTLE_STANCE = 386164,
@@ -123,7 +131,7 @@ local FURY_SPELLS = {
     HEROIC_THROW = 57755
 }
 
--- Spell IDs for Protection Warrior
+-- Spell IDs for Protection Warrior (The War Within, Season 2)
 local PROT_SPELLS = {
     -- Core abilities
     SHIELD_SLAM = 23922,
@@ -136,6 +144,7 @@ local PROT_SPELLS = {
     DEMORALIZING_SHOUT = 1160,
     SHIELD_WALL = 871,
     LAST_STAND = 12975,
+    SHIELD_CHARGE = 385952, -- New in TWW Season 2
     
     -- Defensive & utility
     SPELL_REFLECTION = 23920,
@@ -150,16 +159,20 @@ local PROT_SPELLS = {
     -- Talents
     STORM_BOLT = 107570,
     AVATAR = 107574,
-    SPEAR_OF_BASTION = 376080,
+    SPEAR_OF_BASTION = 376080, -- Unchanged in TWW Season 2
+    THUNDEROUS_ROAR = 384318, -- New in TWW Season 2
     RAVAGER = 228920,
     SHOCKWAVE = 46968,
     BOLSTER = 280001,
     UNSTOPPABLE_FORCE = 275336,
     BOOMING_VOICE = 202743,
+    BLOOD_AND_THUNDER = 384277, -- Important in Season 2 
+    HEAVY_REPERCUSSIONS = 203177, -- Key talent in Season 2
+    IMPENETRABLE_WALL = 384072, -- Important defensive talent
+    SHIELD_SPECIALIZATION = 386328, -- New in Season 2
     
     -- Rage generators
     CHARGE_RAGE = 100,
-    CONQUERORS_BANNER = 324143,
     
     -- Misc
     BATTLE_STANCE = 386164,
@@ -170,7 +183,7 @@ local PROT_SPELLS = {
     HEROIC_THROW = 57755
 }
 
--- Important buffs to track
+-- Important buffs to track (The War Within, Season 2)
 local BUFFS = {
     SUDDEN_DEATH = 52437,
     OVERPOWER = 7384,
@@ -188,10 +201,18 @@ local BUFFS = {
     SWEEPING_STRIKES = 260708,
     DEADLY_CALM = 262228,
     RALLYING_CRY = 97462,
-    RAVAGER = 152277
+    RAVAGER = 152277,
+    JUGGERNAUT = 383292, -- Important for Arms in Season 2
+    MERCILESS_BONEGRINDER = 383316, -- New buff for Season 2
+    BLOODBORNE = 444292, -- New buff for Season 2
+    DANCING_BLADES = 391688, -- Important for Fury in Season 2
+    ODYN_FURY = 385059, -- New buff in Season 2
+    RAGING_ARMAMENTS = 388904, -- Fury's new buff
+    SHIELD_CHARGE = 385954, -- Prot buff for Season 2
+    BLOOD_SURGE = 384090 -- Important for Prot in Season 2
 }
 
--- Important debuffs to track
+-- Important debuffs to track (The War Within, Season 2)
 local DEBUFFS = {
     COLOSSUS_SMASH = 208086,
     DEEP_WOUNDS = 262115,
@@ -199,7 +220,11 @@ local DEBUFFS = {
     SIEGEBREAKER = 280773,
     HAMSTRING = 1715,
     DEMORALIZING_SHOUT = 1160,
-    THUNDER_CLAP = 6343
+    THUNDER_CLAP = 6343,
+    TENDERIZE = 388933, -- Important new debuff for Fury
+    THUNDEROUS_ROAR = 384318, -- New debuff for all specs
+    SLAUGHTERING_STRIKES = 396749, -- New Season 2 debuff
+    BLOOD_AND_THUNDER = 384277 -- Prot debuff for Season 2
 }
 
 -- Initialize the Warrior module
@@ -294,6 +319,36 @@ function WarriorModule:RegisterSettings()
                 description = "Only use Avatar with Colossus Smash",
                 type = "toggle",
                 default = true
+            },
+            useThunderousRoar = {
+                displayName = "Use Thunderous Roar",
+                description = "Use Thunderous Roar in combat (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useJuggernaut = {
+                displayName = "Optimize for Juggernaut",
+                description = "Optimize rotation for Juggernaut stacks (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useTestOfMight = {
+                displayName = "Optimize for Test of Might",
+                description = "Optimize rotation for Test of Might (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            bloodborneStrategy = {
+                displayName = "Bloodborne Strategy",
+                description = "How to use the Bloodborne talent (Season 2)",
+                type = "dropdown",
+                options = {
+                    { text = "On Cooldown", value = "cooldown" },
+                    { text = "With Colossus Smash", value = "colossus" },
+                    { text = "With Avatar", value = "avatar" },
+                    { text = "Manual Only", value = "manual" }
+                },
+                default = "colossus"
             }
         },
         furySettings = {
@@ -335,6 +390,50 @@ function WarriorModule:RegisterSettings()
                 max = 5,
                 step = 1,
                 default = 3
+            },
+            useOdynsFury = {
+                displayName = "Use Odyn's Fury",
+                description = "Use Odyn's Fury in combat (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            odynsFuryThreshold = {
+                displayName = "Odyn's Fury Threshold",
+                description = "Minimum number of targets to use Odyn's Fury",
+                type = "slider",
+                min = 1,
+                max = 6,
+                step = 1,
+                default = 2
+            },
+            useThunderousRoar = {
+                displayName = "Use Thunderous Roar",
+                description = "Use Thunderous Roar in combat (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useTenderize = {
+                displayName = "Optimize for Tenderize",
+                description = "Optimize rotation for Tenderize debuff (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useAnnihilator = {
+                displayName = "Prioritize Annihilator",
+                description = "Prioritize Annihilator procs (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            dancingBladesStrategy = {
+                displayName = "Dancing Blades Strategy",
+                description = "How to use Dancing Blades (Season 2)",
+                type = "dropdown",
+                options = {
+                    { text = "AoE Priority", value = "aoe" },
+                    { text = "Single Target Priority", value = "single" },
+                    { text = "Balanced", value = "balanced" }
+                },
+                default = "balanced"
             }
         },
         protSettings = {
@@ -394,6 +493,47 @@ function WarriorModule:RegisterSettings()
                 description = "Use Avatar in combat",
                 type = "toggle",
                 default = true
+            },
+            useShieldCharge = {
+                displayName = "Use Shield Charge",
+                description = "Use Shield Charge in combat (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useThunderousRoar = {
+                displayName = "Use Thunderous Roar",
+                description = "Use Thunderous Roar in combat (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useBloodAndThunder = {
+                displayName = "Optimize for Blood and Thunder",
+                description = "Optimize Thunder Clap for Blood and Thunder (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useHeavyRepercussions = {
+                displayName = "Optimize for Heavy Repercussions",
+                description = "Prioritize Shield Slam after Shield Block (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            useImpenetrableWall = {
+                displayName = "Use Impenetrable Wall",
+                description = "Optimize defensive cooldown usage with Impenetrable Wall (Season 2)",
+                type = "toggle",
+                default = true
+            },
+            bloodSurgeStrategy = {
+                displayName = "Blood Surge Strategy",
+                description = "How to use Blood Surge (Season 2)",
+                type = "dropdown",
+                options = {
+                    { text = "Maximize Rage", value = "rage" },
+                    { text = "Maximize Shield Block", value = "block" },
+                    { text = "Balance Based on Health", value = "health" }
+                },
+                default = "health"
             }
         }
     })
@@ -588,6 +728,40 @@ function WarriorModule:ArmsRotation()
     
     -- Offensive cooldowns
     if inCombat then
+        -- Season 2: Bloodborne ability
+        if API.IsSpellKnown(ARMS_SPELLS.BLOODBORNE) and API.IsSpellUsable(ARMS_SPELLS.BLOODBORNE) and settings.armsSettings.bloodborneStrategy ~= "manual" then
+            local useBloodborne = false
+            
+            if settings.armsSettings.bloodborneStrategy == "cooldown" then
+                useBloodborne = true
+            elseif settings.armsSettings.bloodborneStrategy == "colossus" and API.UnitHasDebuff(target, DEBUFFS.COLOSSUS_SMASH) then
+                useBloodborne = true
+            elseif settings.armsSettings.bloodborneStrategy == "avatar" and API.UnitHasBuff(player, BUFFS.AVATAR) then
+                useBloodborne = true
+            end
+            
+            if useBloodborne then
+                return {
+                    type = "spell",
+                    id = ARMS_SPELLS.BLOODBORNE,
+                    target = player
+                }
+            end
+        end
+        
+        -- Season 2: Thunderous Roar
+        if settings.armsSettings.useThunderousRoar and API.IsSpellKnown(ARMS_SPELLS.THUNDEROUS_ROAR) and 
+           API.IsSpellUsable(ARMS_SPELLS.THUNDEROUS_ROAR) and not API.UnitHasDebuff(target, DEBUFFS.THUNDEROUS_ROAR) then
+            -- Use when Colossus Smash is applied for maximum damage
+            if API.UnitHasDebuff(target, DEBUFFS.COLOSSUS_SMASH) then
+                return {
+                    type = "spell",
+                    id = ARMS_SPELLS.THUNDEROUS_ROAR,
+                    target = target
+                }
+            end
+        end
+        
         -- Avatar with Colossus Smash
         if settings.armsSettings.useAvatar and 
            API.IsSpellKnown(ARMS_SPELLS.AVATAR) and API.IsSpellUsable(ARMS_SPELLS.AVATAR) then
@@ -755,6 +929,32 @@ function WarriorModule:FuryRotation()
     
     -- Offensive cooldowns
     if inCombat then
+        -- Season 2: Thunderous Roar
+        if settings.furySettings.useThunderousRoar and API.IsSpellKnown(FURY_SPELLS.THUNDEROUS_ROAR) and 
+           API.IsSpellUsable(FURY_SPELLS.THUNDEROUS_ROAR) and not API.UnitHasDebuff(target, DEBUFFS.THUNDEROUS_ROAR) then
+            -- Use with Recklessness or if multiple targets
+            if API.UnitHasBuff(player, BUFFS.RECKLESSNESS) or enemies >= 2 then
+                return {
+                    type = "spell",
+                    id = FURY_SPELLS.THUNDEROUS_ROAR,
+                    target = target
+                }
+            end
+        end
+        
+        -- Season 2: Odyn's Fury for AoE
+        if settings.furySettings.useOdynsFury and enemies >= settings.furySettings.odynsFuryThreshold and
+           API.IsSpellKnown(FURY_SPELLS.ODYN_FURY) and API.IsSpellUsable(FURY_SPELLS.ODYN_FURY) then
+            -- Best used while enraged
+            if isEnraged then
+                return {
+                    type = "spell",
+                    id = FURY_SPELLS.ODYN_FURY,
+                    target = target
+                }
+            end
+        end
+        
         -- Recklessness
         if settings.furySettings.useRecklessness and 
            API.IsSpellKnown(FURY_SPELLS.RECKLESSNESS) and API.IsSpellUsable(FURY_SPELLS.RECKLESSNESS) then
@@ -786,6 +986,30 @@ function WarriorModule:FuryRotation()
     end
     
     -- Core rotation
+    
+    -- Season 2: Annihilator talent check
+    if settings.furySettings.useAnnihilator and API.IsSpellKnown(FURY_SPELLS.ANNIHILATOR) and
+       API.UnitHasBuff(player, BUFFS.RAGING_ARMAMENTS) and API.IsSpellUsable(FURY_SPELLS.RAGING_BLOW) then
+        -- Prioritize Raging Blow when Annihilator is active
+        return {
+            type = "spell",
+            id = FURY_SPELLS.RAGING_BLOW,
+            target = target
+        }
+    end
+    
+    -- Season 2: Check for Dancing Blades buff utilization
+    if settings.furySettings.dancingBladesStrategy ~= "single" and
+       API.UnitHasBuff(player, BUFFS.DANCING_BLADES) and enemies >= 3 and
+       API.IsSpellKnown(FURY_SPELLS.WHIRLWIND) and API.IsSpellUsable(FURY_SPELLS.WHIRLWIND) then
+        -- Use Whirlwind to consume Dancing Blades in AoE
+        return {
+            type = "spell",
+            id = FURY_SPELLS.WHIRLWIND,
+            target = target
+        }
+    end
+    
     if rage >= 80 and API.IsSpellKnown(FURY_SPELLS.RAMPAGE) and API.IsSpellUsable(FURY_SPELLS.RAMPAGE) then
         -- Rampage to spend rage and get enrage
         return {
@@ -800,6 +1024,15 @@ function WarriorModule:FuryRotation()
             id = FURY_SPELLS.EXECUTE_FURY,
             target = target
         }
+    -- Season 2: Apply Tenderize debuff if enabled
+    elseif settings.furySettings.useTenderize and API.IsSpellKnown(FURY_SPELLS.CRUSHING_BLOW) and 
+           API.IsSpellUsable(FURY_SPELLS.CRUSHING_BLOW) and not API.UnitHasDebuff(target, DEBUFFS.TENDERIZE) then
+        -- Crushing Blow to apply Tenderize
+        return {
+            type = "spell",
+            id = FURY_SPELLS.CRUSHING_BLOW,
+            target = target
+        }
     elseif API.IsSpellKnown(FURY_SPELLS.BLOODTHIRST) and API.IsSpellUsable(FURY_SPELLS.BLOODTHIRST) then
         -- Bloodthirst for rage and enrage
         return {
@@ -812,6 +1045,13 @@ function WarriorModule:FuryRotation()
         return {
             type = "spell",
             id = FURY_SPELLS.RAGING_BLOW,
+            target = target
+        }
+    -- Season 2: Use Crushing Blow otherwise if available
+    elseif API.IsSpellKnown(FURY_SPELLS.CRUSHING_BLOW) and API.IsSpellUsable(FURY_SPELLS.CRUSHING_BLOW) then
+        return {
+            type = "spell",
+            id = FURY_SPELLS.CRUSHING_BLOW,
             target = target
         }
     end
@@ -901,6 +1141,30 @@ function WarriorModule:ProtRotation()
     
     -- Offensive cooldowns
     if inCombat then
+        -- Season 2: Shield Charge for mobility and damage
+        if settings.protSettings.useShieldCharge and 
+           API.IsSpellKnown(PROT_SPELLS.SHIELD_CHARGE) and API.IsSpellUsable(PROT_SPELLS.SHIELD_CHARGE) then
+            -- Shield Charge is most effective when we need mobility or against multiple targets
+            if enemies >= 2 or API.GetDistance(player, target) > 8 then
+                return {
+                    type = "spell",
+                    id = PROT_SPELLS.SHIELD_CHARGE,
+                    target = target
+                }
+            end
+        end
+        
+        -- Season 2: Thunderous Roar for damage and threat
+        if settings.protSettings.useThunderousRoar and 
+           API.IsSpellKnown(PROT_SPELLS.THUNDEROUS_ROAR) and API.IsSpellUsable(PROT_SPELLS.THUNDEROUS_ROAR) and 
+           not API.UnitHasDebuff(target, DEBUFFS.THUNDEROUS_ROAR) then
+            return {
+                type = "spell",
+                id = PROT_SPELLS.THUNDEROUS_ROAR,
+                target = target
+            }
+        end
+        
         -- Avatar
         if settings.protSettings.useAvatar and 
            API.IsSpellKnown(PROT_SPELLS.AVATAR) and API.IsSpellUsable(PROT_SPELLS.AVATAR) then
