@@ -17,6 +17,11 @@ local AntiDetectionSystem = WR.AntiDetectionSystem
 local ErrorHandler = WR.ErrorHandler
 local CombatAnalysis = WR.CombatAnalysis
 local PvPManager = WR.PvPManager
+local ItemManager = WR.ItemManager
+local RacialsManager = WR.RacialsManager
+local BuffManager = WR.BuffManager
+local DispelManager = WR.DispelManager
+local PriorityQueue = WR.PriorityQueue
 
 -- Rotation data
 local isEnabled = true
@@ -216,6 +221,30 @@ function RotationManager:RegisterSettings()
                 description = "Use utility and auxiliary abilities",
                 type = "toggle",
                 default = true
+            },
+            useRacials = {
+                displayName = "Use Racial Abilities",
+                description = "Automatically use racial abilities",
+                type = "toggle",
+                default = true
+            },
+            useConsumables = {
+                displayName = "Use Consumables",
+                description = "Automatically use health/mana potions and healthstones",
+                type = "toggle",
+                default = true
+            },
+            useAutoDispel = {
+                displayName = "Auto-Dispel",
+                description = "Automatically dispel harmful effects on friendly targets",
+                type = "toggle",
+                default = true
+            },
+            useGroupBuffs = {
+                displayName = "Track Group Buffs",
+                description = "Automatically track and cast missing group buffs",
+                type = "toggle",
+                default = true
             }
         },
         advancedSettings = {
@@ -289,6 +318,46 @@ function RotationManager:ApplySettings(settings)
     useCrowdControl = settings.combatSettings.useCrowdControl
     useCooldowns = settings.combatSettings.useCooldowns
     useAuxiliaryAbilities = settings.combatSettings.useAuxiliaryAbilities
+    
+    -- Apply settings for new features
+    local useRacials = settings.combatSettings.useRacials
+    local useConsumables = settings.combatSettings.useConsumables
+    local useAutoDispel = settings.combatSettings.useAutoDispel
+    local useGroupBuffs = settings.combatSettings.useGroupBuffs
+    
+    -- Pass settings to the new modules
+    if ItemManager and ItemManager.UpdateSettings then
+        ItemManager.UpdateSettings({
+            enableTrinketUsage = useTrinkets,
+            enableAutomaticConsumables = useConsumables
+        })
+    end
+    
+    if RacialsManager and RacialsManager.UpdateSettings then
+        RacialsManager.UpdateSettings({
+            enableRacialUsage = useRacials
+        })
+    end
+    
+    if BuffManager and BuffManager.UpdateSettings then
+        BuffManager.UpdateSettings({
+            trackGroupBuffs = useGroupBuffs
+        })
+    end
+    
+    if DispelManager and DispelManager.UpdateSettings then
+        DispelManager.UpdateSettings({
+            enableAutoDispel = useAutoDispel
+        })
+    end
+    
+    if PriorityQueue and PriorityQueue.UpdateSettings then
+        PriorityQueue.UpdateSettings({
+            enablePriorityQueue = true,
+            adaptivePriorities = useAdvancedConditions,
+            overrideBaseRotation = true
+        })
+    end
     
     -- Apply advanced settings
     useAdvancedConditions = settings.advancedSettings.useAdvancedConditions
@@ -416,6 +485,135 @@ function RotationManager:OnUpdate(elapsed)
     end
 }
 
+-- Prepare combat state information for all modules
+function RotationManager:PrepareCombatState()
+    -- Get basic player information
+    local playerHealth = UnitHealth("player") / UnitHealthMax("player") * 100
+    local playerPower = 0
+    local powerType = UnitPowerType("player")
+    
+    -- Determine appropriate power resource based on class/spec
+    if powerType == 0 then  -- Mana
+        playerPower = UnitPower("player") / UnitPowerMax("player") * 100
+    elseif powerType == 1 then  -- Rage
+        playerPower = UnitPower("player")
+    elseif powerType == 2 then  -- Focus
+        playerPower = UnitPower("player")
+    elseif powerType == 3 then  -- Energy
+        playerPower = UnitPower("player")
+    elseif powerType == 4 then  -- Combo Points
+        playerPower = UnitPower("player", Enum.PowerType.ComboPoints)
+    elseif powerType == 5 then  -- Runes (Death Knight)
+        -- Count available runes
+        playerPower = 0
+        for i = 1, 6 do
+            local start, duration, runeReady = GetRuneCooldown(i)
+            if runeReady then
+                playerPower = playerPower + 1
+            end
+        end
+    elseif powerType == 6 then  -- Runic Power
+        playerPower = UnitPower("player")
+    elseif powerType == 7 then  -- Soul Shards
+        playerPower = UnitPower("player", Enum.PowerType.SoulShards)
+    elseif powerType == 8 then  -- Astral Power
+        playerPower = UnitPower("player", Enum.PowerType.LunarPower)
+    elseif powerType == 9 then  -- Holy Power
+        playerPower = UnitPower("player", Enum.PowerType.HolyPower)
+    elseif powerType == 10 then  -- Alternate
+        -- Classes with alternate power
+        local className = select(2, UnitClass("player"))
+        if className == "MONK" then
+            playerPower = UnitPower("player", Enum.PowerType.Chi)
+        elseif className == "WARLOCK" then
+            playerPower = UnitPower("player", Enum.PowerType.SoulShards)
+        elseif className == "DRUID" then
+            playerPower = UnitPower("player", Enum.PowerType.LunarPower)
+        elseif className == "EVOKER" then
+            playerPower = UnitPower("player", Enum.PowerType.Essence)
+        else
+            playerPower = UnitPower("player")
+        end
+    else
+        playerPower = UnitPower("player")
+    end
+    
+    -- Get target information
+    local targetHealth = 0
+    if UnitExists("target") then
+        targetHealth = UnitHealth("target") / UnitHealthMax("target") * 100
+    end
+    
+    -- Count number of enemies in combat range
+    local enemyCount = API.GetEnemiesInRange("player", aoeDetectionRange)
+    
+    -- Check if in execute phase
+    local isExecutePhase = false
+    if UnitExists("target") then
+        local executeThreshold = 20  -- Default 20%
+        if UnitClassification("target") == "worldboss" or UnitClassification("target") == "rareelite" or UnitClassification("target") == "elite" then
+            executeThreshold = 35  -- Higher threshold for boss/elite mobs, warrior-style
+        end
+        
+        isExecutePhase = targetHealth <= executeThreshold
+    end
+    
+    -- Determine if enemy is casting
+    local enemyCasting = false
+    if UnitExists("target") then
+        local spellName, _, _, startTime, endTime = UnitCastingInfo("target")
+        if spellName then
+            enemyCasting = true
+        else
+            spellName, _, _, startTime, endTime = UnitChannelInfo("target")
+            if spellName then
+                enemyCasting = true
+            end
+        end
+    end
+    
+    -- Determine if we're in a burst window (cooldowns active)
+    local burstWindow = false
+    if useCooldowns then
+        -- Check if we have major cooldowns active
+        -- Different per class, simplistic example
+        local className = select(2, UnitClass("player"))
+        if className == "WARRIOR" and API.HasBuff("player", 1719) then -- Recklessness
+            burstWindow = true
+        elseif className == "MAGE" and API.HasBuff("player", 12472) then -- Icy Veins
+            burstWindow = true
+        elseif className == "PALADIN" and API.HasBuff("player", 31884) then -- Avenging Wrath
+            burstWindow = true
+        elseif className == "PRIEST" and (API.HasBuff("player", 10060) or API.HasBuff("player", 194249)) then -- Power Infusion or Voidform
+            burstWindow = true
+        elseif className == "WARLOCK" and API.HasBuff("player", 1122) then -- Summon Infernal
+            burstWindow = true
+        elseif className == "HUNTER" and API.HasBuff("player", 193530) then -- Aspect of the Wild
+            burstWindow = true
+        elseif className == "DRUID" and API.HasBuff("player", 194223) then -- Celestial Alignment
+            burstWindow = true
+        elseif className == "DEATHKNIGHT" and API.HasBuff("player", 51271) then -- Pillar of Frost
+            burstWindow = true
+        end
+    end
+    
+    -- Build the combat state structure
+    local combatState = {
+        inCombat = inCombat,
+        health = playerHealth,
+        resource = playerPower,
+        targetHealth = targetHealth,
+        enemyCount = enemyCount,
+        executePhase = isExecutePhase,
+        enemyCasting = enemyCasting,
+        burstWindow = burstWindow,
+        movementRequired = false, -- Would need more complex logic to determine
+        spec = GetSpecialization()
+    }
+    
+    return combatState
+end
+
 -- Should execute rotation
 function RotationManager:ShouldExecuteRotation()
     -- Skip if rotation is paused
@@ -470,35 +668,121 @@ function RotationManager:ExecuteRotation()
     -- Measure execution time
     local startTime = debugprofilestop()
     
+    -- Prepare combat state for modules
+    local combatState = self:PrepareCombatState()
+    
     -- Set up error handling with ErrorHandler
     local success = false
     local result = nil
+    local priorityAction = nil
     
-    if ErrorHandler and ErrorHandler.BeginTransaction then
-        -- Use transaction-based execution
-        ErrorHandler:BeginTransaction("RotationExecution")
+    -- Check if we have a Priority Queue system available and it's enabled
+    local usePriorityQueue = PriorityQueue and PriorityQueue.ProcessQueue
+    
+    if usePriorityQueue then
+        -- Get player class and spec info
+        local playerClass = select(2, UnitClass("player"))
+        local playerSpec = GetSpecialization()
         
-        -- Execute rotation function
-        success, result = pcall(function()
-            return activeRotation.rotation()
-        end)
-        
-        if success then
-            ErrorHandler:CommitTransaction()
-        else
-            ErrorHandler:RollbackTransaction()
-            -- Record error
-            self:RecordRotationError(result)
+        -- Try to get an action from the priority queue
+        priorityAction = PriorityQueue.ProcessQueue(playerClass, playerSpec, combatState)
+    end
+    
+    -- Process automated systems first regardless of rotation
+    if not priorityAction then
+        -- Try automatic trinket usage if enabled
+        if useTrinkets and ItemManager and ItemManager.ProcessTrinkets then
+            local trinketResult = ItemManager.ProcessTrinkets(combatState)
+            if trinketResult then
+                priorityAction = {
+                    type = actionTypes.ITEM,
+                    id = trinketResult.id,
+                    target = trinketResult.target or "player"
+                }
+            end
         end
-    else
-        -- Fallback to basic pcall if ErrorHandler is not available
-        success, result = pcall(function()
-            return activeRotation.rotation()
-        end)
         
-        if not success then
-            -- Record error
-            self:RecordRotationError(result)
+        -- Try automatic consumable usage if enabled
+        if not priorityAction and ConfigRegistry.GetSettings("RotationManager").combatSettings.useConsumables and ItemManager and ItemManager.ProcessConsumables then
+            local consumableResult = ItemManager.ProcessConsumables(combatState)
+            if consumableResult then
+                priorityAction = {
+                    type = actionTypes.ITEM,
+                    id = consumableResult.id,
+                    target = consumableResult.target or "player"
+                }
+            end
+        end
+        
+        -- Try automatic racial ability usage if enabled
+        if not priorityAction and ConfigRegistry.GetSettings("RotationManager").combatSettings.useRacials and RacialsManager and RacialsManager.ProcessRacials then
+            local racialResult = RacialsManager.ProcessRacials(combatState)
+            if racialResult then
+                priorityAction = {
+                    type = actionTypes.SPELL,
+                    id = racialResult.id,
+                    target = racialResult.target or "target"
+                }
+            end
+        end
+        
+        -- Try automatic dispel if enabled
+        if not priorityAction and ConfigRegistry.GetSettings("RotationManager").combatSettings.useAutoDispel and DispelManager and DispelManager.ProcessDispels then
+            local dispelResult = DispelManager.ProcessDispels(combatState)
+            if dispelResult then
+                priorityAction = {
+                    type = actionTypes.SPELL,
+                    id = dispelResult.id,
+                    target = dispelResult.target
+                }
+            end
+        end
+        
+        -- Try automatic buff management if enabled
+        if not priorityAction and ConfigRegistry.GetSettings("RotationManager").combatSettings.useGroupBuffs and BuffManager and BuffManager.ProcessBuffs then
+            local buffResult = BuffManager.ProcessBuffs(combatState)
+            if buffResult then
+                priorityAction = {
+                    type = actionTypes.SPELL,
+                    id = buffResult.id,
+                    target = buffResult.target or "player"
+                }
+            end
+        end
+    end
+    
+    -- If we have a priority action at this point, use it
+    if priorityAction then
+        success = true
+        result = priorityAction
+    else
+        -- Otherwise fall back to the regular rotation
+        if ErrorHandler and ErrorHandler.BeginTransaction then
+            -- Use transaction-based execution
+            ErrorHandler:BeginTransaction("RotationExecution")
+            
+            -- Execute rotation function
+            success, result = pcall(function()
+                return activeRotation.rotation()
+            end)
+            
+            if success then
+                ErrorHandler:CommitTransaction()
+            else
+                ErrorHandler:RollbackTransaction()
+                -- Record error
+                self:RecordRotationError(result)
+            end
+        else
+            -- Fallback to basic pcall if ErrorHandler is not available
+            success, result = pcall(function()
+                return activeRotation.rotation()
+            end)
+            
+            if not success then
+                -- Record error
+                self:RecordRotationError(result)
+            end
         end
     end
     

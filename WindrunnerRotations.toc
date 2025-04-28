@@ -2,7 +2,7 @@
 ## Title: WindrunnerRotations
 ## Notes: Advanced combat optimization system with intelligent, adaptive spell casting
 ## Author: VortexQ8
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: WindrunnerRotationsDB
 ## SavedVariablesPerCharacter: WindrunnerRotationsCharDB
 ## X-Tinkr-Required: 3.0.0
@@ -18,6 +18,11 @@ Core\VersionManager.lua
 Core\CombatAnalysis.lua
 Core\AntiDetectionSystem.lua
 Core\PvPManager.lua
+Core\ItemManager.lua
+Core\RacialsManager.lua
+Core\BuffManager.lua
+Core\DispelManager.lua
+Core\PriorityQueue.lua
 Core\RotationManager.lua
 
 # UI files

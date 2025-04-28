@@ -3,7 +3,7 @@
 ## Advanced Combat Optimization System for World of Warcraft (The War Within Season 2)
 
 **Author:** VortexQ8  
-**Version:** 1.1.0
+**Version:** 1.2.0
 
 ## Overview
 
@@ -13,6 +13,11 @@ Windrunner Rotations is an advanced combat rotation optimization system for Worl
 
 - **Intelligent Rotation Optimization Engine**: Dynamically adjusts ability priorities based on combat conditions, resources, procs, and enemy state
 - **Comprehensive Multi-Class Support**: Complete rotations for all 12 character classes with specialized modules for each specialization
+- **Dynamic Priority Queue System**: Intelligent priority-based decision making that adapts to combat conditions in real-time
+- **Trinket & Consumable Automation**: Smart usage of trinkets, potions, and other consumables based on combat state
+- **Racial Ability Integration**: Optimized automatic usage of racial abilities for each class and specialization
+- **Group Buff Management**: Automatic tracking and casting of missing buffs on party and raid members
+- **Intelligent Dispel System**: Automatic removal of harmful effects based on priority and tactical importance
 - **Smart Target Switching**: Automatically switches to high-priority targets based on health, debuffs, and tactical importance
 - **Advanced Interrupt System**: Intelligently interrupts enemy casts with priority-based decision making
 - **Enemy Classification System**: Categorizes enemies by type and threat level with special handling for boss encounters
@@ -40,6 +45,11 @@ Windrunner Rotations is an advanced combat rotation optimization system for Worl
 - **Core/CombatAnalysis.lua**: Analyzes combat events and provides performance metrics
 - **Core/AntiDetectionSystem.lua**: Ensures the addon remains compliant with Blizzard's automation policies
 - **Core/PvPManager.lua**: Special handling for PvP-specific scenarios and abilities
+- **Core/ItemManager.lua**: Handles intelligent trinket usage and consumable management
+- **Core/RacialsManager.lua**: Manages automatic racial ability usage optimized for each class
+- **Core/BuffManager.lua**: Provides group buff tracking and automatic missing buff casting
+- **Core/DispelManager.lua**: Intelligent system for automatic dispelling of harmful effects
+- **Core/PriorityQueue.lua**: Dynamic ability prioritization system that adapts to combat conditions
 
 ### UI Files
 - **UI/EnhancedConfigUI.lua**: The configuration interface for adjusting all rotation settings
@@ -60,6 +70,56 @@ Windrunner Rotations is an advanced combat rotation optimization system for Worl
 - **Classes/Warrior.lua**: Arms, Fury, and Protection rotation specializations
 
 ## Key Systems Documentation
+
+### Dynamic Priority Queue System
+The priority queue system provides intelligent ability prioritization:
+- Dynamically adjusts ability priorities based on combat conditions
+- Adapts to changing resources, health, and enemy states
+- Takes into account AoE vs single target scenarios
+- Adjusts based on combat phases (opener, execute, burst windows)
+- Provides optimal ability sequence based on priority calculations
+
+Configure priority weights in the "Rotation" tab of the settings panel.
+
+### Trinket and Consumable Automation
+The ItemManager system intelligently handles:
+- Automatic trinket usage based on cooldown alignment
+- Smart consumable usage including potions, healthstones, and scrolls
+- Equipment-specific optimizations for unique trinket effects
+- Logic for saving DPS consumables for optimal burst windows
+- Health-based defensive consumable usage
+
+Customize thresholds in the "Consumables" tab of the settings panel.
+
+### Racial Ability Integration
+The RacialsManager provides:
+- Race-specific ability optimization for each class
+- Automatic usage of offensive racials during burst windows
+- Health-threshold based defensive racial usage
+- Intelligent timing of utility racial abilities
+- Complete customization of racial ability usage
+
+Configuration options available in the "Racials" section of class settings.
+
+### Group Buff Management
+The BuffManager system ensures:
+- Automatic tracking of group and raid buffs
+- Smart casting of missing buffs with priority system
+- Class-specific buff handling for all buff types
+- Role-specific buffs for tanks, healers, and DPS
+- Configurable buff refreshing behavior
+
+Adjust settings in the "Group Buffs" tab of the configuration panel.
+
+### Auto-Dispel System
+The DispelManager provides advanced dispel automation:
+- Intelligent prioritization of harmful effects
+- Role-based dispel targeting (prioritize tanks/healers)
+- Debuff type filtering (magic, curse, poison, disease)
+- Smart handling of special mechanics (don't dispel certain effects)
+- Detection of high-priority debuffs that need immediate removal
+
+Dispel settings can be configured in the "Dispel" tab of the settings panel.
 
 ### Target Switching System
 The target switching system intelligently selects the optimal target based on:

@@ -1,6 +1,22 @@
 # Windrunner Rotations - Change Log
 
-## Version 1.1.0 (April 28, 2025)
+## Version 1.2.0 (April 28, 2025)
+
+### Major Features Added
+- **Trinket Automation System**: Added intelligent trinket usage based on combat conditions and cooldown phases
+- **Consumable Manager**: Implemented automatic potion, healthstone and other consumable usage based on combat state
+- **Priority Queue System**: Created dynamic ability prioritization system with adaptive decision making
+- **Racials Integration**: Added automatic racial ability usage optimized for each class and specialization
+- **Group Buff Tracking**: Implemented comprehensive buff tracking with automatic casting of missing buffs
+- **Auto-Dispel System**: Added intelligent dispelling of harmful effects with priority-based decision making
+
+### System Improvements
+- Updated RotationManager with comprehensive combat state tracking
+- Improved decision making with deep combat state analysis
+- Enhanced resource-based ability prioritization
+- Added better AoE vs. single-target transition logic
+
+## Version 1.1.0 (April 22, 2025)
 
 ### Major Features Added
 - **MouseOver Targeting System**: Added comprehensive mouseover support for all healing, offensive, and utility abilities

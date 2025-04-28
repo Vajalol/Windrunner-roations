@@ -8,8 +8,8 @@
 local addonName, WR = ...
 
 -- Version information
-local ADDON_VERSION = "1.0.0"
-local ADDON_BUILD = 10010
+local ADDON_VERSION = "1.2.0"
+local ADDON_BUILD = 12000
 local WOW_EXPECTED_VERSION = 100205 -- 10.2.5
 local TINKR_EXPECTED_VERSION = "3.0"
 
@@ -28,6 +28,11 @@ local initializationOrder = {
     "CombatAnalysis",
     "AntiDetectionSystem",
     "PvPManager",
+    "ItemManager",
+    "RacialsManager",
+    "BuffManager",
+    "DispelManager",
+    "PriorityQueue",
     "RotationManager"
 }
 
@@ -37,6 +42,11 @@ WR.ModuleManager = WR.ModuleManager or {}
 WR.ConfigRegistry = WR.ConfigRegistry or {}
 WR.ErrorHandler = WR.ErrorHandler or {}
 WR.PerformanceManager = WR.PerformanceManager or {}
+WR.ItemManager = WR.ItemManager or {}
+WR.RacialsManager = WR.RacialsManager or {}
+WR.BuffManager = WR.BuffManager or {}
+WR.DispelManager = WR.DispelManager or {}
+WR.PriorityQueue = WR.PriorityQueue or {}
 
 ----------------------------------------
 -- INITIALIZATION FUNCTIONS
