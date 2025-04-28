@@ -730,9 +730,19 @@ function API.IsGroundTargetedSpell(spellID)
 end
 
 -- Smart cast function that automatically handles cursor targeting if needed
-function API.SmartCast(spellID, unit)
+function API.SmartCast(spellID, unit, mouseover)
     -- Check if this is a special cursor-targeted spell
     local isGroundTargeted, isPositionTargeted = API.IsGroundTargetedSpell(spellID)
+    
+    -- Check for mouseover targeting if requested
+    if mouseover then
+        -- Get current mouseover unit and check if it's valid
+        local mouseoverUnit = "mouseover"
+        if UnitExists(mouseoverUnit) then
+            return API.CastSpell(spellID, mouseoverUnit)
+        end
+        return false
+    end
     
     -- Ground targeted spell (AoE)
     if isGroundTargeted then
@@ -744,6 +754,47 @@ function API.SmartCast(spellID, unit)
     else
         return API.CastSpell(spellID, unit)
     end
+end
+
+-- Cast at mouseover target if available, otherwise fall back to normal target
+function API.CastAtMouseover(spellID, fallbackUnit)
+    -- Try to cast at mouseover target
+    if UnitExists("mouseover") then
+        return API.CastSpell(spellID, "mouseover")
+    -- Fall back to provided unit if available
+    elseif fallbackUnit and UnitExists(fallbackUnit) then
+        return API.CastSpell(spellID, fallbackUnit)
+    -- Otherwise cast at current target or with no target
+    else
+        return API.CastSpell(spellID, "target")
+    end
+end
+
+-- Check if mouseover exists and meets condition
+function API.HasMouseover(friendlyOnly, enemyOnly, healthPercent)
+    if not UnitExists("mouseover") then
+        return false
+    end
+    
+    -- Check if mouseover needs to be friendly
+    if friendlyOnly and not UnitIsFriend("player", "mouseover") then
+        return false
+    end
+    
+    -- Check if mouseover needs to be enemy
+    if enemyOnly and not UnitCanAttack("player", "mouseover") then
+        return false
+    end
+    
+    -- Check health threshold if specified
+    if healthPercent then
+        local _, _, mouseoverHealth = API.GetUnitHealth("mouseover")
+        if mouseoverHealth > healthPercent then
+            return false
+        end
+    end
+    
+    return true
 end
 
 -- Get load errors
@@ -837,6 +888,277 @@ end
 -- Get enemy count in range
 function API.GetEnemyCount(range)
     return #API.GetEnemiesInRange("player", range)
+end
+
+-- Get enemies sorted by various criteria
+function API.GetSortedEnemies(range, sortCriteria)
+    -- Default to health sorting if not specified
+    sortCriteria = sortCriteria or "health"
+    
+    -- Get all enemies in range
+    local enemies = API.GetEnemiesInRange("player", range)
+    local sortedEnemies = {}
+    
+    -- Create a table with enemy data for sorting
+    for _, unit in ipairs(enemies) do
+        local data = {
+            unit = unit,
+            health = 0,
+            healthPercent = 100,
+            distance = API.GetUnitDistance(unit),
+            isBoss = UnitClassification(unit) == "worldboss" or UnitClassification(unit) == "rareelite" or UnitClassification(unit) == "elite",
+            executePhase = false,
+            priority = 0,
+            guid = UnitGUID(unit),
+            isPlayer = UnitIsPlayer(unit)
+        }
+        
+        -- Get health info
+        local health, maxHealth, healthPercent = API.GetUnitHealth(unit)
+        data.health = health
+        data.healthPercent = healthPercent
+        
+        -- Check for execute phase (below 20% health)
+        if healthPercent < 20 then
+            data.executePhase = true
+        end
+        
+        -- Set priority based on unit type
+        if UnitClassification(unit) == "worldboss" then
+            data.priority = 100
+        elseif UnitClassification(unit) == "rareelite" then 
+            data.priority = 90
+        elseif UnitClassification(unit) == "elite" then
+            data.priority = 80
+        elseif UnitClassification(unit) == "rare" then
+            data.priority = 70
+        elseif data.isPlayer then
+            data.priority = 85 -- PvP - players are high priority
+        else
+            data.priority = 50
+        end
+        
+        -- Adjust priority for healers in PvP
+        if data.isPlayer then
+            local _, unitClass = UnitClass(unit)
+            if unitClass == "PRIEST" or unitClass == "DRUID" or unitClass == "MONK" or 
+               unitClass == "PALADIN" or unitClass == "SHAMAN" or unitClass == "EVOKER" then
+                -- Check if they're casting a heal
+                local castInfo = API.GetUnitCastInfo(unit)
+                if castInfo and API.IsHealingSpell(castInfo.spellId) then
+                    data.priority = data.priority + 50 -- Boost priority for actively healing enemies
+                end
+            end
+        end
+        
+        -- List of special debuffs that make a target higher priority
+        for _, debuffID in ipairs({56222, 45524, 702, 115196, 118, 34914, 980, 262115, 316099}) do
+            if API.UnitHasDebuff(unit, debuffID, "player") then
+                data.priority = data.priority + 10 -- Boost priority for targets with our debuffs
+                break
+            end
+        end
+        
+        -- Adjust priority based on health (execute phase)
+        if data.executePhase then
+            data.priority = data.priority + 30
+        end
+        
+        table.insert(sortedEnemies, data)
+    end
+    
+    -- Sort the enemies based on the specified criteria
+    if sortCriteria == "health" then
+        table.sort(sortedEnemies, function(a, b) return a.health < b.health end)
+    elseif sortCriteria == "healthpercent" then
+        table.sort(sortedEnemies, function(a, b) return a.healthPercent < b.healthPercent end)
+    elseif sortCriteria == "distance" then
+        table.sort(sortedEnemies, function(a, b) return a.distance < b.distance end)
+    elseif sortCriteria == "priority" then
+        table.sort(sortedEnemies, function(a, b) return a.priority > b.priority end)
+    end
+    
+    -- Return the sorted list of enemy units
+    local result = {}
+    for _, data in ipairs(sortedEnemies) do
+        table.insert(result, data.unit)
+    end
+    
+    return result
+end
+
+-- Find the best target based on multiple criteria
+function API.FindBestTarget(range, preferExecute, requireDot, requireDebuff, specificUnit)
+    -- If specific unit is requested and exists, use it
+    if specificUnit and UnitExists(specificUnit) then
+        return specificUnit
+    end
+    
+    -- Current target is valid and meets conditions
+    if UnitExists("target") and UnitCanAttack("player", "target") and 
+       API.IsUnitInRange("target", range) then
+        
+        local _, _, healthPercent = API.GetUnitHealth("target")
+        
+        -- If we prefer execute phase and target is in execute phase, keep it
+        if preferExecute and healthPercent < 20 then
+            return "target"
+        end
+        
+        -- If we require DoT and target has our DoT, keep it
+        if requireDot then
+            for _, dotID in ipairs(requireDot) do
+                if API.UnitHasDebuff("target", dotID, "player") then
+                    return "target"
+                end
+            end
+        end
+        
+        -- If we require specific debuff and target has it, keep it
+        if requireDebuff then
+            for _, debuffID in ipairs(requireDebuff) do
+                if API.UnitHasDebuff("target", debuffID) then
+                    return "target"
+                end
+            end
+        end
+    end
+    
+    -- Get all potential targets sorted by priority
+    local potentialTargets = API.GetSortedEnemies(range, "priority")
+    
+    -- No targets in range
+    if #potentialTargets == 0 then
+        return nil
+    end
+    
+    -- Filter based on requirements
+    local filteredTargets = {}
+    
+    for _, unit in ipairs(potentialTargets) do
+        local valid = true
+        
+        -- Check for execute phase requirement
+        if preferExecute then
+            local _, _, healthPercent = API.GetUnitHealth(unit)
+            if healthPercent < 20 then
+                -- This is an execute target, add immediately
+                table.insert(filteredTargets, unit)
+                -- If we just need any execute target, return first one
+                if true then -- preferExecute == "any" (can add different execute behaviors)
+                    return unit
+                end
+            end
+        end
+        
+        -- Check for DoT requirement
+        if requireDot and valid then
+            local hasDot = false
+            for _, dotID in ipairs(requireDot) do
+                if API.UnitHasDebuff(unit, dotID, "player") then
+                    hasDot = true
+                    break
+                end
+            end
+            valid = hasDot
+        end
+        
+        -- Check for debuff requirement
+        if requireDebuff and valid then
+            local hasDebuff = false
+            for _, debuffID in ipairs(requireDebuff) do
+                if API.UnitHasDebuff(unit, debuffID) then
+                    hasDebuff = true
+                    break
+                end
+            end
+            valid = hasDebuff
+        end
+        
+        if valid then
+            table.insert(filteredTargets, unit)
+        end
+    end
+    
+    -- If we found no valid targets with our filters, just return the highest priority target
+    if #filteredTargets == 0 then
+        return potentialTargets[1]
+    end
+    
+    -- Return the best filtered target
+    return filteredTargets[1]
+end
+
+-- Switch to best target if current one isn't ideal
+function API.SwitchToBestTarget(range, preferExecute, requireDot, requireDebuff)
+    local bestTarget = API.FindBestTarget(range, preferExecute, requireDot, requireDebuff)
+    
+    -- If we found a target and it's different from current target
+    if bestTarget and (not UnitExists("target") or not UnitIsUnit("target", bestTarget)) then
+        -- Use Tinkr if available
+        if tinkrLoaded and tinkrAPI.Secure and tinkrAPI.Secure.Call then
+            return tinkrAPI.Secure.Call("TargetUnit", bestTarget)
+        else
+            return TargetUnit(bestTarget)
+        end
+    end
+    
+    return false
+end
+
+-- Check if a spell is a healing spell
+function API.IsHealingSpell(spellID)
+    -- Table of common healing spells across all classes
+    local healingSpells = {
+        -- Priest
+        [2050] = true,   -- Holy Word: Serenity
+        [2061] = true,   -- Flash Heal
+        [596] = true,    -- Prayer of Healing
+        [32546] = true,  -- Binding Heal
+        [33076] = true,  -- Prayer of Mending
+        [47540] = true,  -- Penance (Discipline)
+        
+        -- Paladin
+        [82326] = true,  -- Holy Light
+        [19750] = true,  -- Flash of Light
+        [633] = true,    -- Lay on Hands
+        [85222] = true,  -- Light of Dawn
+        [20473] = true,  -- Holy Shock
+        
+        -- Druid
+        [774] = true,    -- Rejuvenation
+        [8936] = true,   -- Regrowth
+        [33763] = true,  -- Lifebloom
+        [48438] = true,  -- Wild Growth
+        [18562] = true,  -- Swiftmend
+        
+        -- Shaman
+        [8004] = true,   -- Healing Surge
+        [1064] = true,   -- Chain Heal
+        [61295] = true,  -- Riptide
+        [73920] = true,  -- Healing Rain
+        [77472] = true,  -- Healing Wave
+        
+        -- Monk
+        [115175] = true, -- Soothing Mist
+        [116670] = true, -- Vivify
+        [115151] = true, -- Renewing Mist
+        [116849] = true, -- Life Cocoon
+        [124682] = true, -- Enveloping Mist
+        
+        -- Evoker
+        [361469] = true, -- Living Flame (healing)
+        [367230] = true, -- Spiritbloom
+        [355936] = true, -- Dream Breath
+        [366155] = true, -- Reversion
+        [364343] = true, -- Echo
+        
+        -- Misc/Other
+        [2060] = true,   -- Heal (Priest)
+        [32546] = true,  -- Binding Heal (Priest)
+    }
+    
+    return healingSpells[spellID] == true
 end
 
 -- Get best AoE position
