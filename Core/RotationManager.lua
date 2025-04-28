@@ -22,6 +22,11 @@ local RacialsManager = WR.RacialsManager
 local BuffManager = WR.BuffManager
 local DispelManager = WR.DispelManager
 local PriorityQueue = WR.PriorityQueue
+local PetManager = WR.PetManager
+local MovementManager = WR.MovementManager
+local BossMechanicManager = WR.BossMechanicManager
+local RotationControlManager = WR.RotationControlManager
+local LineOfSightManager = WR.LineOfSightManager
 
 -- Rotation data
 local isEnabled = true

@@ -23,6 +23,11 @@ Core\RacialsManager.lua
 Core\BuffManager.lua
 Core\DispelManager.lua
 Core\PriorityQueue.lua
+Core\PetManager.lua
+Core\LineOfSightManager.lua
+Core\MovementManager.lua
+Core\BossMechanicManager.lua
+Core\RotationControlManager.lua
 Core\RotationManager.lua
 
 # UI files

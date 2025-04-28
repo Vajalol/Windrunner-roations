@@ -33,6 +33,11 @@ local initializationOrder = {
     "BuffManager",
     "DispelManager",
     "PriorityQueue",
+    "PetManager",
+    "LineOfSightManager",
+    "MovementManager",
+    "BossMechanicManager",
+    "RotationControlManager",
     "RotationManager"
 }
 
@@ -47,6 +52,11 @@ WR.RacialsManager = WR.RacialsManager or {}
 WR.BuffManager = WR.BuffManager or {}
 WR.DispelManager = WR.DispelManager or {}
 WR.PriorityQueue = WR.PriorityQueue or {}
+WR.PetManager = WR.PetManager or {}
+WR.LineOfSightManager = WR.LineOfSightManager or {}
+WR.MovementManager = WR.MovementManager or {}
+WR.BossMechanicManager = WR.BossMechanicManager or {}
+WR.RotationControlManager = WR.RotationControlManager or {}
 
 ----------------------------------------
 -- INITIALIZATION FUNCTIONS
