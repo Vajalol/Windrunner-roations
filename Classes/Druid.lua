@@ -64,6 +64,21 @@ local BALANCE_SPELLS = {
     WARRIOR_OF_ELUNE = 202425,
     SOUL_OF_THE_FOREST = 114107,
     
+    -- TWW Season 2 Abilities
+    CONVOKE_THE_SPIRITS = 391528, -- Baseline in Season 2 (former Night Fae covenant)
+    ADAPTIVE_SWARM = 391888, -- Baseline in Season 2 (former Necrolord covenant)
+    RAVENOUS_FRENZY = 391971, -- Former Venthyr covenant ability
+    ECLIPSE_DUAL = 390381, -- New passive eclipse enhancement
+    UMBRAL_INTENSITY = 390378, -- Enhanced eclipse buff
+    PRIMORDIAL_ARCANIC_PULSAR = 393960, -- Enhanced Arcanic Pulsar
+    TOUCH_OF_THE_COSMOS = 394094, -- New cooldown ability
+    ASTRAL_SMOLDER = 394048, -- DoT enhancement
+    RADIANT_STARSURGE = 393038, -- Enhanced Starsurge
+    ORBIT_BREAKER = 383197, -- New powerful Starsurge
+    FUNGAL_GROWTH = 391835, -- Wild Mushroom enhancement
+    DENIZEN_OF_THE_DREAM = 394241, -- New ability
+    UMBRAL_EMBRACE = 393760, -- New resource generator
+    
     -- Forms
     MOONKIN_FORM = 24858,
     TRAVEL_FORM = 783,
@@ -80,7 +95,7 @@ local BALANCE_SPELLS = {
     SOOTHE = 2908
 }
 
--- Spell IDs for Feral Druid
+-- Spell IDs for Feral Druid (The War Within, Season 2)
 local FERAL_SPELLS = {
     -- Core abilities
     RAKE = 1822,
@@ -112,6 +127,22 @@ local FERAL_SPELLS = {
     PRIMAL_WRATH = 285381,
     FERAL_FRENZY = 274837,
     
+    -- TWW Season 2 Abilities
+    CONVOKE_THE_SPIRITS = 391528, -- Baseline in Season 2 (former Night Fae covenant)
+    ADAPTIVE_SWARM = 391888, -- Baseline in Season 2 (former Necrolord covenant)
+    APEX_PREDATORS_CRAVING = 391882, -- New passive that enhances Ferocious Bite
+    ASHAMANES_GUIDANCE = 391548, -- New passive
+    BERSERK_FRENZY = 384668, -- Enhanced Berserk
+    FRANTIC_MOMENTUM = 384721, -- Enhanced movement ability
+    RELENTLESS_PREDATOR = 393771, -- New finishing move enhancement
+    RIP_AND_TEAR = 391347, -- Enhanced bleed playstyle
+    SUDDEN_AMBUSH = 384667, -- Stealth ability 
+    TEAR_OPEN_WOUNDS = 391785, -- Enhanced Ferocious Bite
+    TIGERS_TENACITY = 391972, -- Tiger's Fury enhancement
+    TIRELESS_ENERGY = 383390, -- New energy regeneration passive
+    UNBRIDLED_SWARM = 391951, -- Enhanced Adaptive Swarm
+    WILD_FRENZY = 390334, -- New haste buff
+    
     -- Forms
     CAT_FORM = 768,
     BEAR_FORM = 5487,
@@ -128,7 +159,7 @@ local FERAL_SPELLS = {
     SOOTHE = 2908
 }
 
--- Spell IDs for Guardian Druid
+-- Spell IDs for Guardian Druid (The War Within, Season 2)
 local GUARDIAN_SPELLS = {
     -- Core abilities
     THRASH = 77758,
@@ -158,6 +189,23 @@ local GUARDIAN_SPELLS = {
     SURVIVAL_OF_THE_FITTEST = 203965,
     REND_AND_TEAR = 204053,
     
+    -- TWW Season 2 Abilities
+    CONVOKE_THE_SPIRITS = 391528, -- Baseline in Season 2 (former Night Fae covenant)
+    ADAPTIVE_SWARM = 391888, -- Baseline in Season 2 (former Necrolord covenant)
+    BERSERK_RAVAGE = 384702, -- Enhanced Berserk
+    DENSE_FUR = 402835, -- New defensive passive
+    FRENZIED_REGENERATION_ENHANCED = 384668, -- Enhanced Regen
+    FURY_OF_URSOC = 391544, -- New CD ability
+    MATTED_FUR = 385786, -- New defensive 
+    PERPETUAL_FLORA = 391297, -- New healing ability
+    PROTECTOR_OF_THE_PACK = 384721, -- Group defensive
+    REINFORCED_FUR = 393618, -- Enhanced Ironfur
+    SCINTILLATING_MOONLIGHT = 394049, -- Moonfire enhancement
+    URSINE_VIGOR = 377842, -- New form shifting buff
+    URSOCS_FURY = 393618, -- Enhanced Maul
+    URSOCS_GUIDANCE = 393414, -- Enhanced bear form
+    VULNERABLE_FLESH = 391702, -- Attack debuff
+    
     -- Forms
     BEAR_FORM = 5487,
     CAT_FORM = 768,
@@ -174,7 +222,7 @@ local GUARDIAN_SPELLS = {
     SOOTHE = 2908
 }
 
--- Spell IDs for Restoration Druid
+-- Spell IDs for Restoration Druid (The War Within, Season 2)
 local RESTORATION_SPELLS = {
     -- Core abilities
     REJUVENATION = 774,
@@ -191,7 +239,7 @@ local RESTORATION_SPELLS = {
     BARKSKIN = 22812,
     INNERVATE = 29166,
     WILD_CHARGE = 102401,
-    NATURE'S_CURE = 88423,
+    NATURE_CURE = 88423, -- Fixed apostrophe issue
     REBIRTH = 20484,
     
     -- Talents
@@ -203,6 +251,23 @@ local RESTORATION_SPELLS = {
     PHOTOSYNTHESIS = 274902,
     SOUL_OF_THE_FOREST = 158478,
     INCARNATION_TREE_OF_LIFE = 33891,
+    
+    -- TWW Season 2 Abilities
+    CONVOKE_THE_SPIRITS = 391528, -- Baseline in Season 2 (former Night Fae covenant)
+    ADAPTIVE_SWARM = 391888, -- Baseline in Season 2 (former Necrolord covenant)
+    CENARIUS_GUIDANCE = 393948, -- New healing enhancement
+    COMFORT_IN_CRISIS = 393829, -- Emergency healing boost
+    DREAMSTATE = 392161, -- Mana regeneration passive
+    EMBRACE_OF_THE_DREAM = 391827, -- New AoE healing
+    FRENZIED_REGENERATION = 22842, -- Now available for Restoration
+    GROVE_GUARDIANS = 394094, -- New healing cooldown
+    GROVE_TENDING = 383192, -- Enhanced Lifebloom
+    INVIGORATE = 392160, -- New mana return mechanic
+    LYCARA_TEACHINGS = 394235, -- New HoT boost
+    NOURISH = 394235, -- New single target heal
+    REGENESIS = 393371, -- New Swiftmend enhancement
+    REVERSION = 392109, -- New healing spell
+    VERDANT_EMBRACE = 393334, -- New healing cooldown
     
     -- Forms
     BEAR_FORM = 5487,
@@ -219,8 +284,9 @@ local RESTORATION_SPELLS = {
     SOOTHE = 2908
 }
 
--- Important buffs to track
+-- Important buffs to track (The War Within, Season 2)
 local BUFFS = {
+    -- Balance buffs
     MOONKIN_FORM = 24858,
     ECLIPSE_SOLAR = 48517,
     ECLIPSE_LUNAR = 48518,
@@ -229,7 +295,19 @@ local BUFFS = {
     INCARNATION_CHOSEN_OF_ELUNE = 102560,
     WARRIOR_OF_ELUNE = 202425,
     OWLKIN_FRENZY = 157228,
+    ECLIPSE_DUAL = 390381, -- New in Season 2
+    UMBRAL_INTENSITY = 390378, -- New in Season 2
+    PRIMORDIAL_ARCANIC_PULSAR = 393960, -- New in Season 2
+    TOUCH_OF_THE_COSMOS = 394094, -- New in Season 2
+    ORBIT_BREAKER = 383197, -- New in Season 2
+    FUNGAL_GROWTH = 391835, -- New in Season 2
+    DENIZEN_OF_THE_DREAM = 394241, -- New in Season 2
+    UMBRAL_EMBRACE = 393760, -- New in Season 2
+    CONVOKE_THE_SPIRITS_BALANCE = 391528, -- New in Season 2
+    ADAPTIVE_SWARM_DAMAGE = 391889, -- New in Season 2
+    ASTRAL_SMOLDER = 394048, -- New in Season 2
     
+    -- Feral buffs
     CAT_FORM = 768,
     PROWL = 5215,
     PREDATORY_SWIFTNESS = 69369,
@@ -239,7 +317,17 @@ local BUFFS = {
     INCARNATION_KING_OF_THE_JUNGLE = 102543,
     BLOODTALONS = 145152,
     CLEARCASTING = 135700,
+    APEX_PREDATORS_CRAVING = 391883, -- New in Season 2
+    BERSERK_FRENZY = 384668, -- New in Season 2
+    SUDDEN_AMBUSH = 391974, -- New in Season 2
+    TIGERS_TENACITY = 391972, -- New in Season 2
+    WILD_FRENZY = 390334, -- New in Season 2
+    CONVOKE_THE_SPIRITS_FERAL = 391528, -- New in Season 2
+    ADAPTIVE_SWARM_DAMAGE = 391889, -- New in Season 2
+    FRANTIC_MOMENTUM = 391872, -- New in Season 2
+    TIRELESS_ENERGY = 383390, -- New in Season 2
     
+    -- Guardian buffs
     BEAR_FORM = 5487,
     IRONFUR = 192081,
     FRENZIED_REGENERATION = 22842,
@@ -249,7 +337,16 @@ local BUFFS = {
     GALACTIC_GUARDIAN = 213708,
     GUARDIAN_OF_ELUNE = 213680,
     INCARNATION_GUARDIAN_OF_URSOC = 102558,
+    BERSERK_RAVAGE = 384702, -- New in Season 2
+    DENSE_FUR = 402835, -- New in Season 2
+    FURY_OF_URSOC = 391544, -- New in Season 2
+    URSINE_VIGOR = 377842, -- New in Season 2
+    CONVOKE_THE_SPIRITS_GUARDIAN = 391528, -- New in Season 2
+    ADAPTIVE_SWARM_HEAL = 391891, -- New in Season 2
+    REINFORCED_FUR = 393618, -- New in Season 2
+    MATTED_FUR = 385786, -- New in Season 2
     
+    -- Restoration buffs
     REJUVENATION = 774,
     GERMINATION = 155777,
     LIFEBLOOM = 33763,
@@ -259,21 +356,51 @@ local BUFFS = {
     TRANQUILITY = 157982,
     TREE_OF_LIFE = 33891,
     SOUL_OF_THE_FOREST = 114108,
-    MARK_OF_THE_WILD = 1126
+    MARK_OF_THE_WILD = 1126,
+    CENARIUS_GUIDANCE = 393948, -- New in Season 2
+    COMFORT_IN_CRISIS = 393829, -- New in Season 2
+    DREAMSTATE = 392161, -- New in Season 2
+    GROVE_GUARDIANS = 394094, -- New in Season 2
+    CONVOKE_THE_SPIRITS_RESTORE = 391528, -- New in Season 2
+    ADAPTIVE_SWARM_HEAL = 391891, -- New in Season 2
+    EMBRACE_OF_THE_DREAM = 391827, -- New in Season 2
+    VERDANT_EMBRACE = 393334, -- New in Season 2
+    INVIGORATE = 392160 -- New in Season 2
 }
 
--- Important debuffs to track
+-- Important debuffs to track (The War Within, Season 2)
 local DEBUFFS = {
+    -- Balance debuffs
     MOONFIRE = 164812,
     SUNFIRE = 164815,
     STELLAR_FLARE = 202347,
+    ADAPTIVE_SWARM_DAMAGE = 325733, -- New in Season 2
+    ASTRAL_SMOLDER = 394049, -- New in Season 2
+    FUNGAL_GROWTH_SLOW = 391834, -- New in Season 2
     
+    -- Feral debuffs
     RAKE = 155722,
     RIP = 1079,
-    THRASH_BEAR = 192090,
     THRASH_CAT = 106830,
+    ADAPTIVE_SWARM_DAMAGE = 325733, -- New in Season 2
+    TEAR_OPEN_WOUNDS = 391786, -- New in Season 2
+    RIP_AND_TEAR = 391356, -- New in Season 2
+    ASHAMANES_GUIDANCE = 391548, -- New in Season 2 
+    
+    -- Guardian debuffs
+    THRASH_BEAR = 192090,
+    PULVERIZE = 80313,
+    ADAPTIVE_SWARM_DAMAGE = 325733, -- New in Season 2
+    VULNERABLE_FLESH = 391703, -- New in Season 2
+    SCINTILLATING_MOONLIGHT = 394048, -- New in Season 2
+    
+    -- Restoration debuffs
+    ADAPTIVE_SWARM_HEAL = 325748, -- New in Season 2
+    
+    -- Universal debuffs
     ENTANGLING_ROOTS = 339,
-    HIBERNATE = 2637
+    HIBERNATE = 2637,
+    CYCLONE = 33786
 }
 
 -- Initialize the Druid module
@@ -342,6 +469,7 @@ function DruidModule:RegisterSettings()
             }
         },
         balanceSettings = {
+            -- Core Abilities
             useCelestialAlignment = {
                 displayName = "Use Celestial Alignment",
                 description = "Use Celestial Alignment or Incarnation on cooldown",
@@ -369,6 +497,59 @@ function DruidModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            useStellarFlare = {
+                displayName = "Use Stellar Flare",
+                description = "Maintain Stellar Flare on target if talented",
+                type = "toggle",
+                default = true
+            },
+            
+            -- The War Within Season 2 Abilities
+            useConvokeTheSpirits = {
+                displayName = "Use Convoke the Spirits (TWW S2)",
+                description = "Use Convoke the Spirits on cooldown",
+                type = "toggle",
+                default = true
+            },
+            convokeMode = {
+                displayName = "Convoke the Spirits Usage",
+                description = "When to use Convoke the Spirits",
+                type = "dropdown",
+                options = {"With Cooldowns", "On Cooldown", "Manual Only"},
+                default = "With Cooldowns"
+            },
+            useAdaptiveSwarm = {
+                displayName = "Use Adaptive Swarm (TWW S2)",
+                description = "Use Adaptive Swarm for damage",
+                type = "toggle",
+                default = true
+            },
+            useOrbitBreaker = {
+                displayName = "Use Orbit Breaker (TWW S2)",
+                description = "Use empowered Starsurge when available",
+                type = "toggle",
+                default = true
+            },
+            useTouchOfTheCosmos = {
+                displayName = "Use Touch of the Cosmos (TWW S2)",
+                description = "Use Touch of the Cosmos on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useDenizenOfTheDream = {
+                displayName = "Use Denizen of the Dream (TWW S2)",
+                description = "Use Denizen of the Dream when available",
+                type = "toggle",
+                default = true
+            },
+            useEclipseDual = {
+                displayName = "Optimize for Eclipse Dual (TWW S2)",
+                description = "Optimize rotation for Eclipse Dual talent",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Defensive Abilities
             useBarkskin = {
                 displayName = "Use Barkskin",
                 description = "Use Barkskin when taking damage",
@@ -383,15 +564,10 @@ function DruidModule:RegisterSettings()
                 max = 80,
                 step = 5,
                 default = 60
-            },
-            useStellarFlare = {
-                displayName = "Use Stellar Flare",
-                description = "Maintain Stellar Flare on target if talented",
-                type = "toggle",
-                default = true
             }
         },
         feralSettings = {
+            -- Core Abilities
             useTigersFury = {
                 displayName = "Use Tiger's Fury",
                 description = "Use Tiger's Fury on cooldown",
@@ -422,6 +598,65 @@ function DruidModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- The War Within Season 2 Abilities
+            useConvokeTheSpirits = {
+                displayName = "Use Convoke the Spirits (TWW S2)",
+                description = "Use Convoke the Spirits on cooldown",
+                type = "toggle",
+                default = true
+            },
+            convokeMode = {
+                displayName = "Convoke the Spirits Usage",
+                description = "When to use Convoke the Spirits",
+                type = "dropdown",
+                options = {"With Cooldowns", "On Cooldown", "Manual Only"},
+                default = "With Cooldowns"
+            },
+            useAdaptiveSwarm = {
+                displayName = "Use Adaptive Swarm (TWW S2)",
+                description = "Use Adaptive Swarm for damage",
+                type = "toggle",
+                default = true
+            },
+            useBerserkFrenzy = {
+                displayName = "Use Berserk Frenzy (TWW S2)",
+                description = "Optimize rotation for Berserk Frenzy talent",
+                type = "toggle",
+                default = true
+            },
+            useApexPredatorsCraving = {
+                displayName = "Use Apex Predator's Craving (TWW S2)",
+                description = "Optimize for Apex Predator's Craving talent",
+                type = "toggle",
+                default = true
+            },
+            useRipAndTear = {
+                displayName = "Use Rip and Tear (TWW S2)",
+                description = "Optimize rotation for Rip and Tear talent",
+                type = "toggle",
+                default = true
+            },
+            useTearOpenWounds = {
+                displayName = "Use Tear Open Wounds (TWW S2)",
+                description = "Optimize rotation for Tear Open Wounds talent",
+                type = "toggle",
+                default = true
+            },
+            useWildFrenzy = {
+                displayName = "Use Wild Frenzy (TWW S2)",
+                description = "Optimize rotation for Wild Frenzy talent",
+                type = "toggle",
+                default = true
+            },
+            useSuddenAmbush = {
+                displayName = "Use Sudden Ambush (TWW S2)",
+                description = "Use Sudden Ambush procs when available",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Defensive Abilities
             useSurvivalInstincts = {
                 displayName = "Use Survival Instincts",
                 description = "Use Survival Instincts at low health",
@@ -437,6 +672,8 @@ function DruidModule:RegisterSettings()
                 step = 5,
                 default = 30
             },
+            
+            -- AoE Settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to switch to AoE rotation",
@@ -448,6 +685,7 @@ function DruidModule:RegisterSettings()
             }
         },
         guardianSettings = {
+            -- Core Defensive Abilities
             useIronfur = {
                 displayName = "Use Ironfur",
                 description = "Use Ironfur for active mitigation",
@@ -508,12 +746,79 @@ function DruidModule:RegisterSettings()
                 step = 5,
                 default = 25
             },
+            
+            -- The War Within Season 2 Abilities
+            useConvokeTheSpirits = {
+                displayName = "Use Convoke the Spirits (TWW S2)",
+                description = "Use Convoke the Spirits on cooldown",
+                type = "toggle",
+                default = true
+            },
+            convokeMode = {
+                displayName = "Convoke the Spirits Usage",
+                description = "When to use Convoke the Spirits",
+                type = "dropdown",
+                options = {"With Cooldowns", "On Cooldown", "Manual Only"},
+                default = "With Cooldowns"
+            },
+            useAdaptiveSwarm = {
+                displayName = "Use Adaptive Swarm (TWW S2)",
+                description = "Use Adaptive Swarm for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            useBerserkRavage = {
+                displayName = "Use Berserk Ravage (TWW S2)",
+                description = "Optimize rotation for Berserk Ravage talent",
+                type = "toggle",
+                default = true
+            },
+            useDenseFur = {
+                displayName = "Use Dense Fur (TWW S2)",
+                description = "Optimize for Dense Fur passive",
+                type = "toggle",
+                default = true
+            },
+            useFuryOfUrsoc = {
+                displayName = "Use Fury of Ursoc (TWW S2)",
+                description = "Use Fury of Ursoc on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useMattedFur = {
+                displayName = "Use Matted Fur (TWW S2)",
+                description = "Use Matted Fur for AoE damage reduction",
+                type = "toggle",
+                default = true
+            },
+            useReinforcedFur = {
+                displayName = "Use Reinforced Fur (TWW S2)",
+                description = "Optimize for Reinforced Fur passive",
+                type = "toggle",
+                default = true
+            },
+            useScintillatingMoonlight = {
+                displayName = "Use Scintillating Moonlight (TWW S2)",
+                description = "Maintain Moonfire with Scintillating effect",
+                type = "toggle",
+                default = true
+            },
+            useVulnerableFlesh = {
+                displayName = "Use Vulnerable Flesh (TWW S2)",
+                description = "Maintain Vulnerable Flesh debuff on targets",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Core Offensive CDs
             useBerserk = {
                 displayName = "Use Berserk/Incarnation",
                 description = "Use Berserk or Incarnation on cooldown",
                 type = "toggle",
                 default = true
             },
+            
+            -- AoE Settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to prioritize AoE abilities",
@@ -525,6 +830,7 @@ function DruidModule:RegisterSettings()
             }
         },
         restorationSettings = {
+            -- Core Healing Abilities
             useRejuvenation = {
                 displayName = "Use Rejuvenation",
                 description = "Automatically apply Rejuvenation to targets",
@@ -561,6 +867,8 @@ function DruidModule:RegisterSettings()
                 step = 5,
                 default = 40
             },
+            
+            -- Defensive Abilities
             useIronbark = {
                 displayName = "Use Ironbark",
                 description = "Use Ironbark on low health targets",
@@ -591,6 +899,8 @@ function DruidModule:RegisterSettings()
                 step = 5,
                 default = 60
             },
+            
+            -- Major Cooldowns
             useTranquility = {
                 displayName = "Use Tranquility",
                 description = "Use Tranquility for major group healing",
@@ -605,6 +915,93 @@ function DruidModule:RegisterSettings()
                 max = 80,
                 step = 5,
                 default = 40
+            },
+            
+            -- The War Within Season 2 Abilities
+            useConvokeTheSpirits = {
+                displayName = "Use Convoke the Spirits (TWW S2)",
+                description = "Use Convoke the Spirits on cooldown",
+                type = "toggle",
+                default = true
+            },
+            convokeMode = {
+                displayName = "Convoke the Spirits Usage",
+                description = "When to use Convoke the Spirits",
+                type = "dropdown",
+                options = {"With Cooldowns", "Emergency Only", "On Cooldown"},
+                default = "With Cooldowns"
+            },
+            useAdaptiveSwarm = {
+                displayName = "Use Adaptive Swarm (TWW S2)",
+                description = "Use Adaptive Swarm for healing",
+                type = "toggle",
+                default = true
+            },
+            useCenariusGuidance = {
+                displayName = "Use Cenarius' Guidance (TWW S2)",
+                description = "Optimize healing with Cenarius' Guidance",
+                type = "toggle",
+                default = true
+            },
+            useComfortInCrisis = {
+                displayName = "Use Comfort in Crisis (TWW S2)",
+                description = "Optimize for Comfort in Crisis talent",
+                type = "toggle",
+                default = true
+            },
+            useDreamstate = {
+                displayName = "Use Dreamstate (TWW S2)",
+                description = "Optimize for Dreamstate passive",
+                type = "toggle",
+                default = true
+            },
+            useEmbraceOfTheDream = {
+                displayName = "Use Embrace of the Dream (TWW S2)",
+                description = "Use Embrace of the Dream on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useGroveGuardians = {
+                displayName = "Use Grove Guardians (TWW S2)",
+                description = "Use Grove Guardians on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useGroveTending = {
+                displayName = "Use Grove Tending (TWW S2)",
+                description = "Optimize Lifebloom with Grove Tending",
+                type = "toggle",
+                default = true
+            },
+            useInvigorate = {
+                displayName = "Use Invigorate (TWW S2)",
+                description = "Optimize for Invigorate passive",
+                type = "toggle",
+                default = true
+            },
+            useNourish = {
+                displayName = "Use Nourish (TWW S2)",
+                description = "Use Nourish for HoT synergy",
+                type = "toggle",
+                default = true
+            },
+            useRegenesis = {
+                displayName = "Use Regenesis (TWW S2)",
+                description = "Optimize Swiftmend with Regenesis",
+                type = "toggle",
+                default = true
+            },
+            useReversion = {
+                displayName = "Use Reversion (TWW S2)",
+                description = "Use Reversion as a healing filler",
+                type = "toggle",
+                default = true
+            },
+            useVerdantEmbrace = {
+                displayName = "Use Verdant Embrace (TWW S2)",
+                description = "Use Verdant Embrace on cooldown",
+                type = "toggle",
+                default = true
             }
         }
     })

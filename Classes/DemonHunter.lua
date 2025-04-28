@@ -52,7 +52,7 @@ local HAVOC_SPELLS = {
     DISRUPT = 183752,
     IMPRISON = 217832,
     
-    -- Talents
+    -- Talents (The War Within Season 2)
     FIRST_BLOOD = 206416,
     UNBOUND_CHAOS = 347461,
     CYCLE_OF_HATRED = 258887,
@@ -64,6 +64,20 @@ local HAVOC_SPELLS = {
     TRAIL_OF_RUIN = 258881,
     IMMOLATION_AURA = 258920,
     
+    -- New Season 2 abilities
+    SIGIL_OF_FLAME_HAVOC = 389810, -- Havoc version in Season 2
+    THE_HUNT = 370965, -- Powerful mobility and damage ability
+    CHAOS_THEORY = 389687, -- New Season 2 talent
+    BURNING_WOUND = 391189, -- Important DoT effect
+    SOULREND = 388106, -- New cleave ability
+    INNER_DEMON = 389693, -- Enhanced metamorphosis
+    SOULSCAR = 388106, -- New finisher
+    VENGEFUL_BONDS = 390158, -- New utility/damage link
+    FOCUSED_CHAOS = 389775, -- Enhanced single target
+    TACTICAL_RETREAT = 389688, -- New defensive utility
+    EXPANDING_FEL = 391465, -- New AoE enhancement
+    FEL_BARRAGE = 258925, -- Enhanced in Season 2
+    
     -- Misc
     GLIDE = 131347,
     FEL_DEVASTATION = 212084,
@@ -71,7 +85,7 @@ local HAVOC_SPELLS = {
     DOUBLE_JUMP = 198736
 }
 
--- Spell IDs for Vengeance Demon Hunter
+-- Spell IDs for Vengeance Demon Hunter (The War Within, Season 2)
 local VENGEANCE_SPELLS = {
     -- Core abilities
     SHEAR = 203782,
@@ -95,7 +109,7 @@ local VENGEANCE_SPELLS = {
     DISRUPT = 183752,
     IMPRISON = 217832,
     
-    -- Talents
+    -- Talents (The War Within Season 2)
     CHARRED_FLESH = 336639,
     ABYSSAL_STRIKE = 207550,
     AGONIZING_FLAMES = 207548,
@@ -108,6 +122,20 @@ local VENGEANCE_SPELLS = {
     FIERY_DEMISE = 212817,
     BULK_EXTRACTION = 320341,
     
+    -- New Season 2 abilities
+    THE_HUNT_VENGEANCE = 370965, -- Tank version
+    SOULMONGER = 389795, -- New soul fragment generation
+    SOUL_CARVER = 207407, -- Enhanced in Season 2
+    ELYSIAN_DECREE = 390163, -- Kyrian signature ability now baseline
+    FODDER_TO_THE_FLAME = 391429, -- Night Fae signature now baseline
+    SIGIL_OF_SUFFERING = 390181, -- New damage reduction sigil
+    FEL_DEVASTATION_ENHANCED = 390176, -- Improved version
+    FELFIRE_HASTE = 389846, -- New movement talent
+    PRECISE_SIGILS = 389799, -- Improved sigil placement
+    UNLEASHED_POWER = 389976, -- Cooldown reduction
+    DARKGLARE_BOON = 389708, -- Eye beam for tanks
+    REVEL_IN_PAIN = 343014, -- Enhanced Fiery Brand
+    
     -- Misc
     GLIDE = 131347,
     FEL_DEVASTATION = 212084,
@@ -115,36 +143,65 @@ local VENGEANCE_SPELLS = {
     DOUBLE_JUMP = 198736
 }
 
--- Important buffs to track
+-- Important buffs to track (The War Within, Season 2)
 local BUFFS = {
+    -- Havoc buffs
     IMMOLATION_AURA = 258920,
     METAMORPHOSIS_HAVOC = 162264,
-    METAMORPHOSIS_VENGEANCE = 187827,
     CHAOS_BLADES = 247938,
     BLADE_DANCE = 188499,
-    DEMON_SPIKES = 203819,
     BLUR = 212800,
     MOMENTUM = 208628,
     PREPARED = 203650,
     DEMONIC = 213410,
-    SOUL_FRAGMENTS = 203981,
-    FIERY_BRAND = 207771,
-    GLUTTONY = 227330,
     NETHERWALK = 196555,
     DARKNESS = 196718,
     UNBOUND_CHAOS = 347462,
-    SOUL_BARRIER = 263648
+    INNER_DEMON = 389694, -- New in Season 2
+    TACTICAL_RETREAT = 389890, -- New in Season 2
+    CHAOS_THEORY = 390195, -- New in Season 2
+    THE_HUNT_BUFF = 370969, -- New in Season 2
+    FEL_BARRAGE_BUFF = 258925, -- Enhanced in Season 2
+    FOCUSED_CHAOS = 389776, -- New in Season 2
+    VENGEFUL_BONDS = 320635, -- New in Season 2
+    
+    -- Vengeance buffs
+    METAMORPHOSIS_VENGEANCE = 187827,
+    DEMON_SPIKES = 203819,
+    SOUL_FRAGMENTS = 203981,
+    FIERY_BRAND = 207771,
+    SOUL_BARRIER = 263648,
+    GLUTTONY = 227330,
+    SOULMONGER = 389797, -- New in Season 2
+    FODDER_TO_THE_FLAME_BUFF = 391430, -- New in Season 2
+    ELYSIAN_DECREE_BUFF = 390164, -- New in Season 2
+    SIGIL_OF_SUFFERING_BUFF = 390182, -- New in Season 2
+    FEL_DEVASTATION_ENHANCED_BUFF = 390177, -- New in Season 2
+    FELFIRE_HASTE_BUFF = 389847, -- New in Season 2
+    REVEL_IN_PAIN_BUFF = 343013, -- New in Season 2
+    DARKGLARE_BOON_BUFF = 389709 -- New in Season 2
 }
 
--- Important debuffs to track
+-- Important debuffs to track (The War Within, Season 2)
 local DEBUFFS = {
+    -- Vengeance debuffs
     SIGIL_OF_FLAME = 204598,
     FIERY_BRAND = 207744,
-    ESSENCE_BREAK = 320338,
     FRAILTY = 247456,
     VOID_REAVER = 268178,
     FIERY_DEMISE = 212818,
-    IMPRISON = 217832
+    IMPRISON = 217832,
+    SIGIL_OF_SILENCE = 207682,
+    SIGIL_OF_CHAINS = 207407,
+    SIGIL_OF_MISERY = 207685,
+    SIGIL_OF_SUFFERING = 390181, -- New in Season 2
+    
+    -- Havoc debuffs
+    ESSENCE_BREAK = 320338,
+    BURNING_WOUND = 391191, -- New in Season 2
+    SOULREND = 388107, -- New in Season 2
+    SOULSCAR = 388107, -- New in Season 2
+    SIGIL_OF_FLAME_HAVOC = 389811 -- New in Season 2
 }
 
 -- Initialize the Demon Hunter module
@@ -204,6 +261,7 @@ function DemonHunterModule:RegisterSettings()
             }
         },
         havocSettings = {
+            -- Core Abilities
             useMetamorphosis = {
                 displayName = "Use Metamorphosis",
                 description = "Use Metamorphosis in combat",
@@ -217,6 +275,14 @@ function DemonHunterModule:RegisterSettings()
                 options = {"With Cooldowns", "On Cooldown", "Manual Only"},
                 default = "With Cooldowns"
             },
+            useInnerDemon = {
+                displayName = "Use Inner Demon (TWW S2)",
+                description = "Optimize rotation for Inner Demon talent",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Defensive Abilities
             useBlur = {
                 displayName = "Use Blur",
                 description = "Use Blur at low health",
@@ -247,6 +313,14 @@ function DemonHunterModule:RegisterSettings()
                 step = 5,
                 default = 25
             },
+            useTacticalRetreat = {
+                displayName = "Use Tactical Retreat (TWW S2)",
+                description = "Use Tactical Retreat for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Talent Builds
             useDemonBlades = {
                 displayName = "Use Demon Blades",
                 description = "Optimize rotation for Demon Blades talent",
@@ -259,6 +333,53 @@ function DemonHunterModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Season 2 Abilities
+            useTheHunt = {
+                displayName = "Use The Hunt (TWW S2)",
+                description = "Use The Hunt on cooldown or as opener",
+                type = "toggle",
+                default = true
+            },
+            theHuntMode = {
+                displayName = "The Hunt Usage",
+                description = "How to use The Hunt ability",
+                type = "dropdown",
+                options = {"With Cooldowns", "On Cooldown", "Opener Only"},
+                default = "With Cooldowns"
+            },
+            useBurningWound = {
+                displayName = "Use Burning Wound (TWW S2)",
+                description = "Maintain Burning Wound debuff on targets",
+                type = "toggle",
+                default = true
+            },
+            useChaosTheory = {
+                displayName = "Use Chaos Theory (TWW S2)",
+                description = "Optimize rotation for Chaos Theory talent",
+                type = "toggle",
+                default = true
+            },
+            useSoulrend = {
+                displayName = "Use Soulrend (TWW S2)",
+                description = "Use Soulrend when available for AoE",
+                type = "toggle",
+                default = true
+            },
+            useFocusedChaos = {
+                displayName = "Use Focused Chaos (TWW S2)",
+                description = "Optimize single target damage with Focused Chaos",
+                type = "toggle",
+                default = true
+            },
+            useFelBarrage = {
+                displayName = "Use Fel Barrage (TWW S2)",
+                description = "Use Fel Barrage in AoE situations",
+                type = "toggle",
+                default = true
+            },
+            
+            -- General Settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to switch to AoE rotation",
@@ -279,6 +400,7 @@ function DemonHunterModule:RegisterSettings()
             }
         },
         vengeanceSettings = {
+            -- Core Defensive Abilities
             useDemonSpikes = {
                 displayName = "Use Demon Spikes",
                 description = "Use Demon Spikes for active mitigation",
@@ -309,6 +431,12 @@ function DemonHunterModule:RegisterSettings()
                 step = 5,
                 default = 50
             },
+            useRevelInPain = {
+                displayName = "Use Revel in Pain (TWW S2)",
+                description = "Optimize rotation for Revel in Pain talent",
+                type = "toggle",
+                default = true
+            },
             useMetamorphosis = {
                 displayName = "Use Metamorphosis",
                 description = "Use Metamorphosis at low health",
@@ -324,6 +452,8 @@ function DemonHunterModule:RegisterSettings()
                 step = 5,
                 default = 30
             },
+            
+            -- Soul Management
             useSpiritBomb = {
                 displayName = "Use Spirit Bomb",
                 description = "Use Spirit Bomb when available",
@@ -339,6 +469,12 @@ function DemonHunterModule:RegisterSettings()
                 step = 1,
                 default = 4
             },
+            useSoulmonger = {
+                displayName = "Use Soulmonger (TWW S2)",
+                description = "Optimize rotation for Soulmonger talent",
+                type = "toggle",
+                default = true
+            },
             soulCleavePriority = {
                 displayName = "Soul Cleave Priority",
                 description = "Priority for using Soul Cleave",
@@ -346,6 +482,52 @@ function DemonHunterModule:RegisterSettings()
                 options = {"Damage", "Healing", "Balanced"},
                 default = "Balanced"
             },
+            
+            -- Season 2 Abilities
+            useTheHunt = {
+                displayName = "Use The Hunt (TWW S2)",
+                description = "Use The Hunt for mobility and self-healing",
+                type = "toggle",
+                default = true
+            },
+            useElysianDecree = {
+                displayName = "Use Elysian Decree (TWW S2)",
+                description = "Use Elysian Decree sigil for AoE damage",
+                type = "toggle",
+                default = true
+            },
+            useFodderToTheFlame = {
+                displayName = "Use Fodder to the Flame (TWW S2)",
+                description = "Use Fodder to the Flame for demon summoning",
+                type = "toggle",
+                default = true
+            },
+            useSigilOfSuffering = {
+                displayName = "Use Sigil of Suffering (TWW S2)",
+                description = "Use Sigil of Suffering for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            useFelDevastation = {
+                displayName = "Use Fel Devastation",
+                description = "Use Fel Devastation for damage and healing",
+                type = "toggle",
+                default = true
+            },
+            useFelfireHaste = {
+                displayName = "Use Felfire Haste (TWW S2)",
+                description = "Use Felfire Haste for movement speed",
+                type = "toggle",
+                default = true
+            },
+            useDarkglareBoon = {
+                displayName = "Use Darkglare Boon (TWW S2)",
+                description = "Use Darkglare Boon (Eye Beam) for AoE damage",
+                type = "toggle",
+                default = true
+            },
+            
+            -- General Settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to switch to AoE abilities",
@@ -354,6 +536,13 @@ function DemonHunterModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            sigilPlacement = {
+                displayName = "Sigil Placement",
+                description = "How to place sigils in combat",
+                type = "dropdown",
+                options = {"At Feet", "At Cursor", "At Target"},
+                default = "At Feet"
             }
         }
     })
