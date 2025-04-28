@@ -523,6 +523,50 @@ function ConfigRegistry:TriggerCallbacks(module)
     end
 end
 
+-- Open configuration UI
+function ConfigRegistry:OpenConfigUI()
+    -- Check if Enhanced UI is available
+    if WR.UI and WR.UI.EnhancedConfig then
+        WR.UI.EnhancedConfig:Show()
+    else
+        -- Fallback to basic settings display if UI isn't available
+        WR.API.PrintMessage("Enhanced settings UI is not available.")
+        self:PrintCurrentSettings()
+    end
+end
+
+-- Toggle configuration UI
+function ConfigRegistry:ToggleConfigUI()
+    -- Check if Enhanced UI is available
+    if WR.UI and WR.UI.EnhancedConfig then
+        WR.UI.EnhancedConfig:Toggle()
+    else
+        -- Fallback to basic settings display if UI isn't available
+        WR.API.PrintMessage("Enhanced settings UI is not available.")
+        self:PrintCurrentSettings()
+    end
+end
+
+-- Print current settings (basic fallback)
+function ConfigRegistry:PrintCurrentSettings()
+    WR.API.PrintMessage("Current settings:")
+    
+    for module, settings in pairs(profileSettings) do
+        WR.API.PrintMessage("- " .. module .. ":")
+        
+        for setting, value in pairs(settings) do
+            local displayValue = value
+            if type(value) == "table" then
+                displayValue = "table[" .. #value .. "]"
+            elseif type(value) == "boolean" then
+                displayValue = value and "enabled" or "disabled"
+            end
+            
+            WR.API.PrintMessage("  - " .. setting .. ": " .. tostring(displayValue))
+        end
+    end
+end
+
 -- Get profiles list
 function ConfigRegistry:GetProfiles()
     local profiles = {}

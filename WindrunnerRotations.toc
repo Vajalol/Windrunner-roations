@@ -21,7 +21,7 @@ Core\PvPManager.lua
 Core\RotationManager.lua
 
 # UI files
-# UI\EnhancedConfigUI.lua
+UI\EnhancedConfigUI.lua
 
 # Class rotations
 Classes\DeathKnight.lua

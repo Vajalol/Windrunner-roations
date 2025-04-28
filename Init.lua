@@ -71,8 +71,14 @@ end
 
 -- Initialize modules in the correct order
 local function InitializeModules()
+    -- Initialize core modules in order
     for _, moduleName in ipairs(initializationOrder) do
         InitializeModule(moduleName)
+    end
+    
+    -- Initialize UI components if available
+    if WR.UI and WR.UI.EnhancedConfig then
+        InitializeModule("UI.EnhancedConfig")
     end
 end
 
@@ -83,17 +89,22 @@ local function InitializeModule(moduleName)
         return true
     end
     
-    -- Check if module exists
-    if not WR[moduleName] then
-        table.insert(initErrors, "Module not found: " .. moduleName)
-        print("|cFF00FF00WindrunnerRotations|r: |cFFFF0000Error:|r Module not found: " .. moduleName)
-        return false
+    -- Get the module reference - handle nested modules like UI.EnhancedConfig
+    local moduleRef = WR
+    for part in string.gmatch(moduleName, "([^%.]+)") do
+        if moduleRef[part] then
+            moduleRef = moduleRef[part]
+        else
+            table.insert(initErrors, "Module not found: " .. moduleName)
+            print("|cFF00FF00WindrunnerRotations|r: |cFFFF0000Error:|r Module not found: " .. moduleName)
+            return false
+        end
     end
     
     -- Initialize module using pcall to catch errors
     local success, result = pcall(function()
-        if WR[moduleName].Initialize then
-            return WR[moduleName]:Initialize()
+        if moduleRef.Initialize then
+            return moduleRef:Initialize()
         else
             return true -- Module has no Initialize method
         end
@@ -136,35 +147,49 @@ end
 
 -- Handle slash commands
 local function HandleSlashCommand(msg)
-    -- If RotationManager is initialized, let it handle commands
+    -- Parse command
+    local command, args = strsplit(" ", msg, 2)
+    command = strlower(command or "")
+    
+    -- Handle common commands regardless of RotationManager state
+    if command == "config" or command == "settings" or command == "options" then
+        -- Open config UI
+        if WR.ConfigRegistry and WR.ConfigRegistry.OpenConfigUI then
+            WR.ConfigRegistry:OpenConfigUI()
+            return
+        end
+    elseif command == "init" or command == "initialize" then
+        -- Re-initialize addon
+        InitializeAddon()
+        return
+    elseif command == "version" then
+        -- Show version info
+        print("|cFF00FF00WindrunnerRotations|r: Version " .. ADDON_VERSION .. " (Build " .. ADDON_BUILD .. ")")
+        return
+    elseif command == "debug" then
+        -- Toggle debug mode
+        if WR.API and WR.API.EnableDebugMode then
+            WR.API.EnableDebugMode(not WR.API.IsDebugMode())
+        end
+        return
+    end
+    
+    -- If no common command was handled and RotationManager is ready, pass to it
     if WR.RotationManager and modulesInitialized["RotationManager"] then
-        -- RotationManager handles commands
-    else
-        -- Handle basic commands
-        local command, args = strsplit(" ", msg, 2)
-        command = strlower(command or "")
-        
-        if command == "init" or command == "initialize" then
-            -- Re-initialize addon
-            InitializeAddon()
-        elseif command == "version" then
-            -- Show version info
-            print("|cFF00FF00WindrunnerRotations|r: Version " .. ADDON_VERSION .. " (Build " .. ADDON_BUILD .. ")")
-        elseif command == "debug" then
-            -- Toggle debug mode
-            if WR.API and WR.API.EnableDebugMode then
-                WR.API.EnableDebugMode(not WR.API.IsDebugMode())
-            end
-        else
-            -- Show help
-            PrintHelp()
+        -- Check if RotationManager can handle the command
+        if WR.RotationManager.HandleCommand and WR.RotationManager:HandleCommand(command, args) then
+            return -- Command was handled
         end
     end
+    
+    -- If we got here, no command was handled
+    PrintHelp()
 end
 
 -- Print help information
 local function PrintHelp()
     print("|cFF00FF00WindrunnerRotations|r: Commands:")
+    print("  /wr config - Open configuration UI")
     print("  /wr init - Re-initialize addon")
     print("  /wr version - Show version information")
     print("  /wr debug - Toggle debug mode")
