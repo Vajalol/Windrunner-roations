@@ -63,6 +63,23 @@ local ELEMENTAL_SPELLS = {
     STORMKEEPER = 191634,
     PRIMORDIAL_WAVE = 375982,
     
+    -- Season 2 Abilities
+    SKYBREAKERS_FIERY_DEMISE = 378310, -- New in TWW Season 2
+    PRIMORDIAL_FURY = 386474, -- New in TWW Season 2
+    GLACIAL_IMPRISONMENT = 385817, -- New in TWW Season 2
+    PRIMORDIAL_CHAIN_LIGHTNING = 384644, -- New in TWW Season 2
+    STORMING_SKIES = 384641, -- New in TWW Season 2
+    STATIC_ELECTROCONVULSANT = 414386, -- New in TWW Season 2
+    MAGMA_CHAMBER = 381930, -- New in TWW Season 2
+    SWELLING_MAELSTROM = 381707, -- New in TWW Season 2
+    LAVA_SURGE_PLUS = 390371, -- Enhanced in TWW Season 2
+    LIGHTNING_ROD = 386443, -- New in TWW Season 2
+    FLASH_OF_LIGHTNING = 381933, -- New in TWW Season 2
+    MOUNTAINS_WILL_FALL = 381726, -- New in TWW Season 2
+    FURTHER_BEYOND = 381787, -- New in TWW Season 2
+    INUNDATE = 378776, -- New in TWW Season 2
+    ELECTRIFIED_SHOCKS = 382086, -- New in TWW Season 2
+    
     -- Misc
     BLOODLUST = 2825,
     HEROISM = 32182,
@@ -74,7 +91,7 @@ local ELEMENTAL_SPELLS = {
     PURIFY_SPIRIT = 77130
 }
 
--- Spell IDs for Enhancement Shaman
+-- Spell IDs for Enhancement Shaman (The War Within, Season 2)
 local ENHANCEMENT_SPELLS = {
     -- Core abilities
     STORMSTRIKE = 17364,
@@ -109,6 +126,23 @@ local ENHANCEMENT_SPELLS = {
     HAILSTORM = 334195,
     STORMFLURRY = 344357,
     
+    -- Season 2 Abilities
+    CONVERGING_STORMS = 384088, -- New in TWW Season 2
+    MAELSTROM_WEAPON_OVERFLOW = 384149, -- New in TWW Season 2
+    PRIMORDIAL_WAVE = 375982, -- Enhanced in TWW Season 2
+    DOOMWINDS = 384352, -- New in TWW Season 2
+    DOOM_WINDS = 384352, -- New in TWW Season 2 (alt spelling)
+    STRIKE_EMPOWERMENT = 276714, -- New in TWW Season 2
+    THORIMS_INVOCATION = 384405, -- New in TWW Season 2
+    STORMFURY = 384363, -- New in TWW Season 2
+    WINDS_OF_ALAKIR = 384357, -- New in TWW Season 2
+    TEMPEST = 381867, -- New in TWW Season 2
+    MOLTEN_ASSAULT = 334033, -- Enhanced in TWW Season 2
+    PRIMAL_WOLF = 386410, -- New in TWW Season 2
+    ASHEN_CATALYST = 390371, -- New in TWW Season 2
+    DUAL_WEAPONS_MASTERY = 390482, -- New in TWW Season 2
+    LEGACY_OF_THE_FROST_WITCH = 384450, -- New in TWW Season 2
+    
     -- Misc
     BLOODLUST = 2825,
     HEROISM = 32182,
@@ -118,7 +152,7 @@ local ENHANCEMENT_SPELLS = {
     PURIFY_SPIRIT = 77130
 }
 
--- Spell IDs for Restoration Shaman
+-- Spell IDs for Restoration Shaman (The War Within, Season 2)
 local RESTORATION_SPELLS = {
     -- Core abilities
     HEALING_WAVE = 77472,
@@ -152,6 +186,23 @@ local RESTORATION_SPELLS = {
     TORRENT = 200072,
     HIGH_TIDE = 157154,
     PRIMORDIAL_WAVE = 375982,
+    
+    -- Season 2 Abilities
+    EVER_RISING_TIDE = 382029, -- New in TWW Season 2
+    ENDURING_TIDE = 382045, -- New in TWW Season 2
+    TIDE_TURNER = 381208, -- New in TWW Season 2
+    CRIPPLING_HEX = 38616, -- New in TWW Season 2
+    REFRESHING_WATERS = 382047, -- New in TWW Season 2
+    TUMBLING_WAVES = 381877, -- New in TWW Season 2
+    IMPROVED_EARTHLIVING_WEAPON = 382021, -- New in TWW Season 2
+    PURIFIED_WATER = 304783, -- New in TWW Season 2
+    RISING_TIDE = 383010, -- New in TWW Season 2
+    ANCESTRAL_DEFENSE = 382030, -- New in TWW Season 2
+    OVERFLOWING_SHORES = 382040, -- New in TWW Season 2
+    ANCESTRAL_REACH = 382732, -- New in TWW Season 2
+    FLASH_FLOOD = 280615, -- Enhanced in TWW Season 2
+    REINCARNATION = 20608, -- Enhanced in TWW Season 2
+    MANA_SPRING_TOTEM = 381930, -- New in TWW Season 2
     
     -- Misc
     BLOODLUST = 2825,
@@ -278,6 +329,7 @@ function ShamanModule:RegisterSettings()
             }
         },
         elementalSettings = {
+            -- Core settings
             useFireElemental = {
                 displayName = "Use Fire Elemental",
                 description = "Use Fire Elemental on cooldown",
@@ -344,6 +396,70 @@ function ShamanModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Season 2 ability settings
+            useSkybreakersFireyDemise = {
+                displayName = "Use Skybreaker's Fiery Demise (TWW S2)",
+                description = "Use Skybreaker's Fiery Demise for enhanced Flame Shock",
+                type = "toggle",
+                default = true
+            },
+            usePrimordialFury = {
+                displayName = "Use Primordial Fury (TWW S2)",
+                description = "Use Primordial Fury for enhanced Primordial Wave",
+                type = "toggle",
+                default = true
+            },
+            useGlacialImprisonment = {
+                displayName = "Use Glacial Imprisonment (TWW S2)",
+                description = "Use Glacial Imprisonment in rotation",
+                type = "toggle",
+                default = true
+            },
+            usePrimordialChainLightning = {
+                displayName = "Use Primordial Chain Lightning (TWW S2)",
+                description = "Use Primordial Chain Lightning in AoE situations",
+                type = "toggle",
+                default = true
+            },
+            useStormingSkies = {
+                displayName = "Use Storming Skies (TWW S2)",
+                description = "Use Storming Skies in rotation",
+                type = "toggle",
+                default = true
+            },
+            useStaticElectroconvulsant = {
+                displayName = "Use Static Electroconvulsant (TWW S2)",
+                description = "Use Static Electroconvulsant for enhanced Lightning Bolt",
+                type = "toggle",
+                default = true
+            },
+            useMagmaChamber = {
+                displayName = "Use Magma Chamber (TWW S2)",
+                description = "Use Magma Chamber for enhanced Earth Shock",
+                type = "toggle",
+                default = true
+            },
+            useSwellingMaelstrom = {
+                displayName = "Use Swelling Maelstrom (TWW S2)",
+                description = "Use Swelling Maelstrom for enhanced Maelstrom generation",
+                type = "toggle",
+                default = true
+            },
+            useLightningSurge = {
+                displayName = "Use Enhanced Lava Surge (TWW S2)",
+                description = "Prioritize using enhanced Lava Surge procs",
+                type = "toggle",
+                default = true
+            },
+            useLightningRod = {
+                displayName = "Use Lightning Rod (TWW S2)",
+                description = "Use Lightning Rod for enhanced Chain Lightning",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Advanced settings
             poolMaelstrom = {
                 displayName = "Pool Maelstrom",
                 description = "Pool Maelstrom for burst phases",
@@ -367,6 +483,13 @@ function ShamanModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            burstMode = {
+                displayName = "Burst Mode (TWW S2)",
+                description = "How to prioritize burst cooldowns",
+                type = "dropdown",
+                options = {"On Cooldown", "With Bloodlust", "With Trinkets", "Manual Only"},
+                default = "On Cooldown"
             }
         },
         enhancementSettings = {

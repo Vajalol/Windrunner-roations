@@ -62,6 +62,23 @@ local DEVASTATION_SPELLS = {
     ANCIENT_FLAME = 369990,
     CATALYZE = 386283,
     
+    -- Season 2 Abilities
+    SCINTILLATION = 370821, -- New in TWW Season 2
+    ARCANE_VIGOR = 386342, -- New in TWW Season 2
+    DRACONIC_ATTUNEMENT = 381922, -- New in TWW Season 2
+    ARCANE_AWAKENING = 427457, -- New in TWW Season 2
+    TYRANNICAL_FLAME = 392060, -- New in TWW Season 2
+    CHARGED_BLAST = 370454, -- Enhanced in TWW Season 2
+    RUBY_ESSENCE = 375783, -- New in TWW Season 2
+    ENGULFING_BLAZE = 370493, -- New in TWW Season 2
+    LIVING_BREATH = 397056, -- New in TWW Season 2
+    LEAPING_FLAMES = 369939, -- Enhanced in TWW Season 2
+    VOLATILITY = 369089, -- New in TWW Season 2
+    POWER_NEXUS = 369908, -- New in TWW Season 2
+    FEED_THE_FLAMES = 369846, -- New in TWW Season 2
+    ARCANE_INTENSITY = 375796, -- New in TWW Season 2
+    FONT_OF_MAGIC = 375783, -- New in TWW Season 2
+    
     -- Misc
     ESSENCE_BURST = 359618,
     AERIAL_DIVE = 370388,
@@ -70,7 +87,7 @@ local DEVASTATION_SPELLS = {
     QUELL = 351338
 }
 
--- Spell IDs for Preservation Evoker
+-- Spell IDs for Preservation Evoker (The War Within, Season 2)
 local PRESERVATION_SPELLS = {
     -- Core abilities
     DREAM_BREATH = 355936,
@@ -103,13 +120,30 @@ local PRESERVATION_SPELLS = {
     TEMPORAL_COMPRESSIONS = 371938,
     SOURCE_OF_MAGIC = 369459,
     
+    -- Season 2 Abilities
+    ECHO_OF_THE_DREAM = 381922, -- New in TWW Season 2
+    LIFEBIND = 373270, -- New in TWW Season 2
+    EMERALD_TRANCE = 375234, -- New in TWW Season 2
+    GOLDEN_HOUR = 408083, -- New in TWW Season 2
+    REGENERATIVE_FUNGUS = 412785, -- New in TWW Season 2
+    BLOOM = 370886, -- New in TWW Season 2
+    FIELD_OF_DREAMS = 377056, -- New in TWW Season 2
+    DREAM_PETALS = 427462, -- New in TWW Season 2
+    PULSING_TWILIGHT = 395786, -- New in TWW Season 2
+    CYCLE_OF_LIFE = 371958, -- New in TWW Season 2
+    LIFEFORCE_MENDER = 385717, -- New in TWW Season 2
+    REVERSION_IMPROVED = 389359, -- Enhanced in TWW Season 2
+    ALLIED_PROTECTION = 409561, -- New in TWW Season 2
+    TEMPORAL_ANOMALY = 373861, -- New in TWW Season 2
+    TIME_LORD = 372323, -- New in TWW Season 2
+    
     -- Misc
     WING_BUFFET = 357214,
     SLEEP_WALK = 360806,
     QUELL = 351338
 }
 
--- Spell IDs for Augmentation Evoker
+-- Spell IDs for Augmentation Evoker (The War Within, Season 2)
 local AUGMENTATION_SPELLS = {
     -- Core abilities
     LIVING_FLAME = 361469,
@@ -146,6 +180,23 @@ local AUGMENTATION_SPELLS = {
     TAIL_SWIPE = 368970,
     FLY_WITH_ME = 406732,
     TIME_STOP = 378441,
+    
+    -- Season 2 Abilities
+    SPIRITUAL_CLARITY = 408233, -- New in TWW Season 2
+    TIMELESSNESS = 376239, -- New in TWW Season 2
+    CHRONOLOGY = 409667, -- New in TWW Season 2
+    TEMPORAL_WOUND = 409546, -- New in TWW Season 2
+    OUROBOROS = 408083, -- New in TWW Season 2
+    TITANIC_WRATH = 410853, -- New in TWW Season 2
+    SYMBIOTIC_BOND = 410453, -- New in TWW Season 2
+    BESTOW_WRATH = 408233, -- New in TWW Season 2
+    TEMPORAL_COMPRESSION = 408821, -- New in TWW Season 2
+    SCINTILLATION = 370821, -- New in TWW Season 2
+    BLISTERING_SCALES_IMPROVED = 410495, -- Enhanced in TWW Season 2
+    CLOSE_AS_CLUTCHMATES = 409021, -- New in TWW Season 2
+    ESSENCE_ATTUNEMENT = 375544, -- New in TWW Season 2
+    EXPUNGE_CORRUPTION = 383870, -- New in TWW Season 2
+    INFERNOS_BLESSING = 410213, -- New in TWW Season 2
     
     -- Misc
     WING_BUFFET = 357214,

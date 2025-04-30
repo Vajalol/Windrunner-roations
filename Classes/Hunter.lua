@@ -65,6 +65,23 @@ local BM_SPELLS = {
     BINDING_SHOT = 109248,
     WILD_CALL = 185789,
     
+    -- Season 2 Abilities
+    WAILING_ARROW = 392060, -- New in TWW Season 2
+    FOCUSED_MAYHEM = 430113, -- New in TWW Season 2
+    KILLER_INSTINCT = 273887, -- Enhanced in TWW Season 2
+    PACK_TACTICS = 415421, -- New in TWW Season 2
+    LETHAL_SHOTS = 260393, -- Enhanced in TWW Season 2
+    PACK_MENTALITY = 386380, -- New in TWW Season 2
+    FURY_OF_THE_FLOCK = 248443, -- New in TWW Season 2
+    BLOODY_FRENZY = 431922, -- New in TWW Season 2
+    VICIOUS_COMMAND = 386881, -- New in TWW Season 2
+    KILL_CLEAVE = 378015, -- New in TWW Season 2
+    COORDINATED_KILL = 385739, -- New in TWW Season 2
+    KILLING_FRENZY = 386578, -- New in TWW Season 2
+    DIRE_PACK = 378740, -- New in TWW Season 2
+    THRILL_OF_THE_HUNT = 257944, -- Enhanced in TWW Season 2
+    WILD_INSTINCTS = 378442, -- New in TWW Season 2
+    
     -- Pet summons
     CALL_PET_1 = 883,
     CALL_PET_2 = 83242,
@@ -82,7 +99,7 @@ local BM_SPELLS = {
     TAME_BEAST = 1515
 }
 
--- Spell IDs for Marksmanship Hunter
+-- Spell IDs for Marksmanship Hunter (The War Within, Season 2)
 local MM_SPELLS = {
     -- Core abilities
     AIMED_SHOT = 19434,
@@ -120,6 +137,23 @@ local MM_SPELLS = {
     STEEL_TRAP = 162488,
     WAILING_ARROW = 392060,
     
+    -- Season 2 Abilities
+    DEATHBLOW = 378745, -- New in TWW Season 2
+    RAZOR_FRAGMENTS = 384790, -- New in TWW Season 2
+    EAGLETALON_TRUE = 389831, -- New in TWW Season 2
+    TRICK_SHOTS_PLUS = 424567, -- New in TWW Season 2
+    BULLETSTORM = 389017, -- New in TWW Season 2
+    WINDRUNNERS_GUIDANCE = 378888, -- New in TWW Season 2
+    DANCE_OF_DEATH = 378215, -- New in TWW Season 2
+    UNERRING_VISION = 274446, -- Enhanced in TWW Season 2
+    SHREWDNESS = 456826, -- New in TWW Season 2
+    LEGACY_OF_THE_WINDRUNNERS = 394322, -- New in TWW Season 2
+    AIMED_PRECISION = 383476, -- New in TWW Season 2
+    BLAST_RADIUS = 389644, -- New in TWW Season 2
+    LOCK_AND_LOAD = 194595, -- Enhanced in TWW Season 2
+    OVERWATCH = 436713, -- New in TWW Season 2
+    READINESS = 386719, -- New in TWW Season 2
+    
     -- Pet summons
     CALL_PET_1 = 883,
     CALL_PET_2 = 83242,
@@ -137,7 +171,7 @@ local MM_SPELLS = {
     TAME_BEAST = 1515
 }
 
--- Spell IDs for Survival Hunter
+-- Spell IDs for Survival Hunter (The War Within, Season 2)
 local SV_SPELLS = {
     -- Core abilities
     RAPTOR_STRIKE = 186270,
@@ -173,6 +207,23 @@ local SV_SPELLS = {
     GUERRILLA_TACTICS = 264332,
     SPEARHEAD = 360966,
     FURY_OF_THE_EAGLE = 203415,
+    
+    -- Season 2 Abilities
+    LUNGE = 424270, -- New in TWW Season 2
+    RANGER_AND_TRACKER = 384948, -- New in TWW Season 2
+    EMPOWERED_RELEASE = 353265, -- New in TWW Season 2
+    KILLING_FRENZY = 386578, -- New in TWW Season 2
+    FEROCITY_OF_THE_WARSONG = 386804, -- New in TWW Season 2
+    COORDINATED_ONSLAUGHT = 385739, -- New in TWW Season 2
+    TERMS_OF_ENGAGEMENT = 265895, -- Enhanced in TWW Season 2
+    EXPLOSIVE_TRAP = 13813, -- Enhanced in TWW Season 2
+    DEATH_CHAKRAM = 375891, -- New in TWW Season 2
+    SWEEPING_SPEAR = 427964, -- New in TWW Season 2
+    WILD_INSTINCTS = 378442, -- New in TWW Season 2
+    HUNTING_COMPANION = 384799, -- New in TWW Season 2
+    BOMBARDIER = 389880, -- New in TWW Season 2
+    BORN_TO_BE_WILD = 266921, -- Enhanced in TWW Season 2
+    ENFEEBLING_POISON = 394961, -- New in TWW Season 2
     
     -- Pet summons
     CALL_PET_1 = 883,
@@ -304,6 +355,7 @@ function HunterModule:RegisterSettings()
             }
         },
         beastMasterySettings = {
+            -- Core settings
             useBarrage = {
                 displayName = "Use Barrage",
                 description = "Use Barrage for AoE",
@@ -351,6 +403,98 @@ function HunterModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            
+            -- Season 2 ability settings
+            useWailingArrow = {
+                displayName = "Use Wailing Arrow (TWW S2)",
+                description = "Use Wailing Arrow for silence and damage",
+                type = "toggle",
+                default = true
+            },
+            useFocusedMayhem = {
+                displayName = "Use Focused Mayhem (TWW S2)",
+                description = "Use Focused Mayhem for enhanced wild spirits",
+                type = "toggle",
+                default = true
+            },
+            useKillerInstinct = {
+                displayName = "Use Killer Instinct (TWW S2)",
+                description = "Use Killer Instinct for enhanced Kill Command",
+                type = "toggle",
+                default = true
+            },
+            usePackTactics = {
+                displayName = "Use Pack Tactics (TWW S2)",
+                description = "Use Pack Tactics for pet abilities",
+                type = "toggle",
+                default = true
+            },
+            useLethalShots = {
+                displayName = "Use Lethal Shots (TWW S2)",
+                description = "Use Lethal Shots for Kill Shot reset chance",
+                type = "toggle",
+                default = true
+            },
+            usePackMentality = {
+                displayName = "Use Pack Mentality (TWW S2)",
+                description = "Use Pack Mentality for enhanced Bestial Wrath",
+                type = "toggle",
+                default = true
+            },
+            useFuryOfTheFlock = {
+                displayName = "Use Fury of the Flock (TWW S2)",
+                description = "Use Fury of the Flock for AoE damage",
+                type = "toggle",
+                default = true
+            },
+            useBloodyFrenzy = {
+                displayName = "Use Bloody Frenzy (TWW S2)",
+                description = "Use Bloody Frenzy for enhanced Bloodshed",
+                type = "toggle",
+                default = true
+            },
+            useViciousCommand = {
+                displayName = "Use Vicious Command (TWW S2)",
+                description = "Use Vicious Command for enhanced Kill Command",
+                type = "toggle",
+                default = true
+            },
+            useKillCleave = {
+                displayName = "Use Kill Cleave (TWW S2)",
+                description = "Use Kill Cleave for cleave damage",
+                type = "toggle",
+                default = true
+            },
+            useCoordinatedKill = {
+                displayName = "Use Coordinated Kill (TWW S2)",
+                description = "Use Coordinated Kill for enhanced pet abilities",
+                type = "toggle",
+                default = true
+            },
+            beastialWrathMode = {
+                displayName = "Bestial Wrath Usage (TWW S2)",
+                description = "How to optimize Bestial Wrath",
+                type = "dropdown",
+                options = {
+                    "With Aspect of the Wild", 
+                    "On Cooldown", 
+                    "With Kill Command ready", 
+                    "With Barbed Shot stacks"
+                },
+                default = "With Aspect of the Wild"
+            },
+            wildInstinctsMode = {
+                displayName = "Wild Instincts Usage (TWW S2)",
+                description = "How to optimize Wild Instincts",
+                type = "dropdown",
+                options = {
+                    "Always for Focus", 
+                    "Only when below 50 Focus", 
+                    "Only during Bestial Wrath", 
+                    "Manual Only"
+                },
+                default = "Always for Focus"
             }
         },
         marksmanshipSettings = {
