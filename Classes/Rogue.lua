@@ -68,6 +68,23 @@ local ASSASSINATION_SPELLS = {
     SEPSIS = 385408,
     AMPLIFYING_POISON = 381664,
     
+    -- Season 2 Abilities
+    LETHAL_POISON = 426591, -- New in TWW Season 2
+    IMPROVED_GARROTE = 426594, -- New in TWW Season 2
+    IMPROVED_RUPTURE = 426595, -- New in TWW Season 2
+    TINY_TOXIC_BLADE = 381623, -- New in TWW Season 2
+    FATAL_MIXOLOGY = 378499, -- New in TWW Season 2
+    ARTERIAL_PRECISION = 400783, -- New in TWW Season 2
+    SCORPID_VENOM = 425339, -- New in TWW Season 2
+    CAUSTIC_FILAMENTS = 394959, -- New in TWW Season 2
+    FLYING_DAGGERS = 381631, -- Enhanced in TWW Season 2
+    SERRATED_BONE_SPIKE = 385424, -- Enhanced in TWW Season 2
+    DEADLY_BREW = 381637, -- New in TWW Season 2
+    IMPROVED_POISONS = 381624, -- New in TWW Season 2
+    VIRULENT_POISONS = 381620, -- New in TWW Season 2
+    DOOMBLADE = 381673, -- New in TWW Season 2
+    DEEPENING_WOUNDS = 382750, -- New in TWW Season 2
+    
     -- Misc
     SHROUD_OF_CONCEALMENT = 114018,
     SHADOWSTEP = 36554,
@@ -78,7 +95,7 @@ local ASSASSINATION_SPELLS = {
     NUMBING_POISON = 5761
 }
 
--- Spell IDs for Outlaw Rogue
+-- Spell IDs for Outlaw Rogue (The War Within, Season 2)
 local OUTLAW_SPELLS = {
     -- Core abilities
     SINISTER_STRIKE = 193315,
@@ -119,12 +136,29 @@ local OUTLAW_SPELLS = {
     SEPSIS = 385408,
     ECHOING_REPRIMAND = 385616,
     
+    -- Season 2 Abilities
+    THIEFS_VERSATILITY = 381619, -- New in TWW Season 2
+    IMPROVED_ADRENALINE_RUSH = 381754, -- New in TWW Season 2
+    FLOAT_LIKE_A_BUTTERFLY = 354897, -- New in TWW Season 2
+    FLEET_FOOTED = 378813, -- New in TWW Season 2
+    SUMMARILY_DISPATCHED = 381990, -- New in TWW Season 2
+    IMPROVED_BETWEEN_THE_EYES = 235484, -- Enhanced in TWW Season 2
+    TRIPLE_THREAT = 381894, -- New in TWW Season 2
+    FAN_THE_HAMMER = 381846, -- New in TWW Season 2
+    AUDACITY = 381845, -- New in TWW Season 2
+    KEEP_IT_ROLLING = 381989, -- New in TWW Season 2
+    PRECISE_CUTS = 381985, -- New in TWW Season 2
+    HEAVY_HITTER = 381885, -- New in TWW Season 2
+    STORM_CALLER = 425848, -- New in TWW Season 2
+    TREASURE_HUNTER = 428539, -- New in TWW Season 2
+    BOARDING_PARTY = 401987, -- New in TWW Season 2
+    
     -- Misc
     SHROUD_OF_CONCEALMENT = 114018,
     STEALTH = 1784
 }
 
--- Spell IDs for Subtlety Rogue
+-- Spell IDs for Subtlety Rogue (The War Within, Season 2)
 local SUBTLETY_SPELLS = {
     -- Core abilities
     BACKSTAB = 53,
@@ -162,6 +196,23 @@ local SUBTLETY_SPELLS = {
     DEEPER_DAGGERS = 198703,
     SEPSIS = 385408,
     GOREMAWS_BITE = 426591,
+    
+    -- Season 2 Abilities
+    LINGERING_SHADOW = 382745, -- New in TWW Season 2
+    IMPROVED_SHADOW_DANCE = 393972, -- New in TWW Season 2
+    FINALITY = 382742, -- New in TWW Season 2
+    FLAGELLATION = 384631, -- New in TWW Season 2
+    SILENT_STORM = 385722, -- New in TWW Season 2
+    IMPROVED_SHADOW_TECHNIQUES = 394023, -- New in TWW Season 2
+    PERFORATE = 427037, -- New in TWW Season 2
+    INEVITABILITY = 382512, -- New in TWW Season 2
+    SOOTHING_DARKNESS = 393970, -- New in TWW Season 2
+    PLANNED_EXECUTION = 382508, -- New in TWW Season 2
+    DEEPENING_SHADOWS = 185314, -- Enhanced in TWW Season 2
+    THE_ROTTEN = 382015, -- New in TWW Season 2
+    INVIGORATING_SHADOWDUST = 382523, -- New in TWW Season 2
+    SHADOW_VAULT = 382528, -- New in TWW Season 2
+    IMPROVED_FIND_WEAKNESS = 394320, -- New in TWW Season 2
     
     -- Misc
     SHROUD_OF_CONCEALMENT = 114018,
@@ -359,6 +410,7 @@ function RogueModule:RegisterSettings()
             }
         },
         assassinationSettings = {
+            -- Core settings
             useVendetta = {
                 displayName = "Use Vendetta",
                 description = "Use Vendetta on cooldown",
@@ -458,6 +510,98 @@ function RogueModule:RegisterSettings()
                 type = "dropdown",
                 options = {"Deadly + Wound", "Deadly + Numbing", "Amplifying + Wound"},
                 default = "Deadly + Wound"
+            },
+            
+            -- Season 2 ability settings
+            useLethalPoison = {
+                displayName = "Use Lethal Poison (TWW S2)",
+                description = "Use Lethal Poison for increased poison damage",
+                type = "toggle",
+                default = true
+            },
+            useImprovedGarrote = {
+                displayName = "Use Improved Garrote (TWW S2)",
+                description = "Use Improved Garrote for increased Garrote damage",
+                type = "toggle",
+                default = true
+            },
+            useImprovedRupture = {
+                displayName = "Use Improved Rupture (TWW S2)",
+                description = "Use Improved Rupture for increased Rupture damage",
+                type = "toggle",
+                default = true
+            },
+            useTinyToxicBlade = {
+                displayName = "Use Tiny Toxic Blade (TWW S2)",
+                description = "Use Tiny Toxic Blade for enhanced poison application",
+                type = "toggle",
+                default = true
+            },
+            useFatalMixology = {
+                displayName = "Use Fatal Mixology (TWW S2)",
+                description = "Use Fatal Mixology for poison burst damage",
+                type = "toggle",
+                default = true
+            },
+            useArterialPrecision = {
+                displayName = "Use Arterial Precision (TWW S2)",
+                description = "Use Arterial Precision for increased bleed damage",
+                type = "toggle",
+                default = true
+            },
+            useScorpidVenom = {
+                displayName = "Use Scorpid Venom (TWW S2)",
+                description = "Use Scorpid Venom poison",
+                type = "toggle",
+                default = true
+            },
+            useCausticFilaments = {
+                displayName = "Use Caustic Filaments (TWW S2)",
+                description = "Use Caustic Filaments for DoT spreading",
+                type = "toggle",
+                default = true
+            },
+            useFlyingDaggers = {
+                displayName = "Use Flying Daggers (TWW S2)",
+                description = "Use Flying Daggers for enhanced Fan of Knives",
+                type = "toggle",
+                default = true
+            },
+            useSerratedBoneSpike = {
+                displayName = "Use Serrated Bone Spike (TWW S2)",
+                description = "Use Serrated Bone Spike for combo point generation",
+                type = "toggle",
+                default = true
+            },
+            useDeadlyBrew = {
+                displayName = "Use Deadly Brew (TWW S2)",
+                description = "Use Deadly Brew for additional poison application",
+                type = "toggle",
+                default = true
+            },
+            venomRushMode = {
+                displayName = "Venom Rush Mode (TWW S2)",
+                description = "How to optimize Venom Rush talent",
+                type = "dropdown",
+                options = {
+                    "Maximize Envenom", 
+                    "Balance DoTs and Envenom", 
+                    "Envenom at 4+ CP Only", 
+                    "Manual Only"
+                },
+                default = "Balance DoTs and Envenom"
+            },
+            doombladeStrategy = {
+                displayName = "Doomblade Usage (TWW S2)",
+                description = "When to use Doomblade for maximum effect",
+                type = "dropdown",
+                options = {
+                    "With Vendetta", 
+                    "With Full DoTs", 
+                    "On Cooldown", 
+                    "Manual Only"
+                },
+                default = "With Full DoTs"
             }
         },
         outlawSettings = {
