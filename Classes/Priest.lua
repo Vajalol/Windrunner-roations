@@ -41,6 +41,9 @@ local SHADOW_SPELLS = {
     VOID_BOLT = 205448,
     MIND_SEAR = 48045,
     SHADOW_CRASH = 205385,
+    DARK_VOID = 263346,
+    DARK_ASCENSION = 391109,
+    VOID_TORRENT = 263165,
     
     -- Defensive & utility
     DISPERSION = 47585,
@@ -51,25 +54,36 @@ local SHADOW_SPELLS = {
     POWER_WORD_SHIELD = 17,
     PSYCHIC_SCREAM = 8122,
     LEAP_OF_FAITH = 73325,
+    VAMPIRIC_EMBRACE = 15286,
     
     -- Talents
-    DARK_ASCENSION = 391109,
-    VOID_TORRENT = 263165,
     MINDBENDER = 200174,
     SHADOWFIEND = 34433,
-    DARK_VOID = 263346,
     PSYCHIC_HORROR = 64044,
     MIND_BOMB = 205369,
     MINDGAMES = 375901,
     SURGE_OF_DARKNESS = 87160,
     SEARING_NIGHTMARE = 341385,
     
+    -- Season 2 Abilities
+    DARK_REVELATION = 394977, -- New in TWW Season 2
+    SCREAMS_OF_THE_VOID = 375767, -- New in TWW Season 2
+    MIND_DEVASTATION = 391288, -- New in TWW Season 2
+    VOID_CALL = 377461, -- New in TWW Season 2
+    SHADOWY_APPARITIONS = 395254, -- Enhanced in TWW Season 2
+    DEATHSPEAKER = 392507, -- New in TWW Season 2
+    MIND_SPIKE = 73510, -- New in TWW Season 2
+    VOIDTOUCHED = 407468, -- New in TWW Season 2
+    DARK_EVANGELISM = 394963, -- New in TWW Season 2
+    IDOL_OF_YOGGSARON = 373280, -- New in TWW Season 2
+    PSYCHIC_LINK = 199484, -- Enhanced in TWW Season 2
+    
     -- Misc
     POWER_WORD_FORTITUDE = 21562,
     SHADOW_FORM = 232698
 }
 
--- Spell IDs for Discipline Priest
+-- Spell IDs for Discipline Priest (The War Within, Season 2)
 local DISCIPLINE_SPELLS = {
     -- Core abilities
     PENANCE = 47540,
@@ -81,6 +95,7 @@ local DISCIPLINE_SPELLS = {
     SHADOW_WORD_PAIN = 589,
     PURGE_THE_WICKED = 204197,
     SMITE = 585,
+    POWER_WORD_SOLACE = 129250,
     
     -- Defensive & utility
     DESPERATE_PRAYER = 19236,
@@ -90,15 +105,31 @@ local DISCIPLINE_SPELLS = {
     MASS_DISPEL = 32375,
     DISPEL_MAGIC = 528,
     RAPTURE = 47536,
+    POWER_WORD_BARRIER = 62618,
     
     -- Talents
-    POWER_WORD_BARRIER = 62618,
     DIVINE_STAR = 110744,
     HALO = 120517,
     EVANGELISM = 246287,
     SPIRIT_SHELL = 109964,
     MINDBENDER = 123040,
     SHADOWFIEND = 34433,
+    POWER_WORD_LIFE = 373481, -- New in TWW Season 2
+    CONTRITION = 197419, -- Enhanced in TWW Season 2
+    
+    -- Season 2 Abilities
+    VOID_SHIELD = 108968, -- New in TWW Season 2
+    DIVINE_AEGIS = 47753, -- New in TWW Season 2
+    DIVINE_BLESSING = 372761, -- New in TWW Season 2
+    LUMINOUS_BARRIER = 271466, -- New in TWW Season 2
+    BINDING_HEALS = 368275, -- New in TWW Season 2
+    DIVINE_WORD = 372760, -- New in TWW Season 2 
+    WORDS_OF_GRACE = 394797, -- New in TWW Season 2
+    TWILIGHT_BALANCE = 390705, -- New in TWW Season 2
+    SHINING_RADIANCE = 372616, -- New in TWW Season 2
+    PAINFUL_TRUTHS = 373134, -- New in TWW Season 2
+    ULTIMATE_PENITENCE = 421453, -- New in TWW Season 2
+    INDEMNIFICATION = 373049, -- New in TWW Season 2
     
     -- Atonement
     ATONEMENT = 81749,
@@ -107,7 +138,7 @@ local DISCIPLINE_SPELLS = {
     POWER_WORD_FORTITUDE = 21562
 }
 
--- Spell IDs for Holy Priest
+-- Spell IDs for Holy Priest (The War Within, Season 2)
 local HOLY_SPELLS = {
     -- Core abilities
     HEAL = 2050,
@@ -120,6 +151,7 @@ local HOLY_SPELLS = {
     PRAYER_OF_MENDING = 33076,
     SMITE = 585,
     HOLY_FIRE = 14914,
+    HOLY_NOVA = 132157,
     
     -- Defensive & utility
     DESPERATE_PRAYER = 19236,
@@ -128,6 +160,7 @@ local HOLY_SPELLS = {
     MASS_DISPEL = 32375,
     PURIFY = 527,
     PSYCHIC_SCREAM = 8122,
+    HOLY_WORD_LIFE = 373481, -- New in TWW Season 2
     
     -- Talents
     DIVINE_HYMN = 64843,
@@ -137,6 +170,23 @@ local HOLY_SPELLS = {
     APOTHEOSIS = 200183,
     HOLY_WORD_SALVATION = 265202,
     SYMBOL_OF_HOPE = 64901,
+    PRAYER_CIRCLE = 373113, -- New in TWW Season 2
+    EMPYREAL_BLAZE = 372616, -- New in TWW Season 2
+    LIGHTWELL = 372835, -- New in TWW Season 2 (returning ability)
+    
+    -- Season 2 Abilities
+    COSMIC_RIPPLE = 375904, -- New in TWW Season 2
+    HARMONIOUS_APPARATUS = 373400, -- New in TWW Season 2
+    DIVINE_WORD = 372760, -- New in TWW Season 2
+    LIGHTWEAVER = 373612, -- New in TWW Season 2
+    SANCTIFIED_PRAYERS = 372791, -- New in TWW Season 2
+    SPHERES_HARMONY = 372972, -- New in TWW Season 2
+    GUARDIAN_ANGEL = 373432, -- New in TWW Season 2
+    FIRE_LITURGY = 436342, -- New in TWW Season 2
+    HOLY_DAWN = 372618, -- New in TWW Season 2
+    BREATH_OF_THE_DIVINE = 406893, -- New in TWW Season 2
+    DIVINE_PRESENCE = 411011, -- New in TWW Season 2
+    WORDS_OF_THE_PIOUS = 377438, -- New in TWW Season 2
     
     -- Misc
     POWER_WORD_FORTITUDE = 21562
@@ -217,6 +267,7 @@ function PriestModule:RegisterSettings()
             }
         },
         shadowSettings = {
+            -- Core rotation settings
             priorityRotation = {
                 displayName = "Priority Rotation",
                 description = "Use priority-based rotation over strict sequence",
@@ -241,6 +292,8 @@ function PriestModule:RegisterSettings()
                 step = 1,
                 default = 3
             },
+            
+            -- Core abilities
             useShadowCrash = {
                 displayName = "Use Shadow Crash",
                 description = "Use Shadow Crash in combat",
@@ -270,9 +323,74 @@ function PriestModule:RegisterSettings()
                 description = "Use Mindgames in combat",
                 type = "toggle",
                 default = true
+            },
+            
+            -- The War Within Season 2 abilities
+            useDarkRevelation = {
+                displayName = "Use Dark Revelation (TWW S2)",
+                description = "Use Dark Revelation to enhance damage after casting Devouring Plague",
+                type = "toggle",
+                default = true
+            },
+            useScreamsOfTheVoid = {
+                displayName = "Use Screams of the Void (TWW S2)",
+                description = "Use Screams of the Void for burst AoE damage",
+                type = "toggle",
+                default = true
+            },
+            useMindDevastation = {
+                displayName = "Use Mind Devastation (TWW S2)",
+                description = "Use Mind Devastation to boost critical strike chance",
+                type = "toggle",
+                default = true
+            },
+            useVoidCall = {
+                displayName = "Use Void Call (TWW S2)",
+                description = "Use Void Call to summon a void entity for extra damage",
+                type = "toggle",
+                default = true
+            },
+            useMindSpike = {
+                displayName = "Use Mind Spike (TWW S2)",
+                description = "Use Mind Spike in rotation instead of Mind Flay when talented",
+                type = "toggle",
+                default = true
+            },
+            useVoidtouched = {
+                displayName = "Use Voidtouched (TWW S2)",
+                description = "Use Voidtouched passive to enhance damage",
+                type = "toggle",
+                default = true
+            },
+            useDarkEvangelism = {
+                displayName = "Use Dark Evangelism (TWW S2)",
+                description = "Use Dark Evangelism to boost Void Eruption",
+                type = "toggle",
+                default = true
+            },
+            useIdolOfYoggSaron = {
+                displayName = "Use Idol of Yogg-Saron (TWW S2)",
+                description = "Use Idol of Yogg-Saron for extra damage during Voidform",
+                type = "toggle",
+                default = true
+            },
+            voidformStrategy = {
+                displayName = "Voidform Usage Strategy (TWW S2)",
+                description = "How to optimize the Voidform execution strategy",
+                type = "dropdown",
+                options = {"Burst Window", "On Cooldown", "Boss Only", "High Priority Only"},
+                default = "Burst Window"
+            },
+            deathspeakerPriority = {
+                displayName = "Deathspeaker Priority (TWW S2)",
+                description = "When to use Deathspeaker benefits",
+                type = "dropdown",
+                options = {"Single Target", "AoE Cleave", "Use on Cooldown", "Boss Phases Only"},
+                default = "Single Target"
             }
         },
         disciplineSettings = {
+            -- Core Atonement Settings
             atonementCount = {
                 displayName = "Atonement Count",
                 description = "Number of Atonements to maintain",
@@ -303,6 +421,8 @@ function PriestModule:RegisterSettings()
                 step = 5,
                 default = 95
             },
+            
+            -- Core Defensive Cooldowns
             usePainSuppression = {
                 displayName = "Use Pain Suppression",
                 description = "Use Pain Suppression on low health targets",
@@ -323,9 +443,113 @@ function PriestModule:RegisterSettings()
                 description = "Use Spirit Shell in combat",
                 type = "toggle",
                 default = true
+            },
+            usePowerWordBarrier = {
+                displayName = "Use Power Word: Barrier",
+                description = "Use Power Word: Barrier when multiple allies are taking damage",
+                type = "toggle",
+                default = true
+            },
+            powerWordBarrierThreshold = {
+                displayName = "Power Word: Barrier Threshold",
+                description = "Number of injured allies to trigger Power Word: Barrier",
+                type = "slider",
+                min = 2,
+                max = 5,
+                step = 1,
+                default = 3
+            },
+            
+            -- The War Within Season 2 Abilities
+            useVoidShield = {
+                displayName = "Use Void Shield (TWW S2)",
+                description = "Use Void Shield for damage absorption",
+                type = "toggle",
+                default = true
+            },
+            useDivineAegis = {
+                displayName = "Use Divine Aegis (TWW S2)",
+                description = "Use Divine Aegis to enhance critical heal effectiveness",
+                type = "toggle",
+                default = true
+            },
+            useDivineBlessing = {
+                displayName = "Use Divine Blessing (TWW S2)",
+                description = "Use Divine Blessing for increased healing",
+                type = "toggle",
+                default = true
+            },
+            useLuminousBarrier = {
+                displayName = "Use Luminous Barrier (TWW S2)",
+                description = "Use Luminous Barrier alternative to Power Word: Barrier",
+                type = "toggle",
+                default = true
+            },
+            useBindingHeals = {
+                displayName = "Use Binding Heals (TWW S2)",
+                description = "Use Binding Heals for self and target healing",
+                type = "toggle",
+                default = true
+            },
+            useDivineWord = {
+                displayName = "Use Divine Word (TWW S2)",
+                description = "Use Divine Word for enhanced healing spell effects",
+                type = "toggle",
+                default = true
+            },
+            useWordsOfGrace = {
+                displayName = "Use Words of Grace (TWW S2)",
+                description = "Use Words of Grace for increased healing",
+                type = "toggle",
+                default = true
+            },
+            useTwilightBalance = {
+                displayName = "Use Twilight Balance (TWW S2)",
+                description = "Use Twilight Balance for improved balance of healing/damage",
+                type = "toggle",
+                default = true
+            },
+            useShiningRadiance = {
+                displayName = "Use Shining Radiance (TWW S2)",
+                description = "Use Shining Radiance for enhanced Power Word: Radiance",
+                type = "toggle",
+                default = true
+            },
+            usePainfulTruths = {
+                displayName = "Use Painful Truths (TWW S2)",
+                description = "Use Painful Truths for improved damage for Atonement",
+                type = "toggle",
+                default = true
+            },
+            useUltimatePenitence = {
+                displayName = "Use Ultimate Penitence (TWW S2)",
+                description = "Use Ultimate Penitence for improved Penance",
+                type = "toggle",
+                default = true
+            },
+            useIndemnification = {
+                displayName = "Use Indemnification (TWW S2)",
+                description = "Use Indemnification for defensive benefits",
+                type = "toggle",
+                default = true
+            },
+            atonementStrategy = {
+                displayName = "Atonement Strategy (TWW S2)",
+                description = "Strategy for managing Atonement applications",
+                type = "dropdown",
+                options = {"Proactive", "Reactive", "Balanced", "Raid Cooldown"},
+                default = "Balanced"
+            },
+            damageFocusMode = {
+                displayName = "Damage Focus Mode (TWW S2)",
+                description = "Balancing between damage and healing focus",
+                type = "dropdown",
+                options = {"Healing Focus", "Balanced", "Damage Focus", "Context Dependent"},
+                default = "Balanced"
             }
         },
         holySettings = {
+            -- Core Healing Settings
             prioritizeHolyWords = {
                 displayName = "Prioritize Holy Words",
                 description = "Prioritize using Holy Words when available",
@@ -347,6 +571,8 @@ function PriestModule:RegisterSettings()
                 step = 5,
                 default = 90
             },
+            
+            -- Core Cooldown Settings
             useGuardianSpirit = {
                 displayName = "Use Guardian Spirit",
                 description = "Use Guardian Spirit on low health targets",
@@ -376,6 +602,124 @@ function PriestModule:RegisterSettings()
                 max = 5,
                 step = 1,
                 default = 4
+            },
+            useHolyWordSalvation = {
+                displayName = "Use Holy Word: Salvation",
+                description = "Use Holy Word: Salvation in emergency situations",
+                type = "toggle", 
+                default = true
+            },
+            
+            -- Season 2 Abilities
+            useHolyWordLife = {
+                displayName = "Use Holy Word: Life (TWW S2)",
+                description = "Use Holy Word: Life for emergency healing",
+                type = "toggle",
+                default = true
+            },
+            usePrayerCircle = {
+                displayName = "Use Prayer Circle (TWW S2)",
+                description = "Use Prayer Circle to enhance Prayer of Healing",
+                type = "toggle",
+                default = true
+            },
+            useEmpyrealBlaze = {
+                displayName = "Use Empyreal Blaze (TWW S2)",
+                description = "Use Empyreal Blaze for enhancing Holy Fire",
+                type = "toggle",
+                default = true
+            },
+            useLightwell = {
+                displayName = "Use Lightwell (TWW S2)",
+                description = "Use Lightwell for passive group healing",
+                type = "toggle",
+                default = true
+            },
+            useCosmicRipple = {
+                displayName = "Use Cosmic Ripple (TWW S2)",
+                description = "Use Cosmic Ripple for additional AoE healing",
+                type = "toggle",
+                default = true
+            },
+            useHarmoniousApparatus = {
+                displayName = "Use Harmonious Apparatus (TWW S2)",
+                description = "Use Harmonious Apparatus for Holy Word CDR",
+                type = "toggle",
+                default = true
+            },
+            useDivineWord = {
+                displayName = "Use Divine Word (TWW S2)",
+                description = "Use Divine Word to enhance healing spells",
+                type = "toggle",
+                default = true
+            },
+            useLightweaver = {
+                displayName = "Use Lightweaver (TWW S2)",
+                description = "Use Lightweaver for healing enhancements",
+                type = "toggle",
+                default = true
+            },
+            useSanctifiedPrayers = {
+                displayName = "Use Sanctified Prayers (TWW S2)",
+                description = "Use Sanctified Prayers for healing bonuses",
+                type = "toggle",
+                default = true
+            },
+            useSpheresHarmony = {
+                displayName = "Use Spheres Harmony (TWW S2)",
+                description = "Use Spheres Harmony for healing improvements",
+                type = "toggle",
+                default = true
+            },
+            useGuardianAngel = {
+                displayName = "Use Guardian Angel (TWW S2)",
+                description = "Use Guardian Angel to enhance Guardian Spirit",
+                type = "toggle",
+                default = true
+            },
+            useFireLiturgy = {
+                displayName = "Use Fire Liturgy (TWW S2)",
+                description = "Use Fire Liturgy for damage and healing",
+                type = "toggle",
+                default = true
+            },
+            useHolyDawn = {
+                displayName = "Use Holy Dawn (TWW S2)",
+                description = "Use Holy Dawn for healing improvement",
+                type = "toggle",
+                default = true
+            },
+            useBreathOfTheDivine = {
+                displayName = "Use Breath of the Divine (TWW S2)",
+                description = "Use Breath of the Divine for healing bonuses",
+                type = "toggle",
+                default = true
+            },
+            useDivinePresence = {
+                displayName = "Use Divine Presence (TWW S2)",
+                description = "Use Divine Presence for healing boosts",
+                type = "toggle",
+                default = true
+            },
+            useWordsOfThePious = {
+                displayName = "Use Words of the Pious (TWW S2)",
+                description = "Use Words of the Pious for increased healing",
+                type = "toggle",
+                default = true
+            },
+            holyWordStrategy = {
+                displayName = "Holy Word Strategy (TWW S2)",
+                description = "How to prioritize Holy Word spells",
+                type = "dropdown",
+                options = {"On Cooldown", "Emergency Only", "Balanced Usage", "Mana Efficient"},
+                default = "Balanced Usage"
+            },
+            healingFocusMode = {
+                displayName = "Healing Focus Mode (TWW S2)",
+                description = "Focus for healing distribution",
+                type = "dropdown",
+                options = {"Tank Priority", "Raid Healing", "Balanced", "Context Sensitive"},
+                default = "Balanced"
             }
         }
     })

@@ -63,6 +63,24 @@ local ARCANE_SPELLS = {
     NETHER_TEMPEST = 114923,
     ENLIGHTENED = 321387,
     
+    -- Season 2 Abilities
+    ARCANE_SURGE = 365350, -- New in TWW Season 2
+    TIME_ANOMALY = 383865, -- New in TWW Season 2
+    ARCANOSPHERE = 404218, -- New in TWW Season 2
+    SIPHON_STORM = 384187, -- New in TWW Season 2
+    PASS_THE_COOKIES = 384378, -- New in TWW Season 2
+    ARCANE_ECHO = 342231, -- Enhanced in TWW Season 2
+    NETHER_PRECISION = 383782, -- New in TWW Season 2
+    ARCANE_BOMBARDMENT = 384581, -- New in TWW Season 2
+    SLIPSTREAM = 236457, -- New in TWW Season 2
+    CONCENTRATION = 384374, -- New in TWW Season 2
+    OVERFLOWING_ENERGY = 390218, -- New in TWW Season 2
+    CLEARCASTING = 79684, -- Enhanced in TWW Season 2
+    REVERBERATE = 387807, -- New in TWW Season 2
+    ARCANE_WARDING = 383476, -- New in TWW Season 2
+    TEMPORAL_VELOCITY = 382440, -- New in TWW Season 2
+    CHRONOMANCER = 383475, -- New in TWW Season 2
+    
     -- Misc
     ARCANE_INTELLECT = 1459,
     CONJURE_REFRESHMENT = 190336,
@@ -70,7 +88,7 @@ local ARCANE_SPELLS = {
     REMOVE_CURSE = 475
 }
 
--- Spell IDs for Fire Mage
+-- Spell IDs for Fire Mage (The War Within, Season 2)
 local FIRE_SPELLS = {
     -- Core abilities
     FIREBALL = 133,
@@ -104,6 +122,23 @@ local FIRE_SPELLS = {
     KINDLING = 155148,
     CONFLAGRATION = 205023,
     
+    -- Season 2 Abilities
+    FLAME_PATCH = 205037, -- Enhanced in TWW Season 2
+    FLAME_ON = 205029, -- Enhanced in TWW Season 2
+    SUN_KINGS_BLESSING = 383886, -- New in TWW Season 2
+    ALEXSTRASZAS_FURY = 235870, -- Enhanced in TWW Season 2
+    IMPROVED_SCORCH = 383604, -- New in TWW Season 2
+    FIREMIND = 383499, -- New in TWW Season 2
+    TEMPERED_FLAMES = 383659, -- New in TWW Season 2
+    FIRESTARTER = 205026, -- Enhanced in TWW Season 2
+    HYPERTHERMIA = 383860, -- New in TWW Season 2
+    FEVERED_INCANTATION = 383811, -- New in TWW Season 2
+    CALL_OF_THE_SUN_KING = 383479, -- New in TWW Season 2
+    INCENDIARY_ERUPTIONS = 383702, -- New in TWW Season 2
+    PYROCLASM = 269650, -- Enhanced in TWW Season 2
+    WILDFIRE = 416484, -- New in TWW Season 2
+    MASTER_OF_FLAMES = 384642, -- New in TWW Season 2
+    
     -- Misc
     ARCANE_INTELLECT = 1459,
     CONJURE_REFRESHMENT = 190336,
@@ -111,7 +146,7 @@ local FIRE_SPELLS = {
     REMOVE_CURSE = 475
 }
 
--- Spell IDs for Frost Mage
+-- Spell IDs for Frost Mage (The War Within, Season 2)
 local FROST_SPELLS = {
     -- Core abilities
     FROSTBOLT = 116,
@@ -143,6 +178,23 @@ local FROST_SPELLS = {
     BRAIN_FREEZE = 190447,
     FINGERS_OF_FROST = 44544,
     SUMMON_WATER_ELEMENTAL = 31687,
+    
+    -- Season 2 Abilities
+    FREEZE = 33395, -- Enhanced in TWW Season 2
+    ICE_FLOES = 108839, -- Enhanced in TWW Season 2
+    SUB_ZERO = 383676, -- New in TWW Season 2
+    CHILLED_TO_THE_CORE = 383844, -- New in TWW Season 2
+    FREEZING_WINDS = 382103, -- New in TWW Season 2
+    ICE_NOVA = 157997, -- Enhanced in TWW Season 2
+    BONE_CHILLING = 205027, -- Enhanced in TWW Season 2
+    SPLITTING_ICE = 56377, -- Enhanced in TWW Season 2
+    CHAIN_REACTION = 278309, -- Enhanced in TWW Season 2
+    GLACIAL_ASSAULT = 384455, -- New in TWW Season 2
+    SNOWSTORM = 428468, -- New in TWW Season 2
+    ABSOLUTE_ZERO = 389719, -- New in TWW Season 2
+    SHATTER = 12982, -- Enhanced in TWW Season 2
+    THERMAL_VOID = 155149, -- Enhanced in TWW Season 2
+    LONELY_WINTER = 205024, -- Enhanced in TWW Season 2
     
     -- Misc
     ARCANE_INTELLECT = 1459,
@@ -238,6 +290,7 @@ function MageModule:RegisterSettings()
             }
         },
         arcaneSettings = {
+            -- Core settings
             conserveManaThreshold = {
                 displayName = "Conserve Mana Threshold",
                 description = "Mana percentage to start conserving",
@@ -282,6 +335,98 @@ function MageModule:RegisterSettings()
                 max = 60,
                 step = 5,
                 default = 30
+            },
+            
+            -- Season 2 abilities
+            useArcaneSurge = {
+                displayName = "Use Arcane Surge (TWW S2)",
+                description = "Use Arcane Surge for enhanced burst damage",
+                type = "toggle",
+                default = true
+            },
+            useTimeAnomaly = {
+                displayName = "Use Time Anomaly (TWW S2)",
+                description = "Use Time Anomaly for burst rotation",
+                type = "toggle",
+                default = true
+            },
+            useArcanosphere = {
+                displayName = "Use Arcanosphere (TWW S2)",
+                description = "Use Arcanosphere for AoE damage",
+                type = "toggle",
+                default = true
+            },
+            useSiphonStorm = {
+                displayName = "Use Siphon Storm (TWW S2)",
+                description = "Use Siphon Storm for enhanced Evocation benefits",
+                type = "toggle",
+                default = true
+            },
+            useArcaneEcho = {
+                displayName = "Use Arcane Echo (TWW S2)",
+                description = "Use Arcane Echo for enhanced Arcane Missiles",
+                type = "toggle",
+                default = true
+            },
+            useNetherPrecision = {
+                displayName = "Use Nether Precision (TWW S2)",
+                description = "Use Nether Precision for Arcane Missiles procs",
+                type = "toggle",
+                default = true
+            },
+            useArcaneBombardment = {
+                displayName = "Use Arcane Bombardment (TWW S2)",
+                description = "Use Arcane Bombardment for enhanced execute damage",
+                type = "toggle",
+                default = true
+            },
+            useSlipstream = {
+                displayName = "Use Slipstream (TWW S2)",
+                description = "Use Slipstream for mobility while casting",
+                type = "toggle",
+                default = true
+            },
+            useConcentration = {
+                displayName = "Use Concentration (TWW S2)",
+                description = "Use Concentration for mana efficiency",
+                type = "toggle",
+                default = true
+            },
+            useOverflowingEnergy = {
+                displayName = "Use Overflowing Energy (TWW S2)",
+                description = "Use Overflowing Energy for enhanced mana usage",
+                type = "toggle",
+                default = true
+            },
+            useReverberate = {
+                displayName = "Use Reverberate (TWW S2)",
+                description = "Use Reverberate for enhanced Touch of the Magi",
+                type = "toggle",
+                default = true
+            },
+            burstRotationMode = {
+                displayName = "Burst Rotation Mode (TWW S2)",
+                description = "Select burst rotation strategy",
+                type = "dropdown",
+                options = {
+                    "Radiant Spark + TotM", 
+                    "Arcane Surge Only", 
+                    "Maximum Burst", 
+                    "Mana Efficient"
+                },
+                default = "Maximum Burst"
+            },
+            arcanoSphereMode = {
+                displayName = "Arcanosphere Usage (TWW S2)",
+                description = "When to use Arcanosphere",
+                type = "dropdown",
+                options = {
+                    "AoE Only", 
+                    "On Cooldown", 
+                    "With Touch of the Magi", 
+                    "Manual Only"
+                },
+                default = "AoE Only"
             }
         },
         fireSettings = {

@@ -39,11 +39,19 @@ local HOLY_SPELLS = {
     HOLY_PRISM = 114165,
     LIGHT_OF_THE_MARTYR = 183998,
     BESTOW_FAITH = 223306,
-    DIVINE_TOLL = 375576,
+    DIVINE_TOLL = 375576, -- Added in Season 2
     BEACON_OF_LIGHT = 53563,
     BEACON_OF_FAITH = 156910,
     BEACON_OF_VIRTUE = 200025,
     HAMMER_OF_WRATH = 24275,
+    BLESSING_OF_SUMMER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_AUTUMN = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_WINTER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_SPRING = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    AFTERIMAGE = 388012, -- New in TWW Season 2
+    DAYBREAK = 387986, -- New in TWW Season 2
+    RESPLENDENT_LIGHT = 392903, -- New in TWW Season 2
+    EMPYREAN_LEGACY = 387170, -- New in TWW Season 2
     
     -- Defensive & utility
     DIVINE_SHIELD = 642,
@@ -64,6 +72,10 @@ local HOLY_SPELLS = {
     DIVINE_FAVOR = 210294,
     RULE_OF_LAW = 214202,
     DIVINE_PURPOSE = 223817,
+    LIGHTS_HAMMER = 114158, -- Important in Season 2
+    JUDGMENT_OF_LIGHT = 183778, -- Important in Season 2
+    GOLDEN_PATH = 377128, -- New in TWW Season 2
+    RADIANT_DECREE = 387237, -- New in TWW Season 2
     
     -- Misc
     DEVOTION_AURA = 465,
@@ -72,11 +84,10 @@ local HOLY_SPELLS = {
     RETRIBUTION_AURA = 183435,
     CONSECRATION = 26573,
     JUDGMENT = 275773,
-    CRUSADER_STRIKE = 35395,
-    BLESSING_OF_THE_SEASONS = 388007
+    CRUSADER_STRIKE = 35395
 }
 
--- Spell IDs for Protection Paladin
+-- Spell IDs for Protection Paladin (The War Within, Season 2)
 local PROTECTION_SPELLS = {
     -- Core abilities
     SHIELD_OF_THE_RIGHTEOUS = 53600,
@@ -89,7 +100,14 @@ local PROTECTION_SPELLS = {
     WORD_OF_GLORY = 85673,
     ARDENT_DEFENDER = 31850,
     GUARDIAN_OF_ANCIENT_KINGS = 86659,
-    DIVINE_TOLL = 375576,
+    DIVINE_TOLL = 375576, -- Added in Season 2
+    SENTINEL = 387274, -- New in TWW Season 2
+    DIVINE_ARBITER = 389102, -- New in TWW Season 2
+    BULWARK_OF_RIGHTEOUS_FURY = 386652, -- New in TWW Season 2
+    SANCTIFIED_GROUND = 387557, -- New in TWW Season 2
+    SHIELD_OF_HOPE = 378429, -- New in TWW Season 2
+    DIVINE_RESONANCE = 384027, -- New in TWW Season 2
+    MOMENT_OF_GLORY = 327193, -- Important in TWW Season 2
     
     -- Defensive & utility
     DIVINE_SHIELD = 642,
@@ -100,9 +118,13 @@ local PROTECTION_SPELLS = {
     CLEANSE_TOXINS = 213644,
     HAMMER_OF_JUSTICE = 853,
     REBUKE = 96231,
+    EYE_OF_TYR = 387174, -- New in TWW Season 2
+    BLESSING_OF_SUMMER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_AUTUMN = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_WINTER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_SPRING = 388007, -- New in TWW Season 2 (part of Seasons cycle)
     
     -- Talents
-    MOMENT_OF_GLORY = 327193,
     HOLY_AVENGER = 105809,
     AVENGING_WRATH = 31884,
     DIVINE_PURPOSE = 223817,
@@ -110,16 +132,20 @@ local PROTECTION_SPELLS = {
     BULWARK_OF_ORDER = 209389,
     FINAL_STAND = 204077,
     BASTION_OF_LIGHT = 204035,
+    CONSECRATED_GROUND = 204054, -- Improved in TWW Season 2
+    REDOUBT = 280373, -- Important in TWW Season 2
+    BARRICADE_OF_FAITH = 385726, -- New in TWW Season 2
+    CRUSADERS_REPRIEVE = 383314, -- New in TWW Season 2
+    STRENGTH_IN_ADVERSITY = 393030, -- New in TWW Season 2
     
     -- Misc
     DEVOTION_AURA = 465,
     CONCENTRATION_AURA = 317920,
     CRUSADER_AURA = 32223,
-    RETRIBUTION_AURA = 183435,
-    BLESSING_OF_THE_SEASONS = 388007
+    RETRIBUTION_AURA = 183435
 }
 
--- Spell IDs for Retribution Paladin
+-- Spell IDs for Retribution Paladin (The War Within, Season 2)
 local RETRIBUTION_SPELLS = {
     -- Core abilities
     CRUSADER_STRIKE = 35395,
@@ -131,7 +157,13 @@ local RETRIBUTION_SPELLS = {
     EXECUTION_SENTENCE = 343527,
     FINAL_RECKONING = 343721,
     HAMMER_OF_WRATH = 24275,
-    DIVINE_TOLL = 375576,
+    DIVINE_TOLL = 375576, -- Added in Season 2
+    BLESSED_HAMMER = 204019, -- New option in TWW Season 2
+    TEMPEST_OF_THE_LIGHTBRINGER = 383269, -- New in TWW Season 2
+    CRUSADING_STRIKES = 383346, -- New in TWW Season 2
+    DIVINE_HAMMER = 198034, -- New option in TWW Season 2
+    SANCTIFY = 387591, -- New in TWW Season 2
+    CRUSADER_STRIKE_RANK_2 = 389299, -- New in TWW Season 2
     
     -- Defensive & utility
     DIVINE_SHIELD = 642,
@@ -143,6 +175,12 @@ local RETRIBUTION_SPELLS = {
     HAMMER_OF_JUSTICE = 853,
     REBUKE = 96231,
     SHIELD_OF_VENGEANCE = 184662,
+    BLESSING_OF_SUMMER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_AUTUMN = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_WINTER = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    BLESSING_OF_SPRING = 388007, -- New in TWW Season 2 (part of Seasons cycle)
+    DIVINE_PROTECTION = 498, -- Re-added in TWW Season 2
+    GIFT_OF_THE_GOLDEN_VALKYR = 378279, -- New in TWW Season 2
     
     -- Talents
     HOLY_AVENGER = 105809,
@@ -155,6 +193,12 @@ local RETRIBUTION_SPELLS = {
     THE_FIRES_OF_JUSTICE = 203316,
     ZEAL = 217020,
     RIGHTEOUS_VERDICT = 267610,
+    VANGUARDS_MOMENTUM = 383314, -- New in TWW Season 2
+    DIVINE_AUXILIARY = 386738, -- New in TWW Season 2
+    DIVINE_VINDICATOR = 391174, -- New in TWW Season 2
+    SEALED_VERDICT = 387640, -- New in TWW Season 2
+    RADIANT_DECREE = 387237, -- New in TWW Season 2
+    FORTHRIGHT_CLEANSING = 395787, -- New in TWW Season 2
     
     -- Misc
     DEVOTION_AURA = 465,
@@ -163,12 +207,12 @@ local RETRIBUTION_SPELLS = {
     RETRIBUTION_AURA = 183435,
     CONSECRATION = 26573,
     WORD_OF_GLORY = 85673,
-    FLASH_OF_LIGHT = 19750,
-    BLESSING_OF_THE_SEASONS = 388007
+    FLASH_OF_LIGHT = 19750
 }
 
--- Important buffs to track
+-- Important buffs to track (The War Within, Season 2)
 local BUFFS = {
+    -- Holy Paladin buffs
     DIVINE_PURPOSE = 223819,
     HOLY_AVENGER = 105809,
     AVENGING_WRATH = 31884,
@@ -181,7 +225,16 @@ local BUFFS = {
     BLESSING_OF_PROTECTION = 1022,
     BLESSING_OF_FREEDOM = 1044,
     BLESSING_OF_SACRIFICE = 6940,
+    BLESSING_OF_SUMMER = 388010, -- Season 2
+    BLESSING_OF_AUTUMN = 388011, -- Season 2
+    BLESSING_OF_WINTER = 388012, -- Season 2
+    BLESSING_OF_SPRING = 388013, -- Season 2
+    AFTERIMAGE = 388013, -- Season 2
+    DAYBREAK = 387990, -- Season 2
+    GOLDEN_PATH = 377151, -- Season 2
+    RESPLENDENT_LIGHT = 392907, -- Season 2 
     
+    -- Protection Paladin buffs
     SHIELD_OF_THE_RIGHTEOUS = 132403,
     AVENGER_VALOR = 197561,
     CONSECRATION = 188370,
@@ -189,7 +242,17 @@ local BUFFS = {
     GUARDIAN_OF_ANCIENT_KINGS = 86659,
     MOMENT_OF_GLORY = 327193,
     BASTION_OF_LIGHT = 204035,
+    SENTINEL = 387275, -- Season 2
+    DIVINE_ARBITER = 389105, -- Season 2
+    BULWARK_OF_RIGHTEOUS_FURY = 386655, -- Season 2
+    SANCTIFIED_GROUND = 387558, -- Season 2
+    SHIELD_OF_HOPE = 378425, -- Season 2
+    DIVINE_RESONANCE = 384029, -- Season 2
+    BARRICADE_OF_FAITH = 385727, -- Season 2
+    DIVINE_PROTECTION_PROTECTION = 498, -- Season 2
+    STRENGTH_IN_ADVERSITY = 393031, -- Season 2
     
+    -- Retribution Paladin buffs
     CRUSADE = 231895,
     BLADE_OF_JUSTICE = 184575,
     SHIELD_OF_VENGEANCE = 184662,
@@ -199,18 +262,41 @@ local BUFFS = {
     THE_FIRES_OF_JUSTICE = 209785,
     DIVINE_STORM = 53385,
     SERAPHIM = 152262,
-    RIGHTEOUS_VERDICT = 267611
+    DIVINE_AUXILIARY = 386741, -- Season 2
+    VANGUARDS_MOMENTUM = 383317, -- Season 2
+    DIVINE_VINDICATOR = 391176, -- Season 2 
+    SEALED_VERDICT = 387643, -- Season 2
+    TEMPEST_OF_THE_LIGHTBRINGER = 383274, -- Season 2
+    CRUSADING_STRIKES = 378852, -- Season 2
+    GIFT_OF_THE_GOLDEN_VALKYR = 378286, -- Season 2
+    DIVINE_PROTECTION_RETRIBUTION = 498 -- Season 2
 }
 
--- Important debuffs to track
+-- Important debuffs to track (The War Within, Season 2)
 local DEBUFFS = {
+    -- Common debuffs
     JUDGMENT = 197277,
+    FORBEARANCE = 25771,
+    
+    -- Holy debuffs
+    GLIMMER_OF_LIGHT = 287280,
+    JUDGMENT_OF_LIGHT = 196941,
+    RADIANT_DECREE_DEBUFF = 387239, -- Season 2
+    
+    -- Protection debuffs
+    BLESSED_HAMMER = 204301,
+    CONSECRATION_DEBUFF = 204242,
+    GUARDIAN_OF_ANCIENT_KINGS_DEBUFF = 86659,
+    EYE_OF_TYR_DEBUFF = 387176, -- Season 2
+    SANCTIFIED_GROUND_DEBUFF = 387559, -- Season 2
+    
+    -- Retribution debuffs
     EXECUTION_SENTENCE = 343527,
     FINAL_RECKONING = 343721,
-    FORBEARANCE = 25771,
-    BLESSED_HAMMER = 204301,
-    JUDGMENT_OF_LIGHT = 196941,
-    GLIMMER_OF_LIGHT = 287280
+    WAKE_OF_ASHES_DEBUFF = 255937,
+    SANCTIFY_DEBUFF = 387599, -- Season 2
+    RADIANT_DECREE_RET_DEBUFF = 387239, -- Season 2
+    TEMPEST_OF_THE_LIGHTBRINGER_DEBUFF = 383276 -- Season 2
 }
 
 -- Initialize the Paladin module
@@ -281,6 +367,7 @@ function PaladinModule:RegisterSettings()
             }
         },
         holySettings = {
+            -- Core Healing Abilities
             useBeacon = {
                 displayName = "Use Beacon",
                 description = "Which Beacon talent to use",
@@ -301,6 +388,8 @@ function PaladinModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Cooldowns
             useAvengingWrath = {
                 displayName = "Use Avenging Wrath",
                 description = "Use Avenging Wrath or Avenging Crusader on cooldown",
@@ -346,9 +435,85 @@ function PaladinModule:RegisterSettings()
                 description = "Use Divine Toll in combat",
                 type = "toggle",
                 default = true
+            },
+            
+            -- Season 2 Abilities
+            useBlessingOfSeasons = {
+                displayName = "Use Blessing of Seasons (TWW S2)",
+                description = "Use Blessing of Seasons cycle for party members",
+                type = "toggle",
+                default = true
+            },
+            seasonsCycleMode = {
+                displayName = "Seasons Cycle Mode (TWW S2)",
+                description = "How to cycle through the seasonal blessings",
+                type = "dropdown",
+                options = {"Auto-Optimize", "Fixed Rotation", "Situation Based"},
+                default = "Auto-Optimize"
+            },
+            useAfterimage = {
+                displayName = "Use Afterimage (TWW S2)",
+                description = "Use Afterimage for additional healing",
+                type = "toggle",
+                default = true
+            },
+            useDaybreak = {
+                displayName = "Use Daybreak (TWW S2)",
+                description = "Use Daybreak for AoE healing boost",
+                type = "toggle",
+                default = true
+            },
+            daybreakThreshold = {
+                displayName = "Daybreak Injured Count (TWW S2)",
+                description = "Minimum injured allies to use Daybreak",
+                type = "slider",
+                min = 2,
+                max = 5,
+                step = 1,
+                default = 3
+            },
+            useResplendentLight = {
+                displayName = "Use Resplendent Light (TWW S2)",
+                description = "Use Resplendent Light for improved healing",
+                type = "toggle",
+                default = true
+            },
+            useGoldenPath = {
+                displayName = "Use Golden Path (TWW S2)",
+                description = "Use Golden Path with optimal timing",
+                type = "toggle",
+                default = true
+            },
+            useRadiantDecree = {
+                displayName = "Use Radiant Decree (TWW S2)",
+                description = "Use Radiant Decree for additional damage and healing",
+                type = "toggle",
+                default = true
+            },
+            useEmpyreanLegacy = {
+                displayName = "Use Empyrean Legacy (TWW S2)",
+                description = "Optimize usage of Empyrean Legacy procs",
+                type = "toggle",
+                default = true
+            },
+            useLightsHammer = {
+                displayName = "Use Light's Hammer (TWW S2)",
+                description = "Use Light's Hammer for AoE healing and damage",
+                type = "toggle",
+                default = true
+            },
+            lightsHammerThreshold = {
+                displayName = "Light's Hammer Injured Count (TWW S2)",
+                description = "Minimum injured allies to use Light's Hammer",
+                type = "slider",
+                min = 2,
+                max = 5,
+                step = 1,
+                default = 3
             }
         },
         protectionSettings = {
+            -- Core Active Mitigation
             useShieldOfTheRighteous = {
                 displayName = "Use Shield of the Righteous",
                 description = "Automatically use Shield of the Righteous for active mitigation",
@@ -364,6 +529,8 @@ function PaladinModule:RegisterSettings()
                 step = 1,
                 default = 3
             },
+            
+            -- Defensive Cooldowns
             useArdentDefender = {
                 displayName = "Use Ardent Defender",
                 description = "Use Ardent Defender at low health",
@@ -394,6 +561,8 @@ function PaladinModule:RegisterSettings()
                 step = 5,
                 default = 20
             },
+            
+            -- Healing
             useWordOfGlory = {
                 displayName = "Use Word of Glory",
                 description = "Use Word of Glory for self-healing",
@@ -409,6 +578,8 @@ function PaladinModule:RegisterSettings()
                 step = 5,
                 default = 55
             },
+            
+            -- Rotational Abilities
             avengersShieldPriority = {
                 displayName = "Avenger's Shield Priority",
                 description = "Prioritize Avenger's Shield over other abilities",
@@ -426,9 +597,115 @@ function PaladinModule:RegisterSettings()
                 description = "Use Divine Toll in combat",
                 type = "toggle",
                 default = true
+            },
+            
+            -- Season 2 Abilities
+            useSentinel = {
+                displayName = "Use Sentinel (TWW S2)",
+                description = "Use Sentinel for powerful protection",
+                type = "toggle",
+                default = true
+            },
+            sentinelThreshold = {
+                displayName = "Sentinel Health Threshold (TWW S2)",
+                description = "Health percentage to use Sentinel",
+                type = "slider",
+                min = 10,
+                max = 60,
+                step = 5,
+                default = 30
+            },
+            useDivineArbiter = {
+                displayName = "Use Divine Arbiter (TWW S2)",
+                description = "Use Divine Arbiter for enhanced SotR",
+                type = "toggle",
+                default = true
+            },
+            useBulwarkOfRighteousFury = {
+                displayName = "Use Bulwark of Righteous Fury (TWW S2)",
+                description = "Use Bulwark of Righteous Fury for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            useSanctifiedGround = {
+                displayName = "Use Sanctified Ground (TWW S2)",
+                description = "Use Sanctified Ground for consecration bonuses",
+                type = "toggle",
+                default = true
+            },
+            useShieldOfHope = {
+                displayName = "Use Shield of Hope (TWW S2)",
+                description = "Use Shield of Hope for personal and party protection",
+                type = "toggle",
+                default = true
+            },
+            shieldOfHopeThreshold = {
+                displayName = "Shield of Hope Health Threshold (TWW S2)",
+                description = "Health percentage to use Shield of Hope",
+                type = "slider",
+                min = 10,
+                max = 40,
+                step = 5,
+                default = 25
+            },
+            useDivineResonance = {
+                displayName = "Use Divine Resonance (TWW S2)",
+                description = "Use Divine Resonance for improved SotR",
+                type = "toggle",
+                default = true
+            },
+            useMomentOfGlory = {
+                displayName = "Use Moment of Glory (TWW S2)",
+                description = "Use Moment of Glory for improved avoidance",
+                type = "toggle",
+                default = true
+            },
+            useEyeOfTyr = {
+                displayName = "Use Eye of Tyr (TWW S2)",
+                description = "Use Eye of Tyr for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            eyeOfTyrThreshold = {
+                displayName = "Eye of Tyr Health Threshold (TWW S2)",
+                description = "Health percentage to use Eye of Tyr",
+                type = "slider",
+                min = 10,
+                max = 70,
+                step = 5,
+                default = 60
+            },
+            useBlessingOfSeasons = {
+                displayName = "Use Blessing of Seasons (TWW S2)",
+                description = "Use Blessing of Seasons for tank and party benefits",
+                type = "toggle",
+                default = true
+            },
+            seasonsCycleMode = {
+                displayName = "Seasons Cycle Mode (TWW S2)",
+                description = "How to cycle through the seasonal blessings",
+                type = "dropdown",
+                options = {"Auto-Optimize", "Fixed Rotation", "Situation Based"},
+                default = "Auto-Optimize"
+            },
+            useDivineProtection = {
+                displayName = "Use Divine Protection (TWW S2)",
+                description = "Use Divine Protection for magic damage reduction",
+                type = "toggle",
+                default = true
+            },
+            divineProtectionThreshold = {
+                displayName = "Divine Protection Health Threshold (TWW S2)",
+                description = "Health percentage to use Divine Protection",
+                type = "slider",
+                min = 10,
+                max = 80,
+                step = 5,
+                default = 70
             }
         },
         retributionSettings = {
+            -- Core DPS Cooldowns
             useAvengingWrath = {
                 displayName = "Use Avenging Wrath/Crusade",
                 description = "Use Avenging Wrath or Crusade on cooldown",
@@ -459,6 +736,8 @@ function PaladinModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Defensive & Utility
             useShieldOfVengeance = {
                 displayName = "Use Shield of Vengeance",
                 description = "Use Shield of Vengeance for damage and mitigation",
@@ -486,6 +765,8 @@ function PaladinModule:RegisterSettings()
                 step = 5,
                 default = 40
             },
+            
+            -- AoE Settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to switch to AoE rotation",
@@ -500,6 +781,96 @@ function PaladinModule:RegisterSettings()
                 description = "Use Divine Toll in combat",
                 type = "toggle",
                 default = true
+            },
+            
+            -- Season 2 Abilities
+            useTempestOfTheLightbringer = {
+                displayName = "Use Tempest of the Lightbringer (TWW S2)",
+                description = "Use Tempest of the Lightbringer for enhanced Divine Storm",
+                type = "toggle",
+                default = true
+            },
+            useCrusadingStrikes = {
+                displayName = "Use Crusading Strikes (TWW S2)",
+                description = "Use Crusading Strikes for faster CS cooldown",
+                type = "toggle",
+                default = true
+            },
+            useDivineHammer = {
+                displayName = "Use Divine Hammer (TWW S2)",
+                description = "Use Divine Hammer instead of Blade of Justice if talented",
+                type = "toggle",
+                default = true
+            },
+            useSanctify = {
+                displayName = "Use Sanctify (TWW S2)",
+                description = "Use Sanctify for AoE holy damage",
+                type = "toggle",
+                default = true
+            },
+            useDivineAuxiliary = {
+                displayName = "Use Divine Auxiliary (TWW S2)",
+                description = "Use Divine Auxiliary for improved DPS",
+                type = "toggle",
+                default = true
+            },
+            useDivineVindicator = {
+                displayName = "Use Divine Vindicator (TWW S2)",
+                description = "Use Divine Vindicator to optimize Judgment usage",
+                type = "toggle",
+                default = true
+            },
+            useSealedVerdict = {
+                displayName = "Use Sealed Verdict (TWW S2)",
+                description = "Use Sealed Verdict for improved Templar's Verdict",
+                type = "toggle",
+                default = true
+            },
+            useRadiantDecree = {
+                displayName = "Use Radiant Decree (TWW S2)",
+                description = "Use Radiant Decree for damage and healing",
+                type = "toggle",
+                default = true
+            },
+            useForthrightCleansing = {
+                displayName = "Use Forthright Cleansing (TWW S2)",
+                description = "Use Forthright Cleansing for dispel benefits",
+                type = "toggle",
+                default = true
+            },
+            useGiftOfTheGoldenValkyr = {
+                displayName = "Use Gift of the Golden Valkyr (TWW S2)",
+                description = "Use Gift of the Golden Valkyr for wings extension",
+                type = "toggle",
+                default = true
+            },
+            useDivineProtection = {
+                displayName = "Use Divine Protection (TWW S2)",
+                description = "Use Divine Protection for magic damage reduction",
+                type = "toggle",
+                default = true
+            },
+            divineProtectionThreshold = {
+                displayName = "Divine Protection Health Threshold (TWW S2)",
+                description = "Health percentage to use Divine Protection",
+                type = "slider",
+                min = 10,
+                max = 80,
+                step = 5,
+                default = 70
+            },
+            useBlessingOfSeasons = {
+                displayName = "Use Blessing of Seasons (TWW S2)",
+                description = "Use Blessing of Seasons for party benefits",
+                type = "toggle",
+                default = true
+            },
+            seasonsCycleMode = {
+                displayName = "Seasons Cycle Mode (TWW S2)",
+                description = "How to cycle through the seasonal blessings",
+                type = "dropdown",
+                options = {"Auto-Optimize", "Fixed Rotation", "Situation Based"},
+                default = "Auto-Optimize"
             }
         }
     })

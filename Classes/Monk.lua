@@ -42,6 +42,7 @@ local BREWMASTER_SPELLS = {
     CLASH = 324312,
     ZEN_MEDITATION = 115176,
     FORTIFYING_BREW = 115203,
+    EXPLODING_KEG = 325153, -- New in TWW Season 2
     
     -- Defensive & utility
     EXPEL_HARM = 322101,
@@ -52,6 +53,8 @@ local BREWMASTER_SPELLS = {
     RING_OF_PEACE = 116844,
     TRANSCENDENCE = 101643,
     TRANSCENDENCE_TRANSFER = 119996,
+    BONEDUST_BREW = 386276, -- Added in TWW Season 2
+    WEAPONS_OF_ORDER = 387184, -- Added in TWW Season 2
     
     -- Talents
     INVOKE_NIUZAO_THE_BLACK_OX = 132578,
@@ -62,6 +65,12 @@ local BREWMASTER_SPELLS = {
     HIGH_TOLERANCE = 196737,
     SPECIAL_DELIVERY = 196730,
     BOB_AND_WEAVE = 280515,
+    CELESTIAL_FLAMES = 325177, -- New in TWW Season 2
+    FACE_PALM = 389942, -- New talent in TWW Season 2
+    STORMSTOUTS_LAST_KEG = 383707, -- New talent in TWW Season 2
+    IMPROVED_CELESTIAL_BREW = 322510, -- New talent in TWW Season 2
+    SHUFFLE = 393516, -- New talent in TWW Season 2
+    WALK_WITH_THE_OX = 387219, -- New talent in TWW Season 2
     
     -- Misc
     DETOX = 218164,
@@ -72,7 +81,7 @@ local BREWMASTER_SPELLS = {
     TIGERS_LUST = 116841
 }
 
--- Spell IDs for Mistweaver Monk
+-- Spell IDs for Mistweaver Monk (The War Within, Season 2)
 local MISTWEAVER_SPELLS = {
     -- Core abilities
     SOOTHING_MIST = 115175,
@@ -94,6 +103,10 @@ local MISTWEAVER_SPELLS = {
     RING_OF_PEACE = 116844,
     TRANSCENDENCE = 101643,
     TRANSCENDENCE_TRANSFER = 119996,
+    YU_LONS_WHISPER = 388501, -- New in TWW Season 2
+    RESTORAL = 388615, -- New in TWW Season 2
+    BONEDUST_BREW = 386276, -- Added in TWW Season 2
+    ANCIENT_TEACHINGS = 388023, -- Added in TWW Season 2
     
     -- Talents
     INVOKE_YULON_THE_JADE_SERPENT = 322118,
@@ -107,6 +120,12 @@ local MISTWEAVER_SPELLS = {
     FOCUSED_THUNDER = 197895,
     LIFECYCLES = 197915,
     UPWELLING = 274963,
+    AWAKENED_FAELINE = 388779, -- New in TWW Season 2
+    MISTY_PEAKS = 388849, -- New in TWW Season 2
+    ANCIENT_CONCORDANCE = 389002, -- New in TWW Season 2
+    RESONANT_BREATH = 388874, -- New in TWW Season 2
+    CLOUDED_FOCUS = 388796, -- New in TWW Season 2
+    DANCING_MISTS = 388857, -- New in TWW Season 2
     
     -- Misc
     DETOX = 115450,
@@ -117,7 +136,7 @@ local MISTWEAVER_SPELLS = {
     CRACKLING_JADE_LIGHTNING = 117952
 }
 
--- Spell IDs for Windwalker Monk
+-- Spell IDs for Windwalker Monk (The War Within, Season 2)
 local WINDWALKER_SPELLS = {
     -- Core abilities
     TIGER_PALM = 100780,
@@ -131,6 +150,7 @@ local WINDWALKER_SPELLS = {
     TIGEREYE_BREW = 247483,
     STORM_EARTH_AND_FIRE = 137639,
     SERENITY = 152173,
+    STRIKE_OF_THE_WINDLORD = 392983, -- New in TWW Season 2
     
     -- Defensive & utility
     FORTIFYING_BREW = 243435,
@@ -141,6 +161,8 @@ local WINDWALKER_SPELLS = {
     TRANSCENDENCE = 101643,
     TRANSCENDENCE_TRANSFER = 119996,
     TIGEREYE_BREW = 116740,
+    BONEDUST_BREW = 386276, -- Added in TWW Season 2
+    WEAPONS_OF_ORDER = 387184, -- Added in TWW Season 2
     
     -- Talents
     INVOKE_XUEN_THE_WHITE_TIGER = 123904,
@@ -151,6 +173,12 @@ local WINDWALKER_SPELLS = {
     DANCE_OF_CHI_JI = 325201,
     HIT_COMBO = 196740,
     MARK_OF_THE_CRANE = 220357,
+    SKYREACH = 392991, -- New in TWW Season 2
+    SKYTOUCH = 405044, -- New in TWW Season 2
+    SHADOWBOXING_TREADS = 392982, -- New in TWW Season 2
+    THUNDERFIST = 392985, -- New in TWW Season 2
+    DANCE_OF_THE_WIND = 393357, -- New in TWW Season 2
+    FIST_OF_THE_UNIVERSE = 392994, -- New in TWW Season 2
     
     -- Misc
     DETOX = 218164,
@@ -163,8 +191,9 @@ local WINDWALKER_SPELLS = {
     CRACKLING_JADE_LIGHTNING = 117952
 }
 
--- Important buffs to track
+-- Important buffs to track (The War Within, Season 2)
 local BUFFS = {
+    -- Brewmaster buffs
     BLACKOUT_COMBO = 228563,
     RUSHING_JADE_WIND = 116847,
     CELESTIAL_BREW = 322507,
@@ -174,7 +203,14 @@ local BUFFS = {
     IRONSKIN_BREW = 215479,
     STAGGER = 124255,
     ZEN_MEDITATION = 115176,
+    EXPLODING_KEG = 325153, -- New TWW S2
+    BONEDUST_BREW = 386276, -- New TWW S2
+    WEAPONS_OF_ORDER = 387184, -- New TWW S2
+    WALK_WITH_THE_OX = 387219, -- New TWW S2
+    SHUFFLE = 393516, -- New TWW S2
+    CELESTIAL_FLAMES = 325177, -- New TWW S2
     
+    -- Mistweaver buffs
     SOOTHING_MIST = 115175,
     ENVELOPING_MIST = 124682,
     RENEWING_MIST = 119611,
@@ -182,7 +218,15 @@ local BUFFS = {
     LIFE_COCOON = 116849,
     THUNDER_FOCUS_TEA = 116680,
     MANA_TEA = 197908,
+    YU_LONS_WHISPER = 388501, -- New TWW S2
+    ANCIENT_TEACHINGS = 388023, -- New TWW S2
+    ANCIENT_CONCORDANCE = 389002, -- New TWW S2
+    AWAKENED_FAELINE = 388779, -- New TWW S2
+    MISTY_PEAKS = 388849, -- New TWW S2
+    RESONANT_BREATH = 388874, -- New TWW S2
+    CLOUDED_FOCUS = 388796, -- New TWW S2
     
+    -- Windwalker buffs
     STORM_EARTH_AND_FIRE = 137639,
     SERENITY = 152173,
     TOUCH_OF_KARMA = 125174,
@@ -192,10 +236,16 @@ local BUFFS = {
     DANCE_OF_CHI_JI = 325202,
     TIGEREYE_BREW = 247483,
     WHIRLING_DRAGON_PUNCH = 152175,
-    MARK_OF_THE_CRANE = 228287
+    MARK_OF_THE_CRANE = 228287,
+    SKYREACH = 392991, -- New TWW S2
+    SKYTOUCH = 405044, -- New TWW S2
+    THUNDERFIST = 392985, -- New TWW S2
+    DANCE_OF_THE_WIND = 393357, -- New TWW S2
+    BONEDUST_BREW = 386276, -- New TWW S2
+    WEAPONS_OF_ORDER = 387184 -- New TWW S2
 }
 
--- Important debuffs to track
+-- Important debuffs to track (The War Within, Season 2)
 local DEBUFFS = {
     KEG_SMASH = 121253,
     BREATH_OF_FIRE = 123725,
@@ -203,7 +253,13 @@ local DEBUFFS = {
     LEG_SWEEP = 119381,
     PARALYSIS = 115078,
     FLYING_SERPENT_KICK = 123586,
-    RING_OF_PEACE = 116844
+    RING_OF_PEACE = 116844,
+    BONEDUST_BREW = 386275, -- New TWW S2 (damage increase debuff)
+    WEAPONS_OF_ORDER = 387179, -- New TWW S2 (damage taken debuff)
+    THUNDERFIST = 393057, -- New TWW S2
+    SKYREACH = 393047, -- New TWW S2
+    STRIKE_OF_THE_WINDLORD = 395519, -- New TWW S2
+    ANCIENT_CONCORDANCE = 389004 -- New TWW S2 (healing increase debuff)
 }
 
 -- Initialize the Monk module
@@ -263,6 +319,7 @@ function MonkModule:RegisterSettings()
             }
         },
         brewmasterSettings = {
+            -- Core Abilities
             useNiuzao = {
                 displayName = "Use Niuzao",
                 description = "Use Invoke Niuzao, the Black Ox on cooldown",
@@ -285,6 +342,8 @@ function MonkModule:RegisterSettings()
                 step = 5,
                 default = 70
             },
+            
+            -- Defensive Abilities
             useFortifyingBrew = {
                 displayName = "Use Fortifying Brew",
                 description = "Use Fortifying Brew at low health",
@@ -306,6 +365,8 @@ function MonkModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Rotation Priorities
             kegSmashPriority = {
                 displayName = "Keg Smash Priority",
                 description = "Prioritize Keg Smash over other abilities",
@@ -320,9 +381,60 @@ function MonkModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            
+            -- The War Within Season 2 Abilities
+            useExplodingKeg = {
+                displayName = "Use Exploding Keg (TWW S2)",
+                description = "Use Exploding Keg in combat",
+                type = "toggle",
+                default = true
+            },
+            useBonedustBrew = {
+                displayName = "Use Bonedust Brew (TWW S2)",
+                description = "Use Bonedust Brew in combat",
+                type = "toggle",
+                default = true
+            },
+            useWeaponsOfOrder = {
+                displayName = "Use Weapons of Order (TWW S2)",
+                description = "Use Weapons of Order in combat",
+                type = "toggle",
+                default = true
+            },
+            optimizeForBlackoutCombo = {
+                displayName = "Optimize for Blackout Combo",
+                description = "Prioritizes Blackout Kick in rotation",
+                type = "toggle",
+                default = true
+            },
+            optimizeForCelestialFlames = {
+                displayName = "Optimize for Celestial Flames (TWW S2)",
+                description = "Maximizes Breath of Fire uptime for defensive benefits",
+                type = "toggle",
+                default = true
+            },
+            optimizeForFacePalm = {
+                displayName = "Optimize for Face Palm (TWW S2)",
+                description = "Prioritizes Tiger Palm after Blackout Kick",
+                type = "toggle",
+                default = true
+            },
+            optimizeForWalkWithTheOx = {
+                displayName = "Optimize for Walk with the Ox (TWW S2)",
+                description = "Ensures maximum dodge uptime",
+                type = "toggle",
+                default = true
+            },
+            useStormstoutsLastKeg = {
+                displayName = "Use Stormstout's Last Keg (TWW S2)",
+                description = "Use Purifying Brew at maximum charges with Last Keg talent",
+                type = "toggle",
+                default = true
             }
         },
         mistWeaverSettings = {
+            -- Core Healing Abilities
             useEssenceFont = {
                 displayName = "Use Essence Font",
                 description = "Use Essence Font for group healing",
@@ -353,6 +465,8 @@ function MonkModule:RegisterSettings()
                 step = 5,
                 default = 60
             },
+            
+            -- Defensive & Emergency Healing
             useLifeCocoon = {
                 displayName = "Use Life Cocoon",
                 description = "Use Life Cocoon on low health targets",
@@ -383,6 +497,8 @@ function MonkModule:RegisterSettings()
                 step = 5,
                 default = 40
             },
+            
+            -- Cooldown Management
             jadeSerpentMode = {
                 displayName = "Jade Serpent Usage",
                 description = "When to use Yu'lon or Chi-Ji",
@@ -404,9 +520,81 @@ function MonkModule:RegisterSettings()
                 max = 50,
                 step = 5,
                 default = 30
+            },
+            
+            -- The War Within Season 2 Abilities
+            useYuLonsWhisper = {
+                displayName = "Use Yu'Lon's Whisper (TWW S2)",
+                description = "Use Yu'Lon's Whisper for healing buff",
+                type = "toggle",
+                default = true
+            },
+            useRestoral = {
+                displayName = "Use Restoral (TWW S2)",
+                description = "Use Restoral for emergency healing",
+                type = "toggle",
+                default = true
+            },
+            restoralThreshold = {
+                displayName = "Restoral Health Threshold",
+                description = "Average group health percentage to use Restoral",
+                type = "slider",
+                min = 10,
+                max = 50,
+                step = 5,
+                default = 25
+            },
+            useBonedustBrew = {
+                displayName = "Use Bonedust Brew (TWW S2)",
+                description = "Use Bonedust Brew on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useAncientTeachings = {
+                displayName = "Optimize for Ancient Teachings (TWW S2)",
+                description = "Use Rising Sun Kick for healing via Ancient Teachings",
+                type = "toggle",
+                default = true
+            },
+            useAncientConcordance = {
+                displayName = "Use Ancient Concordance (TWW S2)",
+                description = "Maintain optimum HoTs for Ancient Concordance",
+                type = "toggle",
+                default = true
+            },
+            useAwakenedFaeline = {
+                displayName = "Use Awakened Faeline (TWW S2)",
+                description = "Optimize positioning for Faeline healing",
+                type = "toggle",
+                default = true
+            },
+            useMistyPeaks = {
+                displayName = "Optimize for Misty Peaks (TWW S2)",
+                description = "Track stacks and optimize usage",
+                type = "toggle",
+                default = true
+            },
+            useResonantBreath = {
+                displayName = "Optimize for Resonant Breath (TWW S2)",
+                description = "Use Celestial cooldowns with proper timing",
+                type = "toggle",
+                default = true
+            },
+            useCloudedFocus = {
+                displayName = "Optimize for Clouded Focus (TWW S2)",
+                description = "Maintain optimal Soothing Mist usage",
+                type = "toggle",
+                default = true
+            },
+            useDancingMists = {
+                displayName = "Optimize for Dancing Mists (TWW S2)",
+                description = "Track Renewing Mist spread optimization",
+                type = "toggle",
+                default = true
             }
         },
         windwalkerSettings = {
+            -- Core Offensive Cooldowns
             useInvokeXuen = {
                 displayName = "Use Invoke Xuen",
                 description = "Use Invoke Xuen, the White Tiger on cooldown",
@@ -419,6 +607,8 @@ function MonkModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Defensive Abilities
             useTouchOfKarma = {
                 displayName = "Use Touch of Karma",
                 description = "Use Touch of Karma at low health",
@@ -434,6 +624,8 @@ function MonkModule:RegisterSettings()
                 step = 5,
                 default = 60
             },
+            
+            -- Major Cooldowns
             useSerenity = {
                 displayName = "Use Serenity",
                 description = "Use Serenity on cooldown if talented",
@@ -446,6 +638,8 @@ function MonkModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Rotation Optimizations
             comboStrikeTracking = {
                 displayName = "Track Combo Strikes",
                 description = "Prioritize abilities to maintain Hit Combo",
@@ -460,6 +654,62 @@ function MonkModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            
+            -- The War Within Season 2 Abilities
+            useStrikeOfTheWindlord = {
+                displayName = "Use Strike of the Windlord (TWW S2)",
+                description = "Use Strike of the Windlord on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useBonedustBrew = {
+                displayName = "Use Bonedust Brew (TWW S2)",
+                description = "Use Bonedust Brew on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useWeaponsOfOrder = {
+                displayName = "Use Weapons of Order (TWW S2)",
+                description = "Use Weapons of Order on cooldown",
+                type = "toggle",
+                default = true
+            },
+            useSkyreach = {
+                displayName = "Optimize for Skyreach (TWW S2)",
+                description = "Use Rising Sun Kick to gain Skyreach buff",
+                type = "toggle",
+                default = true
+            },
+            useSkytouchPriority = {
+                displayName = "Prioritize Skytouch (TWW S2)",
+                description = "Prioritize Tiger Palm with Skytouch talent",
+                type = "toggle",
+                default = true
+            },
+            useShadowboxingTreads = {
+                displayName = "Optimize for Shadowboxing Treads (TWW S2)",
+                description = "Prioritize Blackout Kick for AoE cleave",
+                type = "toggle",
+                default = true
+            },
+            useThunderfist = {
+                displayName = "Optimize for Thunderfist (TWW S2)",
+                description = "Track and optimize Thunderfist usage",
+                type = "toggle",
+                default = true
+            },
+            useDanceOfTheWind = {
+                displayName = "Optimize for Dance of the Wind (TWW S2)",
+                description = "Track cooldown reductions with Dance of the Wind",
+                type = "toggle",
+                default = true
+            },
+            useFistOfTheUniverse = {
+                displayName = "Use Fist of the Universe (TWW S2)",
+                description = "Track and prioritize Fist of the Universe procs",
+                type = "toggle",
+                default = true
             }
         }
     })
