@@ -493,6 +493,7 @@ function ShamanModule:RegisterSettings()
             }
         },
         enhancementSettings = {
+            -- Core settings
             useFeralSpirit = {
                 displayName = "Use Feral Spirit",
                 description = "Use Feral Spirit on cooldown",
@@ -523,13 +524,6 @@ function ShamanModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
-            priorityRotation = {
-                displayName = "Priority Rotation Type",
-                description = "Prioritize different rotations based on talents",
-                type = "dropdown",
-                options = {"Standard", "Hot Hand", "Ice Strike", "Elemental Assault"},
-                default = "Standard"
-            },
             useElementalBlast = {
                 displayName = "Use Elemental Blast",
                 description = "Use Elemental Blast if talented",
@@ -554,6 +548,83 @@ function ShamanModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Season 2 ability settings
+            useConvergingStorms = {
+                displayName = "Use Converging Storms (TWW S2)",
+                description = "Use Converging Storms to enhance Crash Lightning",
+                type = "toggle",
+                default = true
+            },
+            useMaelstromWeaponOverflow = {
+                displayName = "Use Maelstrom Weapon Overflow (TWW S2)",
+                description = "Use Maelstrom Weapon overflow procs",
+                type = "toggle",
+                default = true
+            },
+            usePrimordialWave = {
+                displayName = "Use Primordial Wave (TWW S2)",
+                description = "Use Primordial Wave in rotation if talented",
+                type = "toggle",
+                default = true
+            },
+            useDoomWinds = {
+                displayName = "Use Doom Winds (TWW S2)",
+                description = "Use Doom Winds for burst damage",
+                type = "toggle",
+                default = true
+            },
+            useThorimsInvocation = {
+                displayName = "Use Thorim's Invocation (TWW S2)",
+                description = "Use Thorim's Invocation for enhanced Lightning Bolt/Chain Lightning",
+                type = "toggle",
+                default = true
+            },
+            useStormfury = {
+                displayName = "Use Stormfury (TWW S2)",
+                description = "Use Stormfury for enhanced Stormstrike",
+                type = "toggle",
+                default = true
+            },
+            useWindsOfAlakir = {
+                displayName = "Use Winds of Al'Akir (TWW S2)",
+                description = "Use Winds of Al'Akir in rotation",
+                type = "toggle",
+                default = true
+            },
+            useTempest = {
+                displayName = "Use Tempest (TWW S2)",
+                description = "Use Tempest for AoE enhancement",
+                type = "toggle",
+                default = true
+            },
+            useMoltenAssault = {
+                displayName = "Use Molten Assault (TWW S2)",
+                description = "Use Molten Assault for enhanced Lava Lash",
+                type = "toggle",
+                default = true
+            },
+            usePrimalWolf = {
+                displayName = "Use Primal Wolf (TWW S2)",
+                description = "Use Primal Wolf to enhance wolf abilities",
+                type = "toggle",
+                default = true
+            },
+            useAshenCatalyst = {
+                displayName = "Use Ashen Catalyst (TWW S2)",
+                description = "Use Ashen Catalyst for enhanced Fire damage",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Advanced settings
+            priorityRotation = {
+                displayName = "Priority Rotation Type",
+                description = "Prioritize different rotations based on talents",
+                type = "dropdown",
+                options = {"Standard", "Hot Hand", "Ice Strike", "Elemental Assault", "Doom Winds"},
+                default = "Standard"
+            },
             maelstromThreshold = {
                 displayName = "Maelstrom Weapon Threshold",
                 description = "Minimum Maelstrom Weapon stacks to cast spells",
@@ -571,9 +642,17 @@ function ShamanModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            burstStrategy = {
+                displayName = "Burst Strategy (TWW S2)",
+                description = "How to prioritize burst abilities",
+                type = "dropdown",
+                options = {"Staggered", "All Together", "On Cooldown", "Manual"},
+                default = "Staggered"
             }
         },
         restorationSettings = {
+            -- Core settings
             waterShield = {
                 displayName = "Use Water Shield",
                 description = "Keep Water Shield active",
@@ -659,11 +738,99 @@ function ShamanModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Season 2 ability settings
+            useEverRisingTide = {
+                displayName = "Use Ever Rising Tide (TWW S2)",
+                description = "Use Ever Rising Tide for enhanced chain heal",
+                type = "toggle",
+                default = true
+            },
+            useEnduringTide = {
+                displayName = "Use Enduring Tide (TWW S2)",
+                description = "Use Enduring Tide for healing wave buffs",
+                type = "toggle",
+                default = true
+            },
+            useTideTurner = {
+                displayName = "Use Tide Turner (TWW S2)",
+                description = "Use Tide Turner for healing wave buffs",
+                type = "toggle",
+                default = true
+            },
+            useCripplingHex = {
+                displayName = "Use Crippling Hex (TWW S2)",
+                description = "Use Crippling Hex for crowd control",
+                type = "toggle",
+                default = true
+            },
+            useRefreshingWaters = {
+                displayName = "Use Refreshing Waters (TWW S2)",
+                description = "Use Refreshing Waters to enhance Healing Rain",
+                type = "toggle",
+                default = true
+            },
+            useTumblingWaves = {
+                displayName = "Use Tumbling Waves (TWW S2)",
+                description = "Use Tumbling Waves for riptide procs",
+                type = "toggle",
+                default = true
+            },
+            useImprovedEarthlivingWeapon = {
+                displayName = "Use Improved Earthliving Weapon (TWW S2)",
+                description = "Use Improved Earthliving Weapon for HoT effects",
+                type = "toggle",
+                default = true
+            },
+            usePurifiedWater = {
+                displayName = "Use Purified Water (TWW S2)",
+                description = "Use Purified Water for mana efficiency",
+                type = "toggle",
+                default = true
+            },
+            useRisingTide = {
+                displayName = "Use Rising Tide (TWW S2)",
+                description = "Use Rising Tide for healing surge buffs",
+                type = "toggle",
+                default = true
+            },
+            useAncestralDefense = {
+                displayName = "Use Ancestral Defense (TWW S2)",
+                description = "Use Ancestral Defense for damage reduction",
+                type = "toggle",
+                default = true
+            },
+            useOverflowingShores = {
+                displayName = "Use Overflowing Shores (TWW S2)",
+                description = "Use Overflowing Shores for enhanced healing rain",
+                type = "toggle",
+                default = true
+            },
+            useAncestralReach = {
+                displayName = "Use Ancestral Reach (TWW S2)",
+                description = "Use Ancestral Reach for extended healing range",
+                type = "toggle",
+                default = true
+            },
+            useFlashFlood = {
+                displayName = "Use Flash Flood (TWW S2)",
+                description = "Use Flash Flood for faster healing cast times",
+                type = "toggle",
+                default = true
+            },
+            useManaSpringTotem = {
+                displayName = "Use Mana Spring Totem (TWW S2)",
+                description = "Use Mana Spring Totem for mana regeneration",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Advanced settings
             healingMode = {
                 displayName = "Healing Priority",
                 description = "Healing style priority",
                 type = "dropdown",
-                options = {"Efficient", "Quick", "Balanced"},
+                options = {"Efficient", "Quick", "Balanced", "HoT Focused"},
                 default = "Balanced"
             },
             manaSavingThreshold = {
@@ -692,6 +859,15 @@ function ShamanModule:RegisterSettings()
                 max = 60,
                 step = 5,
                 default = 35
+            },
+            emergencyHealingThreshold = {
+                displayName = "Emergency Healing Threshold (TWW S2)",
+                description = "Health percentage to use emergency healing abilities",
+                type = "slider",
+                min = 5,
+                max = 40,
+                step = 5,
+                default = 20
             }
         }
     })

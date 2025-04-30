@@ -347,6 +347,7 @@ function EvokerModule:RegisterSettings()
             }
         },
         devastationSettings = {
+            -- Core settings
             useDragonrage = {
                 displayName = "Use Dragonrage",
                 description = "Use Dragonrage on cooldown",
@@ -395,6 +396,76 @@ function EvokerModule:RegisterSettings()
                 type = "toggle",
                 default = true
             },
+            
+            -- Season 2 ability settings
+            useScintillation = {
+                displayName = "Use Scintillation (TWW S2)",
+                description = "Use Scintillation for enhanced Essence Burst",
+                type = "toggle",
+                default = true
+            },
+            useArcaneVigor = {
+                displayName = "Use Arcane Vigor (TWW S2)",
+                description = "Use Arcane Vigor for enhanced Essence generation",
+                type = "toggle",
+                default = true
+            },
+            useDraconicAttunement = {
+                displayName = "Use Draconic Attunement (TWW S2)",
+                description = "Use Draconic Attunement in rotation",
+                type = "toggle",
+                default = true
+            },
+            useArcaneAwakening = {
+                displayName = "Use Arcane Awakening (TWW S2)",
+                description = "Use Arcane Awakening for enhanced Arcane spells",
+                type = "toggle",
+                default = true
+            },
+            useTyrannicalFlame = {
+                displayName = "Use Tyrannical Flame (TWW S2)",
+                description = "Use Tyrannical Flame to enhance Fire Breath",
+                type = "toggle",
+                default = true
+            },
+            useChargedBlast = {
+                displayName = "Use Charged Blast (TWW S2)",
+                description = "Use Charged Blast to enhance Azure Strike",
+                type = "toggle",
+                default = true
+            },
+            useRubyEssence = {
+                displayName = "Use Ruby Essence (TWW S2)",
+                description = "Use Ruby Essence for enhanced Fire damage",
+                type = "toggle",
+                default = true
+            },
+            useEngulfingBlaze = {
+                displayName = "Use Engulfing Blaze (TWW S2)",
+                description = "Use Engulfing Blaze in rotation",
+                type = "toggle",
+                default = true
+            },
+            useLivingBreath = {
+                displayName = "Use Living Breath (TWW S2)",
+                description = "Use Living Breath to enhance Living Flame",
+                type = "toggle",
+                default = true
+            },
+            useLeapingFlames = {
+                displayName = "Use Leaping Flames (TWW S2)",
+                description = "Use Leaping Flames for fire damage jumps",
+                type = "toggle",
+                default = true
+            },
+            useVolatility = {
+                displayName = "Use Volatility (TWW S2)",
+                description = "Use Volatility for enhanced Essence Burst procs",
+                type = "toggle",
+                default = true
+            },
+            
+            -- Advanced settings
             aoeThreshold = {
                 displayName = "AoE Threshold",
                 description = "Number of targets to switch to AoE rotation",
@@ -403,6 +474,20 @@ function EvokerModule:RegisterSettings()
                 max = 6,
                 step = 1,
                 default = 3
+            },
+            dragonrageMode = {
+                displayName = "Dragonrage Usage (TWW S2)",
+                description = "How to optimize Dragonrage cooldown",
+                type = "dropdown",
+                options = {"On Cooldown", "With Bloodlust/Heroism", "Save for Burst Windows", "Manual Only"},
+                default = "On Cooldown"
+            },
+            empowermentStrategy = {
+                displayName = "Empowerment Strategy (TWW S2)",
+                description = "How to handle empowered spell casts",
+                type = "dropdown",
+                options = {"Always Max Level", "Situational", "Speed Prioritized", "Damage Prioritized"},
+                default = "Situational"
             }
         },
         preservationSettings = {
