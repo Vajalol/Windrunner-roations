@@ -52,6 +52,7 @@ local AFFLICTION_SPELLS = {
     DRAIN_LIFE = 234153,
     HEALTHSTONE = 5512,
     MORTAL_COIL = 6789,
+    SHADOWFURY = 30283,
     
     -- Talents
     SUMMON_DARKGLARE = 205180,
@@ -69,6 +70,22 @@ local AFFLICTION_SPELLS = {
     SUMMON_SUCCUBUS = 712,
     SUMMON_FELGUARD = 30146,
     
+    -- Season 2 Abilities
+    WICKED_BARGAIN = 423470, -- New in TWW Season 2
+    DOOM_BRAND = 423471, -- New in TWW Season 2
+    TORMENTED_CRESCENDO = 423463, -- New in TWW Season 2
+    GRAND_WARLOCKS_DESIGN = 387084, -- New in TWW Season 2
+    SOUL_STRIKE = 264057, -- Enhanced in TWW Season 2
+    CREEPING_DEATH = 264000, -- Enhanced in TWW Season 2
+    DREAD_TOUCH = 389775, -- New in TWW Season 2
+    WRATH_OF_CONSUMPTION = 387065, -- New in TWW Season 2
+    PANDEMIC_INVOCATION = 386759, -- New in TWW Season 2
+    SHADOW_RIFT = 389997, -- New in TWW Season 2
+    SOUL_FLAME = 199471, -- Enhanced in TWW Season 2
+    DOOM_BLOSSOM = 416621, -- New in TWW Season 2
+    SOUL_TAP = 387073, -- New in TWW Season 2
+    SACROLASHS_DARK_STRIKE = 386986, -- New in TWW Season 2
+    
     -- Misc
     CREATE_HEALTHSTONE = 6201,
     FEAR = 5782,
@@ -79,7 +96,7 @@ local AFFLICTION_SPELLS = {
     SOULSTONE = 20707
 }
 
--- Spell IDs for Demonology Warlock
+-- Spell IDs for Demonology Warlock (The War Within, Season 2)
 local DEMONOLOGY_SPELLS = {
     -- Core abilities
     SHADOW_BOLT = 686,
@@ -103,6 +120,7 @@ local DEMONOLOGY_SPELLS = {
     DEMONIC_CIRCLE_TELEPORT = 48020,
     DRAIN_LIFE = 234153,
     HEALTHSTONE = 5512,
+    SHADOWFURY = 30283,
     
     -- Talents
     DOOM = 603,
@@ -120,6 +138,22 @@ local DEMONOLOGY_SPELLS = {
     SUMMON_SUCCUBUS = 712,
     SUMMON_FELGUARD = 30146,
     
+    -- Season 2 Abilities
+    THAL_KIELS_CONSUMPTION = 387391, -- New in TWW Season 2
+    BLASPHEMY = 387169, -- New in TWW Season 2
+    FORBIDDEN_KNOWLEDGE = 387172, -- New in TWW Season 2
+    SOUL_BOND = 386333, -- New in TWW Season 2
+    UMBRAL_BLAZE = 405798, -- New in TWW Season 2
+    GUILLOTINE = 386833, -- New in TWW Season 2
+    FEL_MIGHT = 387601, -- New in TWW Season 2
+    SOULBURN_DEMONIC_CIRCLE = 386164, -- New in TWW Season 2
+    THE_EXPENDABLES = 387600, -- New in TWW Season 2
+    DEMONIC_PACT = 387494, -- New in TWW Season 2
+    CARNIVOROUS_STALKERS = 387522, -- New in TWW Season 2
+    INFERNAL_COMMAND = 387549, -- New in TWW Season 2
+    GRIMOIRE_OF_SYNERGY = 171975, -- Enhanced in TWW Season 2
+    DOOM_BRAND = 423471, -- New in TWW Season 2
+    
     -- Misc
     CREATE_HEALTHSTONE = 6201,
     FEAR = 5782,
@@ -130,7 +164,7 @@ local DEMONOLOGY_SPELLS = {
     SOULSTONE = 20707
 }
 
--- Spell IDs for Destruction Warlock
+-- Spell IDs for Destruction Warlock (The War Within, Season 2)
 local DESTRUCTION_SPELLS = {
     -- Core abilities
     INCINERATE = 29722,
@@ -152,6 +186,7 @@ local DESTRUCTION_SPELLS = {
     DEMONIC_CIRCLE_TELEPORT = 48020,
     DRAIN_LIFE = 234153,
     HEALTHSTONE = 5512,
+    SHADOWFURY = 30283,
     
     -- Talents
     SHADOWBURN = 17877,
@@ -167,6 +202,23 @@ local DESTRUCTION_SPELLS = {
     SUMMON_FELHUNTER = 691,
     SUMMON_SUCCUBUS = 712,
     SUMMON_FELGUARD = 30146,
+    
+    -- Season 2 Abilities
+    DIMENSIONAL_RIFT = 387976, -- New in TWW Season 2
+    MAYHEM = 387593, -- New in TWW Season 2
+    AVATAR_OF_DESTRUCTION = 387159, -- New in TWW Season 2
+    BURN_TO_ASHES = 387153, -- New in TWW Season 2
+    INFERNAL_COMMAND = 387549, -- New in TWW Season 2
+    SOUL_FIRE_CONDUIT = 422051, -- New in TWW Season 2
+    CHAOS_BOLD_FURY = 387550, -- New in TWW Season 2
+    RAGING_DEMONFIRE = 387214, -- New in TWW Season 2
+    PYROGENICS = 387095, -- New in TWW Season 2
+    ASHEN_REMAINS = 387252, -- New in TWW Season 2
+    CONFLAGRATION_OF_CHAOS = 387108, -- New in TWW Season 2
+    ROARING_BLAZE = 205184, -- Enhanced in TWW Season 2
+    BACKDRAFT = 196406, -- Enhanced in TWW Season 2
+    CRASHING_CHAOS = 387355, -- New in TWW Season 2
+    INTERNAL_COMBUSTION = 266134, -- Enhanced in TWW Season 2
     
     -- Misc
     CREATE_HEALTHSTONE = 6201,
@@ -290,6 +342,7 @@ function WarlockModule:RegisterSettings()
             }
         },
         afflictionSettings = {
+            -- Core settings
             maintainDots = {
                 displayName = "Maintain DoTs",
                 description = "Automatically maintain DoTs on targets",
@@ -331,6 +384,98 @@ function WarlockModule:RegisterSettings()
                 description = "Apply Agony before other DoTs in multi-target situations",
                 type = "toggle",
                 default = true
+            },
+            
+            -- Season 2 abilities
+            useWickedBargain = {
+                displayName = "Use Wicked Bargain (TWW S2)",
+                description = "Use Wicked Bargain for enhanced Darkglare duration",
+                type = "toggle",
+                default = true
+            },
+            useDoomBrand = {
+                displayName = "Use Doom Brand (TWW S2)",
+                description = "Use Doom Brand for enhanced DoT damage",
+                type = "toggle",
+                default = true
+            },
+            useTormentedCrescendo = {
+                displayName = "Use Tormented Crescendo (TWW S2)",
+                description = "Use Tormented Crescendo for free Malefic Raptures",
+                type = "toggle",
+                default = true
+            },
+            useGrandWarlocksDesign = {
+                displayName = "Use Grand Warlock's Design (TWW S2)",
+                description = "Use Grand Warlock's Design for enhanced Soul Shards generation",
+                type = "toggle",
+                default = true
+            },
+            useSoulStrike = {
+                displayName = "Use Soul Strike (TWW S2)",
+                description = "Use Soul Strike for enhanced burst",
+                type = "toggle",
+                default = true
+            },
+            useCreepingDeath = {
+                displayName = "Use Creeping Death (TWW S2)",
+                description = "Use Creeping Death for faster DoT ticking",
+                type = "toggle",
+                default = true
+            },
+            useDreadTouch = {
+                displayName = "Use Dread Touch (TWW S2)",
+                description = "Use Dread Touch for increased Agony damage",
+                type = "toggle",
+                default = true
+            },
+            useWrathOfConsumption = {
+                displayName = "Use Wrath of Consumption (TWW S2)",
+                description = "Use Wrath of Consumption for increased damage after enemy deaths",
+                type = "toggle",
+                default = true
+            },
+            usePandemicInvocation = {
+                displayName = "Use Pandemic Invocation (TWW S2)",
+                description = "Use Pandemic Invocation for enhanced DoT refreshing",
+                type = "toggle",
+                default = true
+            },
+            useShadowRift = {
+                displayName = "Use Shadow Rift (TWW S2)",
+                description = "Use Shadow Rift for additional AoE damage",
+                type = "toggle",
+                default = true
+            },
+            useSoulTap = {
+                displayName = "Use Soul Tap (TWW S2)",
+                description = "Use Soul Tap for additional healing during Drain Soul",
+                type = "toggle",
+                default = true
+            },
+            darkglareUsage = {
+                displayName = "Darkglare Usage (TWW S2)",
+                description = "How to use Summon Darkglare",
+                type = "dropdown",
+                options = {
+                    "Maximum DoTs", 
+                    "On Cooldown", 
+                    "With Burst CDs", 
+                    "Manual Only"
+                },
+                default = "Maximum DoTs"
+            },
+            soulSwapStrategy = {
+                displayName = "Soul Swap Strategy (TWW S2)",
+                description = "How to use Soul Swap for DoT applications",
+                type = "dropdown",
+                options = {
+                    "Priority Target Only", 
+                    "Spread All DoTs", 
+                    "Focus Target Only", 
+                    "Manual Only"
+                },
+                default = "Priority Target Only"
             }
         },
         demonologySettings = {
